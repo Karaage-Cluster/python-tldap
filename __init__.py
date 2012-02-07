@@ -1,0 +1,45 @@
+# Copyright 2012 VPAC
+#
+# This file is part of django-placard.
+#
+# django-placard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# django-placard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with django-placard  If not, see <http://www.gnu.org/licenses/>.
+
+from placard.tldap.utils import DEFAULT_LDAP_ALIAS, ConnectionHandler
+
+import ldap
+from django.conf import settings
+
+# For backwards compatibility - Port any old database settings over to
+# the new values.
+if not hasattr(settings, 'LDAP'):
+    settings.LDAP = {}
+
+if not settings.LDAP:
+    settings.LDAP[DEFAULT_LDAP_ALIAS] = {
+        'URL': settings.LDAP_URL,
+        'USER': settings.LDAP_ADMIN_USER,
+        'PASSWORD': settings.LDAP_ADMIN_PASSWORD,
+    }
+
+if DEFAULT_LDAP_ALIAS not in settings.LDAP:
+    raise ImproperlyConfigured("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
+
+connections = ConnectionHandler(settings.LDAP)
+connection = connections[DEFAULT_LDAP_ALIAS]
+
+# constants from ldap
+SCOPE_BASE = ldap.SCOPE_BASE
+SCOPE_ONELEVEL = ldap.SCOPE_ONELEVEL
+SCOPE_SUBTREE = ldap.SCOPE_SUBTREE
+PROTOCOL_ERROR = ldap.PROTOCOL_ERROR
