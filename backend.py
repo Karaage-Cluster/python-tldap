@@ -36,9 +36,12 @@ the caching functionality could be split into a seperate class."""
 import ldap
 import ldap.modlist
 
-# debugging
+# hardcoded settings for this module
 
 debugging = True
+delayed_connect = True
+
+# debugging
 
 def debug(*argv):
     argv = [ str(arg) for arg in argv ]
@@ -57,23 +60,46 @@ class LDAPObject(object):
     def __init__(self, init_args, init_kwargs):
         self._init_args = init_args
         self._init_kwargs = init_kwargs
-        self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
         self.reset()
-
-    def __del__(self):
-        self.unbind_s()
+        self.obj = None
+        if not delayed_connect:
+            self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
 
     # connection management
+
+    def _reconnect(self):
+        self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
+        if (self._bind_args) > 0:
+            self.obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
+
+    def _do_with_retry(self, fn):
+        # if no connection
+        if self.obj is None:
+            # never connected; try to connect and then run fn
+            self._reconnect()
+            return fn(self.obj)
+
+        # otherwise try to run fn
+        try:
+            return fn(self.obj)
+        except ldap.SERVER_DOWN:
+            # if it fails, reconnect then retry
+            self._reconnect()
+            return fn(self.obj)
 
     def simple_bind(self, *args, **kwargs):
         self._bind_args = args
         self._bind_kwargs = kwargs
-        return self.obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
+        if self.obj is not None:
+            self._do_with_retry(lambda obj: obj.simple_bind_s(*self._bind_args, **self._bind_kwargs))
 
     def unbind(self):
         if self.obj is not None:
-            self.obj.unbind_s()
-            self.obj = None
+            self._do_with_retry(lambda obj: obj.unbind_s())
+        self._bind_args = None
+        self._bind_kwargs = None
+
+    # cache management
 
     def reset(self):
         """ Reset everything back to original state, discarding all uncompleted transactions. """
@@ -82,26 +108,12 @@ class LDAPObject(object):
         self._onrollback = []
         self._cache = {}
 
-    def _reconnect(self):
-        self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
-        if (self._bind_args) > 0:
-            self.obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
-
-    def _do_with_retry(self, fn):
-        try:
-            return fn()
-        except ldap.SERVER_DOWN:
-            self._reconnect()
-            return fn()
-
-    # cache management
-
     def _cache_get_for_dn(self, dn):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
         if dn not in self._cache:
             # no cached item, retrieve from ldap
-            results = self._do_with_retry(lambda: self.obj.search_s(dn, ldap.SCOPE_BASE))
+            results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE))
             if len(results) < 1:
                 raise RuntimeError("No results finding current value")
             if len(results) > 1:
@@ -167,8 +179,6 @@ class LDAPObject(object):
 
     def commit(self):
         """ Attempt to commit all changes to LDAP database, NOW! However stay inside transaction management. """
-        if self.obj is None:
-            raise RuntimeError("No LDAP binding")
         if not self._transact:
             raise RuntimeError("commit called outside transaction")
 
@@ -178,7 +188,7 @@ class LDAPObject(object):
             for oncommit, onrollback in self._oncommit:
                 # execute it
                 debug("commiting", self._oncommit)
-                self._do_with_retry(lambda: oncommit(self.obj))
+                self._do_with_retry(oncommit)
                 # add statement to rollback log in case something goes wrong
                 self._onrollback.insert(0,onrollback)
                 debug(self._onrollback)
@@ -196,8 +206,6 @@ class LDAPObject(object):
 
     def rollback(self):
         """ Roll back to previous database state. However stay inside transaction management. """
-        if self.obj is None:
-            raise RuntimeError("No LDAP binding")
         if not self._transact:
             raise RuntimeError("rollback called outside transaction")
 
@@ -209,7 +217,7 @@ class LDAPObject(object):
             for onrollback in self._onrollback:
                 # execute it
                 debug("rolling back", onrollback)
-                self._do_with_retry(lambda: onrollback(self.obj))
+                self._do_with_retry(onrollback)
         finally:
             # reset everything to clean state
             self._oncommit = []
@@ -221,7 +229,7 @@ class LDAPObject(object):
         onrollback is a callback to execute if the oncommit() has been called and
         a rollback is required """
         if not self._transact:
-            return self._do_with_retry(lambda: oncommit(self.obj))
+            return self._do_with_retry(oncommit)
         else:
             self._oncommit.append( (oncommit, onrollback) )
             return None
@@ -231,8 +239,6 @@ class LDAPObject(object):
     def add(self, dn, *args, **kwargs):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
-        if self.obj is None:
-            raise RuntimeError("No LDAP binding")
 
         # if rollback of add required, delete it
         oncommit   = lambda obj: obj.add_s(dn, *args, **kwargs)
@@ -248,8 +254,6 @@ class LDAPObject(object):
     def modify(self, dn, modlist, *args, **kwargs):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
-        if self.obj is None:
-            raise RuntimeError("No LDAP binding")
 
         # need to work out how to reverse changes in modlist; result in revlist
         revlist = []
@@ -312,8 +316,6 @@ class LDAPObject(object):
     def delete(self, dn, *args, **kwargs):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
-        if self.obj is None:
-            raise RuntimeError("No LDAP binding")
 
         result = self._cache_get_for_dn(dn)
         modlist = ldap.modlist.addModlist(result)
@@ -337,18 +339,15 @@ class LDAPObject(object):
     # read only stuff
 
     def search_s(self, *args, **kwargs):
-        if self.obj is None:
-            raise RuntimeError("No LDAP binding")
-
-        return self._do_with_retry(lambda: self.obj.search_s(*args, **kwargs))
+        return self._do_with_retry(lambda obj: obj.search_s(*args, **kwargs))
 
     # compatability hacks
 
     def simple_bind_s(self, *args, **kwargs):
-        return self.simple_bind(*args, **kwargs)
+        self.simple_bind(*args, **kwargs)
 
     def unbind_s(self, *args, **kwargs):
-        return self.unbind(*args, **kwargs)
+        self.unbind(*args, **kwargs)
 
     def add_s(self, *args, **kwargs):
         return self.add(*args, **kwargs)
