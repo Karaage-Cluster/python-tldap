@@ -47,16 +47,17 @@ def debug(*argv):
 
 # public methods that return wrapper class
 
-def initialize(uri, *args, **kwargs):
+def initialize(*args, **kwargs):
     """ Initialize an LDAP connection, identical to function in ldap module. """
-    obj = ldap.initialize(uri, *args, **kwargs)
-    return LDAPObject(obj)
+    return LDAPObject(args, kwargs)
 
 # LDAPObject wrapper class
 class LDAPObject(object):
 
-    def __init__(self, obj):
-        self.obj = obj
+    def __init__(self, init_args, init_kwargs):
+        self._init_args = init_args
+        self._init_kwargs = init_kwargs
+        self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
         self.reset()
 
     def __del__(self):
@@ -65,12 +66,11 @@ class LDAPObject(object):
     # connection management
 
     def simple_bind(self, *args, **kwargs):
-        return self.obj.simple_bind(*args, **kwargs)
+        self._bind_args = args
+        self._bind_kwargs = kwargs
+        return self.obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
 
-    def simple_bind_s(self, *args, **kwargs):
-        self.obj.simple_bind_s(*args, **kwargs)
-
-    def unbind_s(self):
+    def unbind(self):
         if self.obj is not None:
             self.obj.unbind_s()
             self.obj = None
@@ -82,12 +82,26 @@ class LDAPObject(object):
         self._onrollback = []
         self._cache = {}
 
+    def _reconnect(self):
+        self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
+        if (self._bind_args) > 0:
+            self.obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
+
+    def _do_with_retry(self, fn):
+        try:
+            return fn()
+        except ldap.SERVER_DOWN:
+            self._reconnect()
+            return fn()
+
+    # cache management
+
     def _cache_get_for_dn(self, dn):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
         if dn not in self._cache:
             # no cached item, retrieve from ldap
-            results = self.obj.search_s(dn, ldap.SCOPE_BASE)
+            results = self._do_with_retry(lambda: self.obj.search_s(dn, ldap.SCOPE_BASE))
             if len(results) < 1:
                 raise RuntimeError("No results finding current value")
             if len(results) > 1:
@@ -164,7 +178,7 @@ class LDAPObject(object):
             for oncommit, onrollback in self._oncommit:
                 # execute it
                 debug("commiting", self._oncommit)
-                oncommit(self.obj)
+                self._do_with_retry(lambda: oncommit(self.obj))
                 # add statement to rollback log in case something goes wrong
                 self._onrollback.insert(0,onrollback)
                 debug(self._onrollback)
@@ -195,7 +209,7 @@ class LDAPObject(object):
             for onrollback in self._onrollback:
                 # execute it
                 debug("rolling back", onrollback)
-                onrollback(self.obj)
+                self._do_with_retry(lambda: onrollback(self.obj))
         finally:
             # reset everything to clean state
             self._oncommit = []
@@ -207,7 +221,7 @@ class LDAPObject(object):
         onrollback is a callback to execute if the oncommit() has been called and
         a rollback is required """
         if not self._transact:
-            return oncommit(self.obj)
+            return self._do_with_retry(lambda: oncommit(self.obj))
         else:
             self._oncommit.append( (oncommit, onrollback) )
             return None
@@ -326,9 +340,15 @@ class LDAPObject(object):
         if self.obj is None:
             raise RuntimeError("No LDAP binding")
 
-        return self.obj.search_s(*args, **kwargs)
+        return self._do_with_retry(lambda: self.obj.search_s(*args, **kwargs))
 
     # compatability hacks
+
+    def simple_bind_s(self, *args, **kwargs):
+        return self.simple_bind(*args, **kwargs)
+
+    def unbind_s(self, *args, **kwargs):
+        return self.unbind(*args, **kwargs)
 
     def add_s(self, *args, **kwargs):
         return self.add(*args, **kwargs)
