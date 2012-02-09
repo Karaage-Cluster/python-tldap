@@ -61,40 +61,40 @@ class LDAPObject(object):
         self._init_args = init_args
         self._init_kwargs = init_kwargs
         self.reset()
-        self.obj = None
+        self._obj = None
         if not delayed_connect:
-            self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
+            self._obj = ldap.initialize(*self._init_args, **self._init_kwargs)
 
     # connection management
 
     def _reconnect(self):
-        self.obj = ldap.initialize(*self._init_args, **self._init_kwargs)
+        self._obj = ldap.initialize(*self._init_args, **self._init_kwargs)
         if (self._bind_args) > 0:
-            self.obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
+            self._obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
 
     def _do_with_retry(self, fn):
         # if no connection
-        if self.obj is None:
+        if self._obj is None:
             # never connected; try to connect and then run fn
             self._reconnect()
-            return fn(self.obj)
+            return fn(self._obj)
 
         # otherwise try to run fn
         try:
-            return fn(self.obj)
+            return fn(self._obj)
         except ldap.SERVER_DOWN:
             # if it fails, reconnect then retry
             self._reconnect()
-            return fn(self.obj)
+            return fn(self._obj)
 
     def simple_bind(self, *args, **kwargs):
         self._bind_args = args
         self._bind_kwargs = kwargs
-        if self.obj is not None:
+        if self._obj is not None:
             self._do_with_retry(lambda obj: obj.simple_bind_s(*self._bind_args, **self._bind_kwargs))
 
     def unbind(self):
-        if self.obj is not None:
+        if self._obj is not None:
             self._do_with_retry(lambda obj: obj.unbind_s())
         self._bind_args = None
         self._bind_kwargs = None
