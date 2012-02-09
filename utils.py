@@ -33,15 +33,7 @@ class ConnectionHandler(object):
 
         db = self.databases[alias]
 
-        conn = backend.initialize(db['URL'])
-        conn.protocol_version = ldap.VERSION3
-
-        if settings.LDAP_USE_TLS:
-            conn.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
-            conn.start_tls_s()
-
-        conn.simple_bind_s(db['USER'], db['PASSWORD'])
-
+        conn = backend.LDAPObject(db)
         self._connections[alias] = conn
         return conn
 

@@ -50,27 +50,44 @@ def debug(*argv):
 
 # public methods that return wrapper class
 
-def initialize(*args, **kwargs):
+def initialize(uri):
     """ Initialize an LDAP connection, identical to function in ldap module. """
-    return LDAPObject(args, kwargs)
+    settings_dict = {
+        'URI': uri,
+        'USER': None,
+        'PASSWORD': None,
+        'USE_TLS': False,
+        'TLS_CA': None,
+    }
+    return LDAPObject(settings_dict)
 
 # LDAPObject wrapper class
 class LDAPObject(object):
 
-    def __init__(self, init_args, init_kwargs):
-        self._init_args = init_args
-        self._init_kwargs = init_kwargs
+    def __init__(self, settings_dict):
+        self.settings_dict = settings_dict
         self.reset()
         self._obj = None
         if not delayed_connect:
-            self._obj = ldap.initialize(*self._init_args, **self._init_kwargs)
+            self._reconnect()
 
     # connection management
 
     def _reconnect(self):
-        self._obj = ldap.initialize(*self._init_args, **self._init_kwargs)
-        if (self._bind_args) > 0:
-            self._obj.simple_bind_s(*self._bind_args, **self._bind_kwargs)
+        s = self.settings_dict
+
+        conn = ldap.initialize(s['URI'])
+        conn.protocol_version = ldap.VERSION3
+
+        if s['USE_TLS']:
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, s['TLS_CA'])
+            conn.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
+            conn.start_tls_s()
+
+        self._obj = conn
+
+        if s['USER'] is not None:
+            self._obj.simple_bind_s(s['USER'], s['PASSWORD'])
 
     def _do_with_retry(self, fn):
         # if no connection
@@ -87,11 +104,11 @@ class LDAPObject(object):
             self._reconnect()
             return fn(self._obj)
 
-    def simple_bind(self, *args, **kwargs):
-        self._bind_args = args
-        self._bind_kwargs = kwargs
+    def simple_bind(self, user, password):
         if self._obj is not None:
-            self._do_with_retry(lambda obj: obj.simple_bind_s(*self._bind_args, **self._bind_kwargs))
+            self._do_with_retry(lambda obj: obj.simple_bind_s(user, password))
+        self.settings_dict['USER'] = user
+        self.settings_dict['PASSWORD'] = password
 
     def unbind(self):
         if self._obj is not None:

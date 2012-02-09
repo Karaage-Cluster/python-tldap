@@ -27,10 +27,16 @@ if not hasattr(settings, 'LDAP'):
 
 if not settings.LDAP:
     settings.LDAP[DEFAULT_LDAP_ALIAS] = {
-        'URL': settings.LDAP_URL,
+        'URI': settings.LDAP_URL,
         'USER': settings.LDAP_ADMIN_USER,
         'PASSWORD': settings.LDAP_ADMIN_PASSWORD,
+        'USE_TLS' : False,
+        'TLS_CA' : None,
     }
+    if hasattr(settings, 'LDAP_USE_TLS'):
+        settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = settings.LDAP_USE_TLS
+    if settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"]:
+        settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = settings.LDAP_TLS_CA
 
 if DEFAULT_LDAP_ALIAS not in settings.LDAP:
     raise ImproperlyConfigured("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
