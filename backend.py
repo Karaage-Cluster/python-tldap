@@ -210,7 +210,7 @@ class LDAPObject(object):
             # for every action ...
             for oncommit, onrollback in self._oncommit:
                 # execute it
-                debug("commiting", self._oncommit)
+                debug("commiting", oncommit)
                 self._do_with_retry(oncommit)
                 # add statement to rollback log in case something goes wrong
                 self._onrollback.insert(0,onrollback)
@@ -240,6 +240,9 @@ class LDAPObject(object):
                 # execute it
                 debug("rolling back", onrollback)
                 self._do_with_retry(onrollback)
+        except:
+            debug("rollback failed")
+            raise
         finally:
             # reset everything to clean state
             self._oncommit = []
@@ -286,7 +289,6 @@ class LDAPObject(object):
 
         # get the current cached attributes
         result = self._cache_get_for_dn(dn)
-        debug(result)
 
         # find the how to reverse modlist (for rollback) and put result in
         # revlist. Also simulate actions on cache.
