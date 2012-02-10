@@ -185,12 +185,14 @@ class LDAPObject(object):
 
     def leave_transaction_management(self):
         """ End a transaction. Must not be dirty when doing so. ie. commit() or
-        rollback() must be called if changes made. """
+        rollback() must be called if changes made. If dirty, changes will be discarded. """
         if not self._transact:
             raise RuntimeError("leave_transaction_management called outside transaction")
         if len(self._oncommit) > 0:
+            self.reset()
             raise RuntimeError("leave_transaction_management called with uncommited changes")
         if len(self._onrollback) > 0:
+            self.reset()
             raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
         self.reset()
 
