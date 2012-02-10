@@ -401,7 +401,24 @@ class LDAPObject(object):
     # read only stuff
 
     def search_s(self, *args, **kwargs):
-        return self._do_with_retry(lambda obj: obj.search_s(*args, **kwargs))
+        results = self._do_with_retry(lambda obj: obj.search_s(*args, **kwargs))
+        mod_results = []
+
+        # substitute results in cache
+        for v in results:
+            dn = v[0]
+            if dn in self._cache:
+                # if this dn exists in cache
+                if self._cache[dn] is not None:
+                    # ... and is not deleted, append value to results
+                    mod_results.append( (v[0], self._cache[dn]) )
+            else:
+                # value is not in cache; add to cache
+                # also add to results list
+                self._cache[dn] = v[1]
+                mod_results.append(v)
+
+        return mod_results
 
     # compatability hacks
 
