@@ -363,8 +363,22 @@ class LDAPObject(object):
 
         debug("delete", self, dn, args, kwargs)
 
-        result = self._cache_get_for_dn(dn)
+        # get copy of cache
+        result = self._cache_get_for_dn(dn).copy()
+
+        # remove special values that can't be added
+        del result['entryUUID']
+        del result['structuralObjectClass']
+        del result['modifiersName']
+        del result['subschemaSubentry']
+        del result['entryDN']
+        del result['modifyTimestamp']
+        del result['entryCSN']
+        del result['createTimestamp']
+        del result['creatorsName']
+        # turn into modlist list.
         modlist = ldap.modlist.addModlist(result)
+        # delete the cache entry
         self._cache_del_dn(dn)
 
         # on commit carry out action; on rollback restore cached state
