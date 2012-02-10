@@ -76,6 +76,7 @@ class LDAPObject(object):
     def _reconnect(self):
         s = self.settings_dict
 
+        debug("connecting")
         conn = ldap.initialize(s['URI'])
         conn.protocol_version = ldap.VERSION3
 
@@ -87,12 +88,14 @@ class LDAPObject(object):
         self._obj = conn
 
         if s['USER'] is not None:
+            debug("binding")
             self._obj.simple_bind_s(s['USER'], s['PASSWORD'])
 
     def _do_with_retry(self, fn):
         # if no connection
         if self._obj is None:
             # never connected; try to connect and then run fn
+            debug("initial connection")
             self._reconnect()
             return fn(self._obj)
 
@@ -101,6 +104,7 @@ class LDAPObject(object):
             return fn(self._obj)
         except ldap.SERVER_DOWN:
             # if it fails, reconnect then retry
+            debug("SERVER_DOWN, reconnecting")
             self._reconnect()
             return fn(self._obj)
 
@@ -210,7 +214,6 @@ class LDAPObject(object):
                 self._do_with_retry(oncommit)
                 # add statement to rollback log in case something goes wrong
                 self._onrollback.insert(0,onrollback)
-                debug(self._onrollback)
         except:
             # oops. Something went wrong. Attempt to rollback.
             debug("commit failed")
@@ -259,6 +262,8 @@ class LDAPObject(object):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
+        debug("add", self, dn, args, kwargs)
+
         # if rollback of add required, delete it
         oncommit   = lambda obj: obj.add_s(dn, *args, **kwargs)
         onrollback = lambda obj: obj.delete_s(dn)
@@ -274,6 +279,8 @@ class LDAPObject(object):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
+        debug("modify", self, dn, modlist, args, kwargs)
+
         # need to work out how to reverse changes in modlist; result in revlist
         revlist = []
 
@@ -284,10 +291,16 @@ class LDAPObject(object):
         # find the how to reverse modlist (for rollback) and put result in
         # revlist. Also simulate actions on cache.
         for mod_op,mod_type,mod_vals in modlist:
-            debug("=========", mod_op, mod_type, mod_vals)
+            reverse = None
+            if mod_type in result:
+                debug("attribute cache:", result[mod_type])
+            else:
+                debug("attribute cache is empty")
+            debug("attribute modify:", (mod_op, mod_type, mod_vals))
+
             if mod_op == ldap.MOD_ADD:
                 # reverse of MOD_ADD is MOD_DELETE
-                revlist.insert(0, (ldap.MOD_DELETE,mod_type,mod_vals) )
+                reverse = (ldap.MOD_DELETE,mod_type,mod_vals)
 
                 # also carry out simulation in cache
                 if mod_type not in result:
@@ -300,7 +313,7 @@ class LDAPObject(object):
             elif mod_op == ldap.MOD_DELETE and mod_vals is not None:
                 # Reverse of MOD_DELETE is MOD_ADD, but only if value is given
                 # if mod_vals is None, this means all values where deleted.
-                revlist.insert(0, (ldap.MOD_ADD,mod,mod_vals) )
+                reverse = (ldap.MOD_ADD,mod,mod_vals)
 
                 # also carry out simulation in cache
                 if mod_type in result:
@@ -313,10 +326,10 @@ class LDAPObject(object):
                 if mod_type in result:
                     # If MOD_DELETE with no values or MOD_REPLACE then we
                     # have to replace all attributes with cached state
-                    revlist.insert(0, (ldap.MOD_REPLACE,mod_type,result[mod_type]) )
+                    reverse = (ldap.MOD_REPLACE,mod_type,result[mod_type])
                 else:
                     # except if we have no cached state for this DN, in which case we delete it.
-                    revlist.insert(0, (ldap.MOD_DELETE,mod_type,None) )
+                    reverse = (ldap.MOD_DELETE,mod_type,None)
 
                 # also carry out simulation in cache
                 if mod_vals is not None:
@@ -324,8 +337,18 @@ class LDAPObject(object):
                 elif mod_type in result:
                     del result[mod_type]
 
-            debug("xxxxxxxx", revlist)
-            debug(result)
+            else:
+                raise RuntimeError("mod_op of %d not supported"%mod_op)
+
+            debug("attribute reverse:", reverse)
+            if mod_type in result:
+                debug("attribute cache:", result[mod_type])
+            else:
+                debug("attribute cache is empty")
+
+            revlist.insert(0, reverse)
+
+        debug("--\n")
 
         # now the hard stuff is over, we get to the easy stuff
         oncommit   = lambda obj: obj.modify_s(dn, modlist, *args, **kwargs)
@@ -335,6 +358,8 @@ class LDAPObject(object):
     def delete(self, dn, *args, **kwargs):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
+
+        debug("delete", self, dn, args, kwargs)
 
         result = self._cache_get_for_dn(dn)
         modlist = ldap.modlist.addModlist(result)
@@ -348,6 +373,8 @@ class LDAPObject(object):
     def rename(self, dn, newrdn, *args, **kwargs):
         """ rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
+
+        debug("rename", self, dn, newrdn, args, kwargs)
 
         # on commit carry out action; on rollback reverse rename
         oncommit   = lambda obj: obj.rename_s(dn, newrdn, *args, **kwargs)
