@@ -51,8 +51,8 @@ def debug(*argv):
     if debugging:
         print " ".join(argv)
 
-def raise_testfailure():
-    raise TestFailure("fail commit called")
+def raise_testfailure(place):
+    raise TestFailure("fail %s called"%place)
 
 # public methods that return wrapper class
 
@@ -420,8 +420,8 @@ class LDAPObject(object):
         debug("fail")
 
         # on commit carry out action; on rollback reverse rename
-        oncommit   = lambda obj: raise_testfailure()
-        onrollback = lambda obj: raise_testfailure()
+        oncommit   = lambda obj: raise_testfailure("commit")
+        onrollback = lambda obj: raise_testfailure("rollback")
         return self._process(oncommit, onrollback)
 
     # read only stuff
