@@ -37,6 +37,8 @@ import ldap
 import ldap.modlist
 import ldap.dn
 
+from placard.tldap.exceptions import TestFailure
+
 # hardcoded settings for this module
 
 debugging = True
@@ -48,6 +50,9 @@ def debug(*argv):
     argv = [ str(arg) for arg in argv ]
     if debugging:
         print " ".join(argv)
+
+def raise_testfailure():
+    raise TestFailure("fail commit called")
 
 # public methods that return wrapper class
 
@@ -143,14 +148,14 @@ class LDAPObject(object):
             # no cached item, retrieve from ldap
             results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE))
             if len(results) < 1:
-                raise RuntimeError("No results finding current value")
+                raise ldap.NO_SUCH_OBJECT("No results finding current value")
             if len(results) > 1:
                 raise RuntimeError("Too many results finding current value")
             self._cache[dn] = results[0][1]
 
         elif self._cache[dn] is None:
             # don't allow access to deleted items
-            raise RuntimeError("Object with dn %s was deleted in cache"%dn)
+            raise ldap.NO_SUCH_OBJECT("Object with dn %s was deleted in cache"%dn)
 
         # return result
         return self._cache[dn]
@@ -160,14 +165,14 @@ class LDAPObject(object):
         so that rollback information can be correct. This function retrieves the cached data. """
         dn = self._cache_normalize_dn(dn)
         if dn in self._cache and self._cache[dn] is not None:
-            raise RuntimeError("Object with dn %s already exists in cache"%dn)
+            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%dn)
         self._cache[dn] = {}
         return self._cache[dn]
 
     def _cache_rename_dn(self, dn, newrdn):
         """ The function will rename the DN in the cache. """
         if newdn in self._cache:
-            raise RuntimeError("Object with dn %s already exists in cache"%dn)
+            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%dn)
         dn = self._cache_normalize_dn(dn)
         newrdn = self._cache_normalize_dn(newrdn)
         self._cache[newrdn] = _cache_get_for_dn(self, dn)
@@ -407,6 +412,16 @@ class LDAPObject(object):
         oncommit   = lambda obj: obj.rename_s(dn, newrdn, *args, **kwargs)
         onrollback = lambda obj: obj.rename_s(newrdn, dn, *args, **kwargs)
         self._cache_rename_dn(dn, newrdn)
+        return self._process(oncommit, onrollback)
+
+    def fail(self):
+        """ for testing purposes only. always fail in commit """
+
+        debug("fail")
+
+        # on commit carry out action; on rollback reverse rename
+        oncommit   = lambda obj: raise_testfailure()
+        onrollback = lambda obj: raise_testfailure()
         return self._process(oncommit, onrollback)
 
     # read only stuff
