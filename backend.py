@@ -35,6 +35,7 @@ the caching functionality could be split into a seperate class."""
 
 import ldap
 import ldap.modlist
+import ldap.dn
 
 # hardcoded settings for this module
 
@@ -129,9 +130,15 @@ class LDAPObject(object):
         self._onrollback = []
         self._cache = {}
 
+    def _cache_normalize_dn(self, dn):
+        """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
+        is not possible to have two or more cache entries representing the same ldap entry. """
+        return ldap.dn.dn2str(ldap.dn.str2dn(dn))
+
     def _cache_get_for_dn(self, dn):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
+        dn = self._cache_normalize_dn(dn)
         if dn not in self._cache:
             # no cached item, retrieve from ldap
             results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE))
@@ -151,6 +158,7 @@ class LDAPObject(object):
     def _cache_create_for_dn(self, dn):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
+        dn = self._cache_normalize_dn(dn)
         if dn in self._cache and self._cache[dn] is not None:
             raise RuntimeError("Object with dn %s already exists in cache"%dn)
         self._cache[dn] = {}
@@ -160,11 +168,14 @@ class LDAPObject(object):
         """ The function will rename the DN in the cache. """
         if newdn in self._cache:
             raise RuntimeError("Object with dn %s already exists in cache"%dn)
+        dn = self._cache_normalize_dn(dn)
+        newrdn = self._cache_normalize_dn(newrdn)
         self._cache[newrdn] = _cache_get_for_dn(self, dn)
         self._cache_del_dn(dn)
 
     def _cache_del_dn(self, dn):
         """ This function will mark as deleted the DN created with _cache_get_for_dn and mark it as unsuable. """
+        dn = self._cache_normalize_dn(dn)
         if dn in self._cache:
             self._cache[dn] = None
 
@@ -407,6 +418,7 @@ class LDAPObject(object):
         # substitute results in cache
         for v in results:
             dn = v[0]
+            dn = self._cache_normalize_dn(dn)
             if dn in self._cache:
                 # if this dn exists in cache
                 if self._cache[dn] is not None:
