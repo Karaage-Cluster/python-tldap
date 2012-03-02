@@ -304,11 +304,11 @@ class LDAPObject(object):
         return self._process(oncommit, onrollback)
 
 
-    def modify(self, dn, modlist, *args, **kwargs):
+    def modify(self, dn, modlist):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
-        debug("modify", self, dn, modlist, args, kwargs)
+        debug("modify", self, dn, modlist)
 
         # need to work out how to reverse changes in modlist; result in revlist
         revlist = []
@@ -379,15 +379,15 @@ class LDAPObject(object):
         debug("--\n")
 
         # now the hard stuff is over, we get to the easy stuff
-        oncommit   = lambda obj: obj.modify_s(dn, modlist, *args, **kwargs)
-        onrollback = lambda obj: obj.modify_s(dn, revlist, *args, **kwargs)
+        oncommit   = lambda obj: obj.modify_s(dn, modlist)
+        onrollback = lambda obj: obj.modify_s(dn, revlist)
         return self._process(oncommit, onrollback)
 
-    def delete(self, dn, *args, **kwargs):
+    def delete(self, dn):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
 
-        debug("delete", self, dn, args, kwargs)
+        debug("delete", self)
 
         # get copy of cache
         result = self._cache_get_for_dn(dn).copy()
@@ -410,19 +410,19 @@ class LDAPObject(object):
         self._cache_del_dn(dn)
 
         # on commit carry out action; on rollback restore cached state
-        oncommit   = lambda obj: obj.delete_s(dn, *args, **kwargs)
+        oncommit   = lambda obj: obj.delete_s(dn)
         onrollback = lambda obj: obj.add_s(dn, modlist)
         return self._process(oncommit, onrollback)
 
-    def rename(self, dn, newrdn, *args, **kwargs):
+    def rename(self, dn, newrdn):
         """ rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
 
-        debug("rename", self, dn, newrdn, args, kwargs)
+        debug("rename", self, dn, newrdn)
 
         # on commit carry out action; on rollback reverse rename
-        oncommit   = lambda obj: obj.rename_s(dn, newrdn, *args, **kwargs)
-        onrollback = lambda obj: obj.rename_s(newrdn, dn, *args, **kwargs)
+        oncommit   = lambda obj: obj.rename_s(dn, newrdn)
+        onrollback = lambda obj: obj.rename_s(newrdn, dn)
         self._cache_rename_dn(dn, newrdn)
         return self._process(oncommit, onrollback)
 
