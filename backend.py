@@ -72,17 +72,19 @@ class LDAPObject(object):
 
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict
-        self._cache = {}
-        self.reset()
+        self._transact = False
         self._obj = None
-        if not delayed_connect:
-            self._reconnect()
 
         # just autoflushes the cache after every transaction
         # not strictly required, however guarantees that one transaction
         # can't stuff up future transactions if something went wrong
         # with the caching
         self.autoflushcache = True
+        self.reset()
+
+        if not delayed_connect:
+            self._reconnect()
+
 
     # connection management
 
@@ -135,11 +137,12 @@ class LDAPObject(object):
 
     # cache management
 
-    def reset(self):
-        """ Reset everything back to original state, discarding all uncompleted transactions. """
-        self._transact = False
+    def reset(self, forceflushcache=False):
+        """ Reset transaction back to original state, discarding all uncompleted transactions. """
         self._oncommit = []
         self._onrollback = []
+        if forceflushcache or self.autoflushcache:
+            self._cache = {}
 
     def _cache_normalize_dn(self, dn):
         """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
@@ -215,15 +218,13 @@ class LDAPObject(object):
         if not self._transact:
             raise RuntimeError("leave_transaction_management called outside transaction")
         if len(self._oncommit) > 0:
-            self._cache = {}
-            self.reset()
+            self.reset(forceflushcache=true)
             raise RuntimeError("leave_transaction_management called with uncommited changes")
         if len(self._onrollback) > 0:
-            self._cache = {}
-            self.reset()
+            self.reset(forceflushcache=true)
             raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
-        if self.autoflushcache: self._cache = {}
         self.reset()
+        self._transact = False
 
     def commit(self):
         """ Attempt to commit all changes to LDAP database, NOW! However stay inside transaction management. """
@@ -247,9 +248,7 @@ class LDAPObject(object):
             raise
         finally:
             # reset everything to clean state
-            self._oncommit = []
-            self._onrollback = []
-            if self.autoflushcache: self._cache = {}
+            self.reset()
 
     def rollback(self):
         """ Roll back to previous database state. However stay inside transaction management. """
@@ -270,35 +269,36 @@ class LDAPObject(object):
             raise
         finally:
             # reset everything to clean state
-            self._oncommit = []
-            self._onrollback = []
-            self._cache = {}
+            self.reset(forceflushcache=True)
 
     def _process(self, oncommit, onrollback):
         """ Add action to list. oncommit is a callback to execute on commit(),
         onrollback is a callback to execute if the oncommit() has been called and
         a rollback is required """
         if not self._transact:
-            if self.autoflushcache: self._cache = {}
-            return self._do_with_retry(oncommit)
+            result = self._do_with_retry(oncommit)
+            self.reset()
+            return result
         else:
             self._oncommit.append( (oncommit, onrollback) )
             return None
 
     # statements needing transactions
 
-    def add(self, dn, *args, **kwargs):
+    def add(self, dn, modlist):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
-        debug("add", self, dn, args, kwargs)
+        debug("add", self, dn, modlist)
 
         # if rollback of add required, delete it
-        oncommit   = lambda obj: obj.add_s(dn, *args, **kwargs)
+        oncommit   = lambda obj: obj.add_s(dn, modlist)
         onrollback = lambda obj: obj.delete_s(dn)
 
         # simulate this action in cache
-        self._cache_create_for_dn(dn)
+        cache = self._cache_create_for_dn(dn)
+        for k,v in modlist:
+            cache[k] = v
 
         # process this action
         return self._process(oncommit, onrollback)
@@ -393,15 +393,17 @@ class LDAPObject(object):
         result = self._cache_get_for_dn(dn).copy()
 
         # remove special values that can't be added
-        del result['entryUUID']
-        del result['structuralObjectClass']
-        del result['modifiersName']
-        del result['subschemaSubentry']
-        del result['entryDN']
-        del result['modifyTimestamp']
-        del result['entryCSN']
-        del result['createTimestamp']
-        del result['creatorsName']
+        def delete_attribute(name):
+            if name in result: del result[name]
+        delete_attribute('entryUUID')
+        delete_attribute('structuralObjectClass')
+        delete_attribute('modifiersName')
+        delete_attribute('subschemaSubentry')
+        delete_attribute('entryDN')
+        delete_attribute('modifyTimestamp')
+        delete_attribute('entryCSN')
+        delete_attribute('createTimestamp')
+        delete_attribute('creatorsName')
         # turn into modlist list.
         modlist = ldap.modlist.addModlist(result)
         # delete the cache entry
