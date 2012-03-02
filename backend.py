@@ -72,10 +72,17 @@ class LDAPObject(object):
 
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict
+        self._cache = {}
         self.reset()
         self._obj = None
         if not delayed_connect:
             self._reconnect()
+
+        # just autoflushes the cache after every transaction
+        # not strictly required, however guarantees that one transaction
+        # can't stuff up future transactions if something went wrong
+        # with the caching
+        self.autoflushcache = True
 
     # connection management
 
@@ -133,7 +140,6 @@ class LDAPObject(object):
         self._transact = False
         self._oncommit = []
         self._onrollback = []
-        self._cache = {}
 
     def _cache_normalize_dn(self, dn):
         """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
@@ -209,11 +215,14 @@ class LDAPObject(object):
         if not self._transact:
             raise RuntimeError("leave_transaction_management called outside transaction")
         if len(self._oncommit) > 0:
+            self._cache = {}
             self.reset()
             raise RuntimeError("leave_transaction_management called with uncommited changes")
         if len(self._onrollback) > 0:
+            self._cache = {}
             self.reset()
             raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
+        if self.autoflushcache: self._cache = {}
         self.reset()
 
     def commit(self):
@@ -240,7 +249,7 @@ class LDAPObject(object):
             # reset everything to clean state
             self._oncommit = []
             self._onrollback = []
-            self._cache = {}
+            if self.autoflushcache: self._cache = {}
 
     def rollback(self):
         """ Roll back to previous database state. However stay inside transaction management. """
@@ -270,6 +279,7 @@ class LDAPObject(object):
         onrollback is a callback to execute if the oncommit() has been called and
         a rollback is required """
         if not self._transact:
+            if self.autoflushcache: self._cache = {}
             return self._do_with_retry(oncommit)
         else:
             self._oncommit.append( (oncommit, onrollback) )
