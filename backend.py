@@ -33,7 +33,6 @@ multiple LDAPObject values for the one database things could get confused
 because each one will keep track of changes seperately - if this is an issue
 the caching functionality could be split into a seperate class."""
 
-import ldap
 import ldap.modlist
 import ldap.dn
 
@@ -178,13 +177,13 @@ class LDAPObject(object):
         self._cache[dn] = {}
         return self._cache[dn]
 
-    def _cache_rename_dn(self, dn, newrdn):
+    def _cache_rename_dn(self, dn, newdn):
         """ The function will rename the DN in the cache. """
-        if newdn in self._cache:
-            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%dn)
+        if newdn in self._cache and self._cache[newdn] is not None:
+            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%newdn)
         dn = self._cache_normalize_dn(dn)
-        newrdn = self._cache_normalize_dn(newrdn)
-        self._cache[newrdn] = _cache_get_for_dn(self, dn)
+        newrdn = self._cache_normalize_dn(newdn)
+        self._cache[newrdn] = self._cache_get_for_dn(dn)
         self._cache_del_dn(dn)
 
     def _cache_del_dn(self, dn):
@@ -218,10 +217,10 @@ class LDAPObject(object):
         if not self._transact:
             raise RuntimeError("leave_transaction_management called outside transaction")
         if len(self._oncommit) > 0:
-            self.reset(forceflushcache=true)
+            self.reset(forceflushcache=True)
             raise RuntimeError("leave_transaction_management called with uncommited changes")
         if len(self._onrollback) > 0:
-            self.reset(forceflushcache=true)
+            self.reset(forceflushcache=True)
             raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
         self.reset()
         self._transact = False
@@ -341,7 +340,7 @@ class LDAPObject(object):
             elif mod_op == ldap.MOD_DELETE and mod_vals is not None:
                 # Reverse of MOD_DELETE is MOD_ADD, but only if value is given
                 # if mod_vals is None, this means all values where deleted.
-                reverse = (ldap.MOD_ADD,mod,mod_vals)
+                reverse = (ldap.MOD_ADD,mod_type,mod_vals)
 
                 # also carry out simulation in cache
                 if mod_type in result:
@@ -350,6 +349,8 @@ class LDAPObject(object):
                     else:
                         for val in mod_vals:
                             result[mod_type].remove(val)
+                    if len(result[mod_type]) == 0:
+                        del result[mod_type]
             elif mod_op == ldap.MOD_DELETE or mod_op == ldap.MOD_REPLACE:
                 if mod_type in result:
                     # If MOD_DELETE with no values or MOD_REPLACE then we
@@ -420,10 +421,28 @@ class LDAPObject(object):
 
         debug("rename", self, dn, newrdn)
 
+        # split up the parameters
+        split_dn = ldap.dn.str2dn(dn)
+        split_newrdn = ldap.dn.str2dn(newrdn)
+        assert(len(split_newrdn)==1)
+        
+        # make dn unqualified
+        rdn = ldap.dn.dn2str(split_dn[0:1])
+
+        # make newrdn fully qualified dn
+        tmplist = []
+        tmplist.append(split_newrdn[0])
+        tmplist.extend(split_dn[1:])
+        newdn = ldap.dn.dn2str(tmplist)
+                
+        debug("--> rollback", self, newdn, rdn)
+
         # on commit carry out action; on rollback reverse rename
         oncommit   = lambda obj: obj.rename_s(dn, newrdn)
-        onrollback = lambda obj: obj.rename_s(newrdn, dn)
-        self._cache_rename_dn(dn, newrdn)
+        onrollback = lambda obj: obj.rename_s(newdn, rdn)
+        
+        debug("--> rename cache", dn, newdn)
+        self._cache_rename_dn(dn, newdn)
         return self._process(oncommit, onrollback)
 
     def fail(self):
