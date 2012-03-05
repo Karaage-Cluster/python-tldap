@@ -39,7 +39,7 @@ if not settings.LDAP:
         settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = settings.LDAP_TLS_CA
 
 if DEFAULT_LDAP_ALIAS not in settings.LDAP:
-    raise ImproperlyConfigured("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
+    raise RuntimeError("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
 
 connections = ConnectionHandler(settings.LDAP)
 connection = connections[DEFAULT_LDAP_ALIAS]
