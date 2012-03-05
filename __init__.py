@@ -45,7 +45,9 @@ connections = ConnectionHandler(settings.LDAP)
 connection = connections[DEFAULT_LDAP_ALIAS]
 
 # constants from ldap
-SCOPE_BASE = ldap.SCOPE_BASE
+MOD_ADD = ldap.MOD_ADD
+MOD_DELETE = ldap.MOD_DELETE
+MOD_REPLACE = ldap.MOD_REPLACE
 SCOPE_ONELEVEL = ldap.SCOPE_ONELEVEL
 SCOPE_SUBTREE = ldap.SCOPE_SUBTREE
 PROTOCOL_ERROR = ldap.PROTOCOL_ERROR
