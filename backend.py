@@ -514,10 +514,45 @@ class LDAPObject(object):
             rdict[dn] = v[1]
         print "---> rdict", rdict
         
+        # is this dn in the search scope?
+        split_base = ldap.dn.str2dn(base)
+        base = ldap.dn.dn2str(split_base)
+        def check_scope(dn):
+            split_dn = ldap.dn.str2dn(dn)
+
+            if dn == base:
+                return True
+
+            nested = len(split_dn) - len(split_base)
+            if scope == ldap.SCOPE_BASE:
+                pass
+            elif scope == ldap.SCOPE_ONELEVEL:
+                if nested == 1:
+                    for i in range(len(split_base)):
+                        if split_dn[i+nested] != split_base[i]:
+                            return False
+                    return True
+            elif scope == ldap.SCOPE_SUBTREE:
+                if nested > 0:
+                    for i in range(len(split_base)):
+                        if split_dn[i+nested] != split_base[i]:
+                            return False
+                    return True
+            else:
+                raise RuntimeError("Unknown search scope %d"%scope)
+
+            return False
+
         # also search cache
-        # FIXME - user search base        
         for dn,v in self._cache.iteritems():
             print "---> checking",dn,v
+
+            # check dn is in search scope
+            if not check_scope(dn):
+                print "---> not in scope"
+                continue
+            print "---> is in scope"
+
             # if this entry is not deleted
             if v is not None:
                 # then check if it matches the filter
