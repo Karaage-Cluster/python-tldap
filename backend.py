@@ -252,7 +252,7 @@ class LDAPObject(object):
                 debug("---> commiting", oncommit)
                 self._do_with_retry(oncommit)
                 # add statement to rollback log in case something goes wrong
-                self._onrollback.insert(0,onrollback)
+                self._onrollback.insert(0, onrollback)
         except:
             # oops. Something went wrong. Attempt to rollback.
             debug("commit failed")
@@ -549,8 +549,8 @@ class LDAPObject(object):
             return False
 
         # also search cache
-        for dn,v in self._cache.iteritems():
-            debug("---> checking",dn,v)
+        for dn, v in self._cache.iteritems():
+            debug("---> checking", dn, v)
 
             # check dn is in search scope
             if not check_scope(dn):
@@ -561,7 +561,7 @@ class LDAPObject(object):
             # if this entry is not deleted
             if v is not None:
                 # then check if it matches the filter
-                t = _MatchMixin(dn,v)
+                t = _MatchMixin(dn, v)
                 if t.match(filterobj):
                     debug("---> match")
                     rdict[dn] = v 
