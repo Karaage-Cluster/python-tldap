@@ -235,7 +235,7 @@ class LDAPObject(object):
             # for every action ...
             for oncommit, onrollback in self._oncommit:
                 # execute it
-                debug("commiting", oncommit)
+                debug("---> commiting", oncommit)
                 self._do_with_retry(oncommit)
                 # add statement to rollback log in case something goes wrong
                 self._onrollback.insert(0,onrollback)
