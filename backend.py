@@ -474,7 +474,7 @@ class LDAPObject(object):
     # read only stuff
 
     def search(self, base, scope, *args, **kwargs):
-        print "search", base, scope, args, kwargs
+        debug("search", base, scope, args, kwargs)
         
         # do the real ldap search
         try:
@@ -483,7 +483,7 @@ class LDAPObject(object):
             # if base doesn't exist in LDAP, it really should exist in cache
             self._cache_get_for_dn(base)
             rarray = []
-        print "---> rarray", rarray
+        debug("---> rarray", rarray)
         
         # parse specific arguments
         def get_arg(name):
@@ -500,19 +500,19 @@ class LDAPObject(object):
         attrlist = get_arg('attrlist')
 
         # now parse the filter string
-        print "---> filterstr", filterstr                
+        debug("---> filterstr", filterstr                )
         if filterstr[0] != "(":
             filterstr = "(%s)"%filterstr
 
         filterobj = ldapfilter.parseFilter(filterstr)
-        print "---> filterobj", type(filterobj)
+        debug("---> filterobj", type(filterobj))
         
         # convert results to dictionary
         rdict = {}
         for v in rarray:
             dn = v[0]
             rdict[dn] = v[1]
-        print "---> rdict", rdict
+        debug("---> rdict", rdict)
         
         # is this dn in the search scope?
         split_base = ldap.dn.str2dn(base)
@@ -545,31 +545,31 @@ class LDAPObject(object):
 
         # also search cache
         for dn,v in self._cache.iteritems():
-            print "---> checking",dn,v
+            debug("---> checking",dn,v)
 
             # check dn is in search scope
             if not check_scope(dn):
-                print "---> not in scope"
+                debug("---> not in scope")
                 continue
-            print "---> is in scope"
+            debug("---> is in scope")
 
             # if this entry is not deleted
             if v is not None:
                 # then check if it matches the filter
                 t = _MatchMixin(dn,v)
                 if t.match(filterobj):
-                    print "---> match"
+                    debug("---> match")
                     rdict[dn] = v 
                 else:
-                    print "---> nomatch"
+                    debug("---> nomatch")
             else:
                 # otherwise, entry deleted in cache, delete from
                 # results
-                print "---> deleted"
+                debug("---> deleted")
                 if dn in rdict:
-                    print "---> deleting"
+                    debug("---> deleting")
                     del rdict[dn] 
-        print "---> rdict", rdict
+        debug("---> rdict", rdict)
 
         # convert results back to list format
         rarray = []
@@ -577,7 +577,7 @@ class LDAPObject(object):
             rarray.append( (dn,v) )
 
         # we are finished - return results, eat cake
-        print "---> return", rarray
+        debug("---> return", rarray)
         return rarray
 
     # compatability hacks
