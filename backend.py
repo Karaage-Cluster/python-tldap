@@ -457,7 +457,7 @@ class LDAPObject(object):
 
     # read only stuff
 
-    def search_s(self, *args, **kwargs):
+    def search(self, *args, **kwargs):
         results = self._do_with_retry(lambda obj: obj.search_s(*args, **kwargs))
         mod_results = []
 
@@ -497,6 +497,9 @@ class LDAPObject(object):
 
     def rename_s(self, *args, **kwargs):
         return self.rename(*args, **kwargs)
+
+    def search_s(self, *args, **kwargs):
+        return self.search(*args, **kwargs)
 
 
 
