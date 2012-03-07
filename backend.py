@@ -297,7 +297,10 @@ class LDAPObject(object):
         # simulate this action in cache
         cache = self._cache_create_for_dn(dn)
         for k,v in modlist:
-            cache[k] = v
+            if isinstance(v, list):
+                cache[k] = v
+            else:
+                cache[k] = [v]
 
         # process this action
         return self._process(oncommit, onrollback)
@@ -332,11 +335,11 @@ class LDAPObject(object):
                 # also carry out simulation in cache
                 if mod_type not in result:
                     result[mod_type] = []
-                if isinstance(mod_vals, str):
-                    result[mod_type].append(mod_vals)
-                else:
+                if isinstance(mod_vals, list):
                     for val in mod_vals:
                         result[mod_type].append(val)
+                else:
+                    result[mod_type].append(mod_vals)
             elif mod_op == ldap.MOD_DELETE and mod_vals is not None:
                 # Reverse of MOD_DELETE is MOD_ADD, but only if value is given
                 # if mod_vals is None, this means all values where deleted.
@@ -344,11 +347,11 @@ class LDAPObject(object):
 
                 # also carry out simulation in cache
                 if mod_type in result:
-                    if isinstance(mod_vals, str):
-                        result[mod_type].remove(mod_vals)
-                    else:
+                    if isinstance(mod_vals, list):
                         for val in mod_vals:
                             result[mod_type].remove(val)
+                    else:
+                        result[mod_type].remove(mod_vals)
                     if len(result[mod_type]) == 0:
                         del result[mod_type]
             elif mod_op == ldap.MOD_DELETE or mod_op == ldap.MOD_REPLACE:
