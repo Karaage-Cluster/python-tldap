@@ -18,15 +18,14 @@
 """ This module provides the LDAP functions with transaction support faked,
 with a subset of the functions from the real ldap module.  Note that the async
 and sync functions are identical. When transactions are not enabled they will
-behave like the sync functions and return the same information.i
+behave like the sync functions and return the same information.
 
 When transactions are enabled, the action will be delayed until commit() is
 called. This means that rollback() is normally a nop. This could also be easily
 changed to make the changes immediately and rollback if required.
 
-Note although the current state is simulated in cache, the ldap search method
-will not use this information; instead it will retrieve current state from
-LDAP database. Suggestions to fix this appreciated.
+The current state is simulated in cache, so that functions to retrieve
+the current data should work as expected.
 
 WARNING: DON'T use more then one object/connection per database; if you have
 multiple LDAPObject values for the one database things could get confused
