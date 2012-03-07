@@ -36,6 +36,7 @@ the caching functionality could be split into a seperate class."""
 import ldap.modlist
 import ldap.dn
 
+from ldaptor import ldapfilter, entryhelpers
 from placard.tldap.exceptions import TestFailure
 
 # hardcoded settings for this module
@@ -66,6 +67,14 @@ def initialize(uri):
     }
     return LDAPObject(settings_dict)
 
+class _MatchMixin(entryhelpers.MatchMixin):
+    def __init__(self, dn, attributes):
+        self._dn = dn
+        self._attributes = attributes
+        
+    def get(self, key, default):
+        return self._attributes.get(key, default)
+        
 # LDAPObject wrapper class
 class LDAPObject(object):
 
@@ -464,26 +473,72 @@ class LDAPObject(object):
 
     # read only stuff
 
-    def search(self, *args, **kwargs):
-        results = self._do_with_retry(lambda obj: obj.search_s(*args, **kwargs))
-        mod_results = []
+    def search(self, base, scope, *args, **kwargs):
+        print "search", base, scope, args, kwargs
+        
+        # do the real ldap search
+        rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, *args, **kwargs))
+        print "---> rarray", rarray
+        
+        # parse specific arguments
+        def get_arg(name):
+            get_arg.num = get_arg.num + 1
+            
+            if name in kwargs:
+                return kwargs[name]
+            if get_arg.num < len(args):
+                return args[get_arg.num]
+            return None
+        get_arg.num = -1
+           
+        filterstr = get_arg('filterstr')
+        attrlist = get_arg('attrlist')
 
-        # substitute results in cache
-        for v in results:
+        # now parse the filter string
+        print "---> filterstr", filterstr                
+        if filterstr[0] != "(":
+            filterstr = "(%s)"%filterstr
+
+        filterobj = ldapfilter.parseFilter(filterstr)
+        print "---> filterobj", type(filterobj)
+        
+        # convert results to dictionary
+        rdict = {}
+        for v in rarray:
             dn = v[0]
-            dn = self._cache_normalize_dn(dn)
-            if dn in self._cache:
-                # if this dn exists in cache
-                if self._cache[dn] is not None:
-                    # ... and is not deleted, append value to results
-                    mod_results.append( (v[0], self._cache[dn]) )
+            rdict[dn] = v[1]
+        print "---> rdict", rdict
+        
+        # also search cache
+        # FIXME - user search base        
+        for dn,v in self._cache.iteritems():
+            print "---> checking",dn,v
+            # if this entry is not deleted
+            if v is not None:
+                # then check if it matches the filter
+                t = _MatchMixin(dn,v)
+                if t.match(filterobj):
+                    print "---> match"
+                    rdict[dn] = v 
+                else:
+                    print "---> nomatch"
             else:
-                # value is not in cache; add to cache
-                # also add to results list
-                self._cache[dn] = v[1]
-                mod_results.append(v)
+                # otherwise, entry deleted in cache, delete from
+                # results
+                print "---> deleted"
+                if dn in rdict:
+                    print "---> deleting"
+                    del rdict[dn] 
+        print "---> rdict", rdict
 
-        return mod_results
+        # convert results back to list format
+        rarray = []
+        for dn, v in rdict.iteritems():
+            rarray.append( (dn,v) )
+
+        # we are finished - return results, eat cake
+        print "---> return", rarray
+        return rarray
 
     # compatability hacks
 
