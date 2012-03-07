@@ -82,6 +82,12 @@ class LDAPObject(object):
         self._transact = False
         self._obj = None
 
+        self._cache = None
+        self._oncommit = None
+        self._onrollback = None
+        self._bind_args = None
+        self._bind_kwargs = None
+
         # just autoflushes the cache after every transaction
         # not strictly required, however guarantees that one transaction
         # can't stuff up future transactions if something went wrong
