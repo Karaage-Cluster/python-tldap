@@ -17,9 +17,6 @@
 
 from placard.tldap import backend
 
-import ldap
-from django.conf import settings
-
 DEFAULT_LDAP_ALIAS = "default"
 
 class ConnectionHandler(object):
