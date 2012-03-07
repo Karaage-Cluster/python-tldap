@@ -182,8 +182,8 @@ class LDAPObject(object):
         if newdn in self._cache and self._cache[newdn] is not None:
             raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%newdn)
         dn = self._cache_normalize_dn(dn)
-        newrdn = self._cache_normalize_dn(newdn)
-        self._cache[newrdn] = self._cache_get_for_dn(dn)
+        newdn = self._cache_normalize_dn(newdn)
+        self._cache[newdn] = self._cache_get_for_dn(dn)
         self._cache_del_dn(dn)
 
     def _cache_del_dn(self, dn):
