@@ -477,7 +477,12 @@ class LDAPObject(object):
         print "search", base, scope, args, kwargs
         
         # do the real ldap search
-        rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, *args, **kwargs))
+        try:
+            rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, *args, **kwargs))
+        except ldap.NO_SUCH_OBJECT:
+            # if base doesn't exist in LDAP, it really should exist in cache
+            self._cache_get_for_dn(base)
+            rarray = []
         print "---> rarray", rarray
         
         # parse specific arguments
