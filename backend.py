@@ -342,6 +342,10 @@ class LDAPObject(object):
                 debug("attribute cache is empty")
             debug("attribute modify:", (mod_op, mod_type, mod_vals))
 
+            if mod_vals is not None:
+                if not isinstance(mod_vals, list):
+                    mod_vals = [ mod_vals ]
+
             if mod_op == ldap.MOD_ADD:
                 # reverse of MOD_ADD is MOD_DELETE
                 reverse = (ldap.MOD_DELETE,mod_type,mod_vals)
@@ -349,25 +353,29 @@ class LDAPObject(object):
                 # also carry out simulation in cache
                 if mod_type not in result:
                     result[mod_type] = []
-                if isinstance(mod_vals, list):
-                    for val in mod_vals:
-                        result[mod_type].append(val)
-                else:
-                    result[mod_type].append(mod_vals)
+
+                for val in mod_vals:
+                    if val in result[mod_type]:
+                        raise ldap.TYPE_OR_VALUE_EXISTS("%s value %s already exists"%(mod_type,val))
+                    result[mod_type].append(val)
+
             elif mod_op == ldap.MOD_DELETE and mod_vals is not None:
                 # Reverse of MOD_DELETE is MOD_ADD, but only if value is given
                 # if mod_vals is None, this means all values where deleted.
                 reverse = (ldap.MOD_ADD,mod_type,mod_vals)
 
                 # also carry out simulation in cache
-                if mod_type in result:
-                    if isinstance(mod_vals, list):
-                        for val in mod_vals:
-                            result[mod_type].remove(val)
-                    else:
-                        result[mod_type].remove(mod_vals)
-                    if len(result[mod_type]) == 0:
-                        del result[mod_type]
+                if mod_type not in result:
+                    raise ldap.NO_SUCH_ATTRIBUTE("%s value doesn't exist"%mod_type)
+
+                for val in mod_vals:
+                    if val not in result[mod_type]:
+                        raise ldap.NO_SUCH_ATTRIBUTE("%s value %s doesn't exist"%(mod_type,val))
+                    result[mod_type].remove(val)
+
+                if len(result[mod_type]) == 0:
+                    del result[mod_type]
+
             elif mod_op == ldap.MOD_DELETE or mod_op == ldap.MOD_REPLACE:
                 if mod_type in result:
                     # If MOD_DELETE with no values or MOD_REPLACE then we
