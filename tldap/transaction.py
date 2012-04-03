@@ -35,9 +35,8 @@ try:
 except ImportError:
     from django.utils.functional import wraps  # Python 2.4 fallback.
 
-from django.conf import settings
-from placard.tldap import connections, DEFAULT_LDAP_ALIAS
-
+import django.conf as settings
+import tldap
 
 class TransactionManagementError(Exception):
     """
@@ -57,8 +56,8 @@ def enter_transaction_management(using=None):
     when no current block is running).
     """
     if using is None:
-        using = DEFAULT_LDAP_ALIAS
-    connection = connections[using]
+        using = tldap.DEFAULT_LDAP_ALIAS
+    connection = tldap.connections[using]
     connection.enter_transaction_management()
 
 def leave_transaction_management(using=None):
@@ -68,8 +67,8 @@ def leave_transaction_management(using=None):
     those from outside. (Commits are on connection level.)
     """
     if using is None:
-        using = DEFAULT_LDAP_ALIAS
-    connection = connections[using]
+        using = tldap.DEFAULT_LDAP_ALIAS
+    connection = tldap.connections[using]
     connection.leave_transaction_management()
 
 def is_dirty(using=None):
@@ -78,8 +77,8 @@ def is_dirty(using=None):
     happen.
     """
     if using is None:
-        using = DEFAULT_LDAP_ALIAS
-    connection = connections[using]
+        using = tldap.DEFAULT_LDAP_ALIAS
+    connection = tldap.connections[using]
     return connection.is_dirty()
 
 def commit(using=None):
@@ -87,8 +86,8 @@ def commit(using=None):
     Does the commit itself and resets the dirty flag.
     """
     if using is None:
-        using = DEFAULT_LDAP_ALIAS
-    connection = connections[using]
+        using = tldap.DEFAULT_LDAP_ALIAS
+    connection = tldap.connections[using]
     connection.commit()
 
 def rollback(using=None):
@@ -96,8 +95,8 @@ def rollback(using=None):
     This function does the rollback itself and resets the dirty flag.
     """
     if using is None:
-        using = DEFAULT_LDAP_ALIAS
-    connection = connections[using]
+        using = tldap.DEFAULT_LDAP_ALIAS
+    connection = tldap.connections[using]
     connection.rollback()
 
 ##############
@@ -157,9 +156,9 @@ def _transaction_func(entering, exiting, using):
     # may actually be a function; @autocommit and @autocommit('foo')
     # are both allowed forms.
     if using is None:
-        using = DEFAULT_LDAP_ALIAS
+        using = tldap.DEFAULT_LDAP_ALIAS
     if callable(using):
-        return Transaction(entering, exiting, DEFAULT_LDAP_ALIAS)(using)
+        return Transaction(entering, exiting, tldap.DEFAULT_LDAP_ALIAS)(using)
     return Transaction(entering, exiting, using)
 
 

@@ -513,11 +513,14 @@ class LDAPObject(object):
         attrlist = get_arg('attrlist')
 
         # now parse the filter string
-        debug("---> filterstr", filterstr                )
-        if filterstr[0] != "(":
-            filterstr = "(%s)"%filterstr
+        debug("---> filterstr", filterstr)
+        if filterstr is not None:
+            if filterstr[0] != "(":
+                filterstr = "(%s)"%filterstr
 
-        filterobj = ldapfilter.parseFilter(filterstr)
+            filterobj = ldapfilter.parseFilter(filterstr)
+        else:
+            filterobj = None
         debug("---> filterobj", type(filterobj))
         
         # convert results to dictionary
@@ -570,7 +573,7 @@ class LDAPObject(object):
             if v is not None:
                 # then check if it matches the filter
                 t = _MatchMixin(dn, v)
-                if t.match(filterobj):
+                if filterobj is None or t.match(filterobj):
                     debug("---> match")
                     rdict[dn] = v 
                 else:
