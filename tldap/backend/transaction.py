@@ -519,7 +519,7 @@ class LDAPwrapper(object):
         for v in rarray:
             dn = v[0]
             rdict[dn] = v[1]
-        debug("---> rdict", rdict)
+        debug("---> rdict (ldap)", rdict)
         
         # is this dn in the search scope?
         split_base = ldap.dn.str2dn(base)
@@ -576,7 +576,7 @@ class LDAPwrapper(object):
                 if dn in rdict:
                     debug("---> deleting")
                     del rdict[dn] 
-        debug("---> rdict", rdict)
+        debug("---> rdict (cache)", rdict)
 
         # convert results back to list format
         rarray = []
