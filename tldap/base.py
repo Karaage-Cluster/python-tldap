@@ -163,12 +163,7 @@ class LDAPobject(object):
         modlist = ldap.modlist.addModlist(moddict)
 
         # what database should we be using?
-        if using is None:
-            using = self._alias
-
-        if using is None:
-            using = tldap.DEFAULT_LDAP_ALIAS
-
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
 
         # do it
@@ -204,12 +199,7 @@ class LDAPobject(object):
         modlist = ldap.modlist.modifyModlist(db_values, moddict)
 
         # what database should we be using?
-        if using is None:
-            using = self._alias
-
-        if using is None:
-            using = tldap.DEFAULT_LDAP_ALIAS
-
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
 
         # do it
