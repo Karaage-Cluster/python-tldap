@@ -60,10 +60,13 @@ class _MatchMixin(ldaptor.entryhelpers.MatchMixin):
     def __init__(self, dn, attributes):
         self._dn = dn
         self._attributes = attributes
-        
+
     def get(self, key, default):
         return self._attributes.get(key, default)
-        
+
+    def __contains__(self, item):
+        return item in self._attributes
+
 # wrapper class
 
 class LDAPwrapper(object):
