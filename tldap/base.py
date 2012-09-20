@@ -197,7 +197,10 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # do it
-        c.add(self.dn, modlist)
+        try:
+            c.add(self.dn, modlist)
+        except ldap.ALREADY_EXISTS:
+            raise tldap.exceptions.DatabaseError("Object with dn %r already exists doing add"%(self.dn,))
 
         # update dn attribute in object
         setattr(self, dn0k, dn0v)
@@ -233,7 +236,10 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # do it
-        c.modify(self.dn, modlist)
+        try:
+            c.modify(self.dn, modlist)
+        except ldap.NO_SUCH_OBJECT:
+            raise tldap.exceptions.DatabaseError("Object with dn %r doesn't already exists doing modify"%(self.dn,))
 
         # save new values
         self._db_values = moddict

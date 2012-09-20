@@ -294,6 +294,7 @@ class ModelTest(unittest.TestCase):
             'userPassword': "silly",
         }
         p = person(dn="ou=People, dc=python-ldap,dc=org", **kwargs)
+        # self.assertRaises(tldap.exceptions.DatabaseError, lambda: p.save(force_modify=True))
         p.save()
 
         # test explicit roll back
@@ -324,6 +325,7 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "000")
 
 
+        # test deleting attribute
         p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(created, False)
         p.telephoneNumber = None
@@ -343,6 +345,7 @@ class ModelTest(unittest.TestCase):
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
 
+        # test adding attribute
         p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(created, False)
         p.telephoneNumber = "111"
@@ -362,79 +365,63 @@ class ModelTest(unittest.TestCase):
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
 
-        return
-
-        # test search scopes
-        c.add("ou=Groups, dc=python-ldap,dc=org", [ ("objectClass", ["top","organizationalunit"]) ])
-        r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 1)
-        r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 0)
-        r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 0)
-        r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 0)
-        self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
-
-        r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 1)
-        r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 1)
-        r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 0)
-        r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 0)
-        self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
-
-        r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 1)
-        r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 1)
-        r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 1)
-        r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 0)
-        self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        # test replacing attribute
+        p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(created, False)
+        p.telephoneNumber = "222"
 
         # test replacing attribute with rollback
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "telephoneNumber", "222") ])
-            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
-        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "111" ])
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
 
         # test replacing attribute with success
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "telephoneNumber", "222") ])
-            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
-        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
+            p.reload_db_values()
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
 
-        # test deleting attribute value with rollback
+        # test deleting attribute
+        p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(created, False)
+        p.telephoneNumber = None
+
+        # test deleting attribute *of new object* with rollback
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_DELETE, "telephoneNumber", "222") ])
-            self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
-        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
 
-        # test deleting attribute value with success
+        # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_DELETE, "telephoneNumber", "222") ])
-            self.assertRaises(ldap.NO_SUCH_ATTRIBUTE, c.modify, "uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_DELETE, "telephoneNumber", "222") ])
-            self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
-        self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
+            p.reload_db_values()
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
 
         # test success when 3rd statement fails; need to roll back 2nd and 1st statements
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Milkshakes") ])
-            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Milkshakes" ])
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Bannas") ])
-            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Bannas" ])
-            self.assertRaises(ldap.ALREADY_EXISTS, c.add, "uid=tux, ou=People, dc=python-ldap,dc=org", modlist)
+            p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            p.sn = "Milkshakes"
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Milkshakes")
+
+            p.sn = "Bannas"
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Bannas")
+
+            self.assertRaises(tldap.exceptions.DatabaseError, lambda: p.save(force_add=True))
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
-        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+
+        return
 
         # test rename with rollback
         with tldap.transaction.commit_on_success():

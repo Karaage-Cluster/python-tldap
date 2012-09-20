@@ -34,3 +34,7 @@ class MultipleObjectsReturned(Exception):
 class ValidationError(Exception):
     """An error while validating data."""
     pass
+
+class DatabaseError(Exception):
+    """An error while validating data."""
+    pass
