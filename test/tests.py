@@ -330,6 +330,7 @@ class ModelTest(unittest.TestCase):
 
         # test deleting attribute *of new object* with rollback
         with tldap.transaction.commit_on_success():
+            p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
             c.fail() # raises TestFailure during commit causing rollback
@@ -338,6 +339,7 @@ class ModelTest(unittest.TestCase):
 
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
+            p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)

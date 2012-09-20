@@ -113,6 +113,36 @@ class LDAPobject(object):
             else:
                 raise TypeError("'%s' is an invalid keyword argument for this function" % k)
 
+
+    def reload_db_values(self, using=None):
+        """
+        Hack in case cached _db_values fall out of sync for any reason, e.g.
+        because a transaction was rolled back. A transaction rolling back will not
+        update the _db_values attribute of this object unless this function is called.
+        """
+        # what database should we be using?
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+        c = tldap.connections[using]
+
+        # what fields should we get?
+        fields = self._meta.fields
+        field_names = [ f.name for f in fields ]
+
+        # get values
+        db_values = list(c.search(self.dn, ldap.SCOPE_BASE, "(objectClass=*)", field_names))
+        num = len(db_values)
+        if num==0:
+            raise self.DoesNotExist("%s matching query does not exist."
+                    % self._meta.object_name)
+        elif num > 1:
+            raise self.model.MultipleObjectsReturned("get() returned more than one %s -- it returned %s!"
+                    % (self._meta.object_name, num))
+
+        self._db_values = db_values[0][1]
+
+    reload_db_values.alters_data = True
+
+
     def save(self, force_add=False, force_modify=False, using=None):
         """
         Saves the current instance. Override this in a subclass if you want to
