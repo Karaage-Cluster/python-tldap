@@ -14,23 +14,3 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
-
-class TestFailure(Exception):
-    """Simulated failure for testing."""
-    pass
-
-class FieldError(Exception):
-    """Some kind of problem with a field."""
-    pass
-
-class ObjectDoesNotExist(Exception):
-    "The requested object does not exist"
-    silent_variable_failure = True
-
-class MultipleObjectsReturned(Exception):
-    "The query returned multiple objects when only one was expected."
-    pass
-
-class ValidationError(Exception):
-    """An error while validating data."""
-    pass

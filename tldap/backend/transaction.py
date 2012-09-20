@@ -1,19 +1,19 @@
 # Copyright 2012 VPAC
 #
-# This file is part of django-tldap.
+# This file is part of python-tldap.
 #
-# django-tldap is free software: you can redistribute it and/or modify
+# python-tldap is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# django-tldap is distributed in the hope that it will be useful,
+# python-tldap is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
+# along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 """ This module provides the LDAP functions with transaction support faked,
 with a subset of the functions from the real ldap module.  Note that the async
@@ -32,11 +32,12 @@ multiple LDAPObject values for the one database things could get confused
 because each one will keep track of changes seperately - if this is an issue
 the caching functionality could be split into a seperate class."""
 
+import ldap
 import ldap.modlist
 import ldap.dn
-
-from ldaptor import ldapfilter, entryhelpers
-from tldap.exceptions import TestFailure
+import ldaptor
+import ldaptor.entryhelpers
+import tldap.exceptions
 
 # hardcoded settings for this module
 
@@ -51,22 +52,11 @@ def debug(*argv):
         print " ".join(argv)
 
 def raise_testfailure(place):
-    raise TestFailure("fail %s called"%place)
+    raise tldap.exceptions.TestFailure("fail %s called"%place)
 
-# public methods that return wrapper class
+# private
 
-def initialize(uri):
-    """ Initialize an LDAP connection, identical to function in ldap module. """
-    settings_dict = {
-        'URI': uri,
-        'USER': None,
-        'PASSWORD': None,
-        'USE_TLS': False,
-        'TLS_CA': None,
-    }
-    return LDAPObject(settings_dict)
-
-class _MatchMixin(entryhelpers.MatchMixin):
+class _MatchMixin(ldaptor.entryhelpers.MatchMixin):
     def __init__(self, dn, attributes):
         self._dn = dn
         self._attributes = attributes
@@ -74,8 +64,9 @@ class _MatchMixin(entryhelpers.MatchMixin):
     def get(self, key, default):
         return self._attributes.get(key, default)
         
-# LDAPObject wrapper class
-class LDAPObject(object):
+# wrapper class
+
+class LDAPwrapper(object):
 
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict
@@ -99,7 +90,9 @@ class LDAPObject(object):
             self._reconnect()
 
 
-    # connection management
+    #########################
+    # Connection Management #
+    #########################
 
     def _reconnect(self):
         s = self.settings_dict
@@ -119,6 +112,7 @@ class LDAPObject(object):
             debug("binding")
             self._obj.simple_bind_s(s['USER'], s['PASSWORD'])
 
+
     def _do_with_retry(self, fn):
         # if no connection
         if self._obj is None:
@@ -136,19 +130,9 @@ class LDAPObject(object):
             self._reconnect()
             return fn(self._obj)
 
-    def simple_bind(self, user, password):
-        if self._obj is not None:
-            self._do_with_retry(lambda obj: obj.simple_bind_s(user, password))
-        self.settings_dict['USER'] = user
-        self.settings_dict['PASSWORD'] = password
-
-    def unbind(self):
-        if self._obj is not None:
-            self._do_with_retry(lambda obj: obj.unbind_s())
-        self._bind_args = None
-        self._bind_kwargs = None
-
-    # cache management
+    ####################
+    # Cache Management #
+    ####################
 
     def reset(self, forceflushcache=False):
         """ Reset transaction back to original state, discarding all uncompleted transactions. """
@@ -206,7 +190,9 @@ class LDAPObject(object):
         if dn in self._cache:
             self._cache[dn] = None
 
-    # transaction management
+    ##########################
+    # Transaction Management #
+    ##########################
 
     def is_dirty(self):
         """ Are there uncommitted changes? """
@@ -296,7 +282,9 @@ class LDAPObject(object):
             self._oncommit.append( (oncommit, onrollback) )
             return None
 
-    # statements needing transactions
+    ##################################
+    # Functions needing Transactions #
+    ##################################
 
     def add(self, dn, modlist):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
@@ -518,7 +506,7 @@ class LDAPObject(object):
             if filterstr[0] != "(":
                 filterstr = "(%s)"%filterstr
 
-            filterobj = ldapfilter.parseFilter(filterstr)
+            filterobj = ldaptor.ldapfilter.parseFilter(filterstr)
         else:
             filterobj = None
         debug("---> filterobj", type(filterobj))
@@ -596,13 +584,9 @@ class LDAPObject(object):
         debug("---> return", rarray)
         return rarray
 
-    # compatability hacks
-
-    def simple_bind_s(self, *args, **kwargs):
-        self.simple_bind(*args, **kwargs)
-
-    def unbind_s(self, *args, **kwargs):
-        self.unbind(*args, **kwargs)
+    #######################
+    # Compatability Hacks #
+    #######################
 
     def add_s(self, *args, **kwargs):
         return self.add(*args, **kwargs)
@@ -618,6 +602,4 @@ class LDAPObject(object):
 
     def search_s(self, *args, **kwargs):
         return self.search(*args, **kwargs)
-
-
 

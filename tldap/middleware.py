@@ -1,21 +1,21 @@
 # Copyright 2012 VPAC
 #
-# This file is part of django-tldap.
+# This file is part of python-tldap.
 #
-# django-tldap is free software: you can redistribute it and/or modify
+# python-tldap is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# django-tldap is distributed in the hope that it will be useful,
+# python-tldap is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
+# along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-from placard.tldap import transaction
+import tldap.transaction
 
 class TransactionMiddleware(object):
     """
@@ -26,17 +26,17 @@ class TransactionMiddleware(object):
     """
     def process_request(self, request):
         """Enters transaction management"""
-        transaction.enter_transaction_management()
+       tldap.transaction.enter_transaction_management()
 
     def process_exception(self, request, exception):
         """Rolls back the database and leaves transaction management"""
         if transaction.is_dirty():
             transaction.rollback()
-        transaction.leave_transaction_management()
+        tldap.transaction.leave_transaction_management()
 
     def process_response(self, request, response):
         """Commits and leaves transaction management."""
         if transaction.is_dirty():
             transaction.commit()
-        transaction.leave_transaction_management()
+        tldap.transaction.leave_transaction_management()
         return response
