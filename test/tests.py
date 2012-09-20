@@ -279,9 +279,10 @@ class ModelTest(unittest.TestCase):
         c.autoflushcache = False
 
         person = tldap.models.person
-        create = person.objects.create
         DoesNotExist = person.DoesNotExist
         get = person.objects.get
+        get_or_create = person.objects.get_or_create
+        create = person.objects.create
 
         kwargs = {
             'givenName': "Tux",
@@ -323,7 +324,8 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "000")
 
 
-        p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(created, False)
         p.telephoneNumber = None
 
         # test deleting attribute *of new object* with rollback
