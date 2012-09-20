@@ -21,6 +21,7 @@ import tldap.options
 import tldap.exceptions
 import tldap.manager
 
+import ldap.dn
 import ldap.modlist
 
 class LDAPmeta(type):
@@ -138,6 +139,7 @@ class LDAPobject(object):
 
     def _add(self, using):
         fields = self._meta.fields
+        dn0k,dn0v,_ = ldap.dn.str2dn(self.dn)[0][0]
 
         # ensure objectClass is set
         self.objectClass = getattr(self, "objectClass", self._meta.object_classes)
@@ -150,6 +152,11 @@ class LDAPobject(object):
             name = field.name
             value = getattr(self, name, [])
             value = field.to_db(value)
+            # if dn attribute given, it must match the dn
+            if name == dn0k:
+                if len(value) > 1 or (len(value) == 1 and value[0] != dn0v):
+                    raise ValueError("value of %r is %r not %r from dn %r"%(name, value, dn0v, self.dn))
+                value = dn0v
             moddict[name] = value
 
         # turn moddict into a modlist
@@ -167,6 +174,9 @@ class LDAPobject(object):
         # do it
         c.add(self.dn, modlist)
 
+        # update dn attribute in object
+        setattr(self, dn0k, dn0v)
+
         # save new values
         self._db_values = moddict
 
@@ -175,6 +185,7 @@ class LDAPobject(object):
 
     def _modify(self, using, db_values):
         fields = self._meta.fields
+        dn0k,dn0v,_ = ldap.dn.str2dn(self.dn)[0][0]
 
         # generate moddict values
         moddict = {}
@@ -182,6 +193,11 @@ class LDAPobject(object):
             name = field.name
             value = getattr(self, name, [])
             value = field.to_db(value)
+            # if dn attribute given, it must match the dn
+            if name == dn0k:
+                if len(value) > 1 or (len(value)==1 and value[0] != dn0v):
+                    raise ValueError("value of %r is %r not %r from dn %r"%(name, value, dn0v, self.dn))
+                value = dn0v
             moddict[name] = value
 
         # turn moddict into a modlist

@@ -63,7 +63,6 @@ class BackendTest(unittest.TestCase):
         if no_results < 1:
             raise ldap.NO_SUCH_OBJECT()
         self.assertEqual(no_results, 1)
-        print result_data[0][1]
         return result_data[0][1]
 
     def test_transactions(self):
@@ -324,23 +323,24 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "000")
 
 
+        p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        p.telephoneNumber = None
+
         # test deleting attribute *of new object* with rollback
         with tldap.transaction.commit_on_success():
-            p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
-            p.telephoneNumber = None
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "000")
 
-        return
-
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_DELETE, "telephoneNumber", None) ])
-            self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
-        self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
+
+        return
 
         # test adding attribute with rollback
         with tldap.transaction.commit_on_success():

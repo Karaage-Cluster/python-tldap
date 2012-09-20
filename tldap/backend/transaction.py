@@ -301,6 +301,8 @@ class LDAPwrapper(object):
 
         # simulate this action in cache
         cache = self._cache_create_for_dn(dn)
+        k,v,_ = ldap.dn.str2dn(dn)[0][0]
+        cache[k] = [v]
         for k,v in modlist:
             if isinstance(v, list):
                 cache[k] = v
