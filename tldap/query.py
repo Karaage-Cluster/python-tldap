@@ -166,12 +166,12 @@ class QuerySet(object):
                 raise RuntimeError("Should never happen")
             # return with no results
 
-    def get(self, *args, **kwargs):
+    def get(self, **kwargs):
         """
         Performs the query and returns a single object matching the given
         keyword arguments.
         """
-        qs = self.filter(*args, **kwargs)
+        qs = self.filter(**kwargs)
         num = len(qs)
         if num == 1:
             return qs._result_cache[0]
