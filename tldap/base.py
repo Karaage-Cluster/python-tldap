@@ -167,6 +167,17 @@ class LDAPobject(object):
     save.alters_data = True
 
 
+    def delete(self, using=None):
+        # what database should we be using?
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+        c = tldap.connections[using]
+        # delete it
+        c.delete(self.dn)
+        self._db_values = None
+
+    delete.alters_data = True
+
+
     def _add(self, using):
         fields = self._meta.fields
         dn0k,dn0v,_ = ldap.dn.str2dn(self.dn)[0][0]

@@ -421,6 +421,20 @@ class ModelTest(unittest.TestCase):
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
 
+        # test delate and add same user
+        with tldap.transaction.commit_on_success():
+            p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            p.delete()
+            self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+
+        # test delate
+        with tldap.transaction.commit_on_success():
+            p.delete()
+        self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+
         return
 
         # test rename with rollback
@@ -457,18 +471,6 @@ class ModelTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
-
-        # test delate and add same user
-        with tldap.transaction.commit_on_success():
-            c.delete("uid=tux, ou=People, dc=python-ldap,dc=org")
-            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
-            c.add("uid=tux, ou=People, dc=python-ldap,dc=org", modlist)
-        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Torvalds" ])
-
-        # test delate
-        with tldap.transaction.commit_on_success():
-            c.delete("uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
 
         c.autoflushcache = True
 
