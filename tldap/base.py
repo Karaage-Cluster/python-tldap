@@ -214,7 +214,9 @@ class LDAPobject(object):
             raise tldap.exceptions.DatabaseError("Object with dn %r already exists doing add"%(self.dn,))
 
         # update dn attribute in object
-        setattr(self, dn0k, dn0v)
+        field_names = set([f.name for f in fields])
+        if dn0k in field_names:
+            setattr(self, dn0k, dn0v)
 
         # save new values
         self._db_values = moddict
