@@ -31,6 +31,25 @@ import tldap.exceptions
 
 import ldap.modlist
 
+def assert_cache_dn(ut, dn, c):
+        dn = c._cache_normalize_dn(dn)
+
+        try:
+            result_data = c._obj.search_s(dn, ldap.SCOPE_BASE)
+        except ldap.NO_SUCH_OBJECT:
+            result_data = []
+
+        if dn not in c._cache:
+            return
+
+        if c._cache[dn] is None:
+            ut.assertEqual(len(result_data), 0)
+            return
+
+        ut.assertEqual(len(result_data), 1)
+        ut.assertEqual(result_data[0][0], dn)
+        ut.assertEqual(result_data[0][1], c._cache[dn])
+
 def raise_testfailure(place):
     raise TestFailure("fail %s called"%place)
 
@@ -88,6 +107,7 @@ class BackendTest(unittest.TestCase):
             c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Gates") ])
             c.rollback()
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test roll back on exception
         try:
@@ -98,6 +118,7 @@ class BackendTest(unittest.TestCase):
         except RuntimeError:
             pass
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test success commits
         with tldap.transaction.commit_on_success():
@@ -105,6 +126,7 @@ class BackendTest(unittest.TestCase):
             c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Gates") ])
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "000" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute *of new object* with rollback
         with tldap.transaction.commit_on_success():
@@ -113,12 +135,14 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "000" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
             c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_DELETE, "telephoneNumber", None) ])
             self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
         self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test adding attribute with rollback
         with tldap.transaction.commit_on_success():
@@ -127,6 +151,7 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test adding attribute with success
         with tldap.transaction.commit_on_success():
@@ -134,6 +159,7 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(ldap.TYPE_OR_VALUE_EXISTS, c.modify, "uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_ADD, "telephoneNumber", "111") ])
             self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "111" ])
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "111" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test search scopes
         c.add("ou=Groups, dc=python-ldap,dc=org", [ ("objectClass", ["top","organizationalunit"]) ])
@@ -146,6 +172,7 @@ class BackendTest(unittest.TestCase):
         r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
         self.assertEqual(len(r), 0)
         self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
         self.assertEqual(len(r), 1)
@@ -156,6 +183,7 @@ class BackendTest(unittest.TestCase):
         r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
         self.assertEqual(len(r), 0)
         self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
         self.assertEqual(len(r), 1)
@@ -166,6 +194,7 @@ class BackendTest(unittest.TestCase):
         r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
         self.assertEqual(len(r), 0)
         self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test replacing attribute with rollback
         with tldap.transaction.commit_on_success():
@@ -174,12 +203,14 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "111" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test replacing attribute with success
         with tldap.transaction.commit_on_success():
             c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "telephoneNumber", "222") ])
             self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute value with rollback
         with tldap.transaction.commit_on_success():
@@ -188,6 +219,7 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'], [ "222" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute value with success
         with tldap.transaction.commit_on_success():
@@ -195,6 +227,7 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(ldap.NO_SUCH_ATTRIBUTE, c.modify, "uid=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_DELETE, "telephoneNumber", "222") ])
             self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
         self.assertRaises(KeyError, lambda: self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test success when 3rd statement fails; need to roll back 2nd and 1st statements
         with tldap.transaction.commit_on_success():
@@ -206,6 +239,7 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test rename with rollback
         with tldap.transaction.commit_on_success():
@@ -216,6 +250,8 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tuz, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
 
         # test rename with success
         with tldap.transaction.commit_on_success():
@@ -224,6 +260,8 @@ class BackendTest(unittest.TestCase):
             self.assertEqual(self.get(c, "uid=tuz, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(self.get(c, "uid=tuz, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
+        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
 
         # test rename back with success
         with tldap.transaction.commit_on_success():
@@ -231,6 +269,8 @@ class BackendTest(unittest.TestCase):
             c.rename("uid=tuz, ou=People, dc=python-ldap,dc=org", 'uid=tux')
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tuz, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
 
         # test roll back on error of delete and add of same user
         with tldap.transaction.commit_on_success():
@@ -241,6 +281,8 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
 
         # test delate and add same user
         with tldap.transaction.commit_on_success():
@@ -248,11 +290,15 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
             c.add("uid=tux, ou=People, dc=python-ldap,dc=org", modlist)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Torvalds" ])
+        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
 
         # test delate
         with tldap.transaction.commit_on_success():
             c.delete("uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
 
         c.autoflushcache = True
 
@@ -304,6 +350,7 @@ class ModelTest(unittest.TestCase):
             p.save()
             c.rollback()
         self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test roll back on exception
         try:
@@ -315,6 +362,7 @@ class ModelTest(unittest.TestCase):
         except RuntimeError:
             pass
         self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test success commits
         with tldap.transaction.commit_on_success():
@@ -323,12 +371,14 @@ class ModelTest(unittest.TestCase):
             p.save()
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "000")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
 
         # test deleting attribute
         p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(created, False)
         p.telephoneNumber = None
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute *of new object* with rollback
         with tldap.transaction.commit_on_success():
@@ -337,6 +387,7 @@ class ModelTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "000")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
@@ -344,11 +395,13 @@ class ModelTest(unittest.TestCase):
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test adding attribute
         p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(created, False)
         p.telephoneNumber = "111"
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test adding attribute with rollback
         with tldap.transaction.commit_on_success():
@@ -357,18 +410,22 @@ class ModelTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         # test adding attribute with success
         with tldap.transaction.commit_on_success():
             p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test replacing attribute
         p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(created, False)
         p.telephoneNumber = "222"
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test replacing attribute with rollback
         with tldap.transaction.commit_on_success():
@@ -384,11 +441,13 @@ class ModelTest(unittest.TestCase):
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute
         p, created = get_or_create(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(created, False)
         p.telephoneNumber = None
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute *of new object* with rollback
         with tldap.transaction.commit_on_success():
@@ -397,6 +456,7 @@ class ModelTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
@@ -404,6 +464,7 @@ class ModelTest(unittest.TestCase):
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test success when 3rd statement fails; need to roll back 2nd and 1st statements
         with tldap.transaction.commit_on_success():
@@ -420,6 +481,7 @@ class ModelTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test delate and add same user
         with tldap.transaction.commit_on_success():
@@ -429,11 +491,13 @@ class ModelTest(unittest.TestCase):
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test delate
         with tldap.transaction.commit_on_success():
             p.delete()
         self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         return
 
