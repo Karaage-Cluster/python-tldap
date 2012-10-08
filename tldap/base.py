@@ -106,7 +106,7 @@ class LDAPobject(object):
 
 
     def __init__(self, **kwargs):
-        self._db_values = None
+        self._db_values = {}
         self._alias = None
 
         fields = self._meta.fields
@@ -143,7 +143,7 @@ class LDAPobject(object):
             raise self.model.MultipleObjectsReturned("get() returned more than one %s -- it returned %s!"
                     % (self._meta.object_name, num))
 
-        self._db_values = db_values[0][1]
+        self._db_values[using] = db_values[0][1]
 
     reload_db_values.alters_data = True
 
@@ -160,12 +160,15 @@ class LDAPobject(object):
         if force_add and force_modify:
             raise ValueError("Cannot force both insert and updating in model saving.")
 
+        # what database should we be using?
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+
         if force_add:
             self._add(using)
         elif force_modify:
-            self._modify(using, self._db_values or {})
-        elif self._db_values:
-            self._modify(using, self._db_values)
+            self._modify(using)
+        elif using in self._db_values:
+            self._modify(using)
         else:
             self._add(using)
 
@@ -178,7 +181,7 @@ class LDAPobject(object):
         c = tldap.connections[using]
         # delete it
         c.delete(self.dn)
-        self._db_values = None
+        del self._db_values[using]
 
     delete.alters_data = True
 
@@ -209,7 +212,6 @@ class LDAPobject(object):
         modlist = ldap.modlist.addModlist(moddict)
 
         # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
 
         # do it
@@ -224,14 +226,18 @@ class LDAPobject(object):
             setattr(self, dn0k, dn0v)
 
         # save new values
-        self._db_values = moddict
+        self._db_values[using] = moddict
 
     _add.alters_data = True
 
 
-    def _modify(self, using, db_values):
+    def _modify(self, using):
+        assert(using in self._db_values)
         fields = self._meta.fields
         dn0k,dn0v,_ = ldap.dn.str2dn(self.dn)[0][0]
+
+        # what database should we be using?
+        c = tldap.connections[using]
 
         # generate moddict values
         moddict = {}
@@ -247,11 +253,7 @@ class LDAPobject(object):
             moddict[name] = value
 
         # turn moddict into a modlist
-        modlist = ldap.modlist.modifyModlist(db_values, moddict)
-
-        # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
-        c = tldap.connections[using]
+        modlist = ldap.modlist.modifyModlist(self._db_values[using], moddict)
 
         # do it
         try:
@@ -260,7 +262,7 @@ class LDAPobject(object):
             raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self.dn,))
 
         # save new values
-        self._db_values = moddict
+        self._db_values[using] = moddict
 
     _modify.alters_data = True
 

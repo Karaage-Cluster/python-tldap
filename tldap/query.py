@@ -154,7 +154,7 @@ class QuerySet(object):
                     setattr(o, name, value)
 
                 # save raw db values for latter use
-                o._db_values = i[1]
+                o._db_values[alias] = i[1]
 
                 # save database alias for latter use
                 o._alias = alias
