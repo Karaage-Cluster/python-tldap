@@ -50,6 +50,11 @@ class LDAPmeta(type):
                 'MultipleObjectsReturned',
                 tuple(x.MultipleObjectsReturned for x in parents if hasattr(x, '_meta')) or (MultipleObjectsReturned,),
                 module))
+        ObjectAlreadyExists = tldap.exceptions.ObjectAlreadyExists
+        new_class.add_to_class('AlreadyExists', subclass_exception(
+                'ObjectAlreadyExists',
+                tuple(x.MultipleObjectsReturned for x in parents if hasattr(x, '_meta')) or (ObjectAlreadyExists,),
+                module))
 
         for obj_name, obj in attrs.items():
             new_class.add_to_class(obj_name, obj)
@@ -211,7 +216,7 @@ class LDAPobject(object):
         try:
             c.add(self.dn, modlist)
         except ldap.ALREADY_EXISTS:
-            raise tldap.exceptions.DatabaseError("Object with dn %r already exists doing add"%(self.dn,))
+            raise self.AlreadyExists("Object with dn %r already exists doing add"%(self.dn,))
 
         # update dn attribute in object
         field_names = set([f.name for f in fields])
@@ -252,9 +257,36 @@ class LDAPobject(object):
         try:
             c.modify(self.dn, modlist)
         except ldap.NO_SUCH_OBJECT:
-            raise tldap.exceptions.DatabaseError("Object with dn %r doesn't already exists doing modify"%(self.dn,))
+            raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self.dn,))
 
         # save new values
         self._db_values = moddict
 
     _modify.alters_data = True
+
+    def rename(self, name, value, using=None):
+        # what database should we be using?
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+        c = tldap.connections[using]
+
+        # do the rename
+        split_newrdn = [[(name, value, 1)]]
+        new_rdn = ldap.dn.dn2str(split_newrdn)
+        c.rename(self.dn, new_rdn)
+
+        # reconstruct dn
+        split_dn = ldap.dn.str2dn(self.dn)
+
+        # make newrdn fully qualified dn
+        tmplist = []
+        tmplist.append(split_newrdn[0])
+        tmplist.extend(split_dn[1:])
+        self.dn = ldap.dn.dn2str(tmplist)
+
+        # FIXME: do we need to delete old rdn field?
+
+        # update dn attribute in object
+        fields = self._meta.fields
+        field_names = set([f.name for f in fields])
+        if name in field_names:
+            setattr(self, name, value)

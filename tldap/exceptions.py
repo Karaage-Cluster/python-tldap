@@ -25,16 +25,15 @@ class FieldError(Exception):
 
 class ObjectDoesNotExist(Exception):
     "The requested object does not exist"
-    silent_variable_failure = True
 
 class MultipleObjectsReturned(Exception):
     "The query returned multiple objects when only one was expected."
     pass
 
+class ObjectAlreadyExists(Exception):
+    "The requested object already exists"
+
 class ValidationError(Exception):
     """An error while validating data."""
     pass
 
-class DatabaseError(Exception):
-    """An error while validating data."""
-    pass
