@@ -463,7 +463,7 @@ class LDAPwrapper(object):
         self._cache_rename_dn(dn, newdn)
         cache = self._cache_get_for_dn(newdn)
         key,value,_ = split_newrdn[0][0]
-        cache[key] = value
+        cache[key] = [ value ]
 
         return self._process(oncommit, onrollback)
 
