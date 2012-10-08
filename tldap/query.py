@@ -125,7 +125,7 @@ class QuerySet(object):
         # set the database we should use as required
         alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
 
-        # get list of fieldi names we support
+        # get list of field names we support
         fields = self._cls._meta.fields
         field_names = [ f.name for f in fields ]
 
