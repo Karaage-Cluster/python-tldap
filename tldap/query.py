@@ -144,7 +144,7 @@ class QuerySet(object):
                 o = self._cls()
 
                 # set dn manually
-                setattr(o, 'dn', i[0])
+                setattr(o, '_dn', i[0])
 
                 # set the other fields
                 for field in fields:

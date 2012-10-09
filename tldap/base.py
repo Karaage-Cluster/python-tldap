@@ -65,8 +65,10 @@ class LDAPmeta(type):
         field_names = set([f.name for f in new_fields])
         parent_field_names = set()
 
-        if 'dn' in field_names:
-            raise tldap.exceptions.FieldError('Local field dn clashes with reserved name from base class %r'%(name))
+        if '_db_values' in field_names:
+            raise tldap.exceptions.FieldError('Local field _db_values clashes with reserved name from base class %r'%(name))
+        if '_dn' in field_names:
+            raise tldap.exceptions.FieldError('Local field _dn clashes with reserved name from base class %r'%(name))
 
         for base in parents:
             if not hasattr(base, '_meta'):
@@ -106,6 +108,10 @@ def subclass_exception(name, parents, module):
 class LDAPobject(object):
     __metaclass__ = LDAPmeta
 
+    @property
+    def dn(self):
+        """Get the current dn."""
+        return self._dn
 
     def __init__(self, **kwargs):
         self._db_values = {}
@@ -115,8 +121,10 @@ class LDAPobject(object):
         field_names = set([f.name for f in fields])
 
         for k,v in kwargs.iteritems():
-            if k in field_names or k == 'dn':
+            if k in field_names:
                 setattr(self, k, v)
+            elif k == 'dn':
+                setattr(self, '_dn', v)
             else:
                 raise TypeError("'%s' is an invalid keyword argument for this function" % k)
 
@@ -134,7 +142,7 @@ class LDAPobject(object):
         field_names = [ f.name for f in fields ]
 
         # get values
-        db_values = list(c.search(self.dn, ldap.SCOPE_BASE, "(objectClass=*)", field_names))
+        db_values = list(c.search(self._dn, ldap.SCOPE_BASE, "(objectClass=*)", field_names))
         num = len(db_values)
         if num==0:
             raise self.DoesNotExist("%s matching query does not exist."
@@ -186,7 +194,7 @@ class LDAPobject(object):
             self._db_values[using] = old_values
 
         # delete it
-        c.delete(self.dn, onfailure)
+        c.delete(self._dn, onfailure)
         del self._db_values[using]
 
     delete.alters_data = True
@@ -194,7 +202,7 @@ class LDAPobject(object):
 
     def _add(self, using):
         fields = self._meta.fields
-        dn0k,dn0v,_ = ldap.dn.str2dn(self.dn)[0][0]
+        dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
 
         # ensure objectClass is set
         self.objectClass = getattr(self, "objectClass", self._meta.object_classes)
@@ -212,7 +220,7 @@ class LDAPobject(object):
                 if len(value) < 1:
                     value = [ dn0v]
                 if dn0v.lower() not in set(v.lower() for v in value):
-                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self.dn))
+                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
             moddict[name] = value
 
         # turn moddict into a modlist
@@ -227,9 +235,9 @@ class LDAPobject(object):
 
         # do it
         try:
-            c.add(self.dn, modlist, onfailure)
+            c.add(self._dn, modlist, onfailure)
         except ldap.ALREADY_EXISTS:
-            raise self.AlreadyExists("Object with dn %r already exists doing add"%(self.dn,))
+            raise self.AlreadyExists("Object with dn %r already exists doing add"%(self._dn,))
 
         # update dn attribute in object
         field_names = set([f.name for f in fields])
@@ -245,7 +253,7 @@ class LDAPobject(object):
     def _modify(self, using):
         assert(using in self._db_values)
         fields = self._meta.fields
-        dn0k,dn0v,_ = ldap.dn.str2dn(self.dn)[0][0]
+        dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
 
         # what database should we be using?
         c = tldap.connections[using]
@@ -261,7 +269,7 @@ class LDAPobject(object):
                 if len(value) < 1:
                     value = [ dn0v]
                 if dn0v.lower() not in set(v.lower() for v in value):
-                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self.dn))
+                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
             moddict[name] = value
 
         # turn moddict into a modlist
@@ -274,9 +282,9 @@ class LDAPobject(object):
 
         # do it
         try:
-            c.modify(self.dn, modlist, onfailure)
+            c.modify(self._dn, modlist, onfailure)
         except ldap.NO_SUCH_OBJECT:
-            raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self.dn,))
+            raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
 
         # save new values
         self._db_values[using] = moddict
@@ -289,31 +297,31 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # what to do if transaction is reversed
-        old_dn = self.dn
+        old_dn = self._dn
         old_values = copy.copy(self._db_values[using])
         def onfailure():
-            self.dn = old_dn
+            self._dn = old_dn
             self._db_values[using] = old_values
 
         # do the rename
         split_newrdn = [[(name, value, 1)]]
         new_rdn = ldap.dn.dn2str(split_newrdn)
-        c.rename(self.dn, new_rdn, onfailure)
+        c.rename(self._dn, new_rdn, onfailure)
 
         # reconstruct dn
-        split_dn = ldap.dn.str2dn(self.dn)
+        split_dn = ldap.dn.str2dn(self._dn)
 
         # make newrdn fully qualified dn
         tmplist = []
         tmplist.append(split_newrdn[0])
         tmplist.extend(split_dn[1:])
-        self.dn = ldap.dn.dn2str(tmplist).lower()
+        self._dn = ldap.dn.dn2str(tmplist).lower()
 
         # get set of field_names
         fields = self._meta.fields
 
         # get old rdn values
-        split_oldrdn = ldap.dn.str2dn(self.dn)
+        split_oldrdn = ldap.dn.str2dn(self._dn)
         old_key,old_value,_ = split_dn[0][0]
 
         for field in fields:
