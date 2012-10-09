@@ -47,7 +47,7 @@ def assert_cache_dn(ut, dn, c):
             return
 
         ut.assertEqual(len(result_data), 1)
-        ut.assertEqual(result_data[0][0], dn)
+        ut.assertEqual(result_data[0][0].lower(), dn)
         ut.assertEqual(result_data[0][1], c._cache[dn])
 
 def raise_testfailure(place):
@@ -245,32 +245,84 @@ class BackendTest(unittest.TestCase):
         with tldap.transaction.commit_on_success():
             c.rename("uid=tux, ou=People, dc=python-ldap,dc=org", 'uid=tuz')
             c.modify("uid=tuz, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Tuz") ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
             self.assertEqual(self.get(c, "uid=tuz, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tuz, ou=People, dc=python-ldap,dc=org")
-        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
-        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
         # test rename with success
         with tldap.transaction.commit_on_success():
             c.rename("uid=tux, ou=People, dc=python-ldap,dc=org", 'uid=tuz')
             c.modify("uid=tuz, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Tuz") ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
             self.assertEqual(self.get(c, "uid=tuz, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(self.get(c, "uid=tuz, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
-        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
-        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
         # test rename back with success
         with tldap.transaction.commit_on_success():
             c.modify("uid=tuz, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Gates") ])
             c.rename("uid=tuz, ou=People, dc=python-ldap,dc=org", 'uid=tux')
-        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tuz, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tuz, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
-        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
-        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tuz, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename with success
+        with tldap.transaction.commit_on_success():
+            c.rename("uid=tux, ou=People, dc=python-ldap,dc=org", 'cn=tux')
+            c.modify("cn=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Tuz") ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(self.get(c, "cn=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(self.get(c, "cn=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=tux, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename back with success
+        with tldap.transaction.commit_on_success():
+            c.modify("cn=tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Gates") ])
+            c.rename("cn=tux, ou=People, dc=python-ldap,dc=org", 'uid=tux')
+            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "cn=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "cn=tux, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=tux, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename with success
+        with tldap.transaction.commit_on_success():
+            c.rename("uid=tux, ou=People, dc=python-ldap,dc=org", 'cn=Tux Torvalds')
+            c.modify("cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Tuz") ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(self.get(c, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(self.get(c, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")['sn'], [ "Tuz" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename back with success
+        with tldap.transaction.commit_on_success():
+            c.modify("cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "sn", "Gates") ])
+            c.modify("cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_ADD, "cn", [ "meow" ] ) ])
+            c.rename("cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", 'uid=tux')
+            c.modify("uid=Tux, ou=People, dc=python-ldap,dc=org", [ (ldap.MOD_REPLACE, "cn", "Tux Torvalds" ) ])
+            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+            self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['cn'], [ "Tux Torvalds" ])
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
+        self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['cn'], [ "Tux Torvalds" ])
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", c)
 
         # test roll back on error of delete and add of same user
         with tldap.transaction.commit_on_success():
@@ -281,8 +333,8 @@ class BackendTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Gates" ])
-        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
-        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
         # test delate and add same user
         with tldap.transaction.commit_on_success():
@@ -290,15 +342,15 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
             c.add("uid=tux, ou=People, dc=python-ldap,dc=org", modlist)
         self.assertEqual(self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [ "Torvalds" ])
-        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
-        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
         # test delate
         with tldap.transaction.commit_on_success():
             c.delete("uid=tux, ou=People, dc=python-ldap,dc=org")
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c, "uid=tux, ou=People, dc=python-ldap,dc=org")
-        assert_cache_dn(self, "uid=tux, ou=people, dc=python-ldap,dc=org", c)
-        assert_cache_dn(self, "uid=tuz, ou=people, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
         c.autoflushcache = True
 
@@ -535,6 +587,90 @@ class ModelTest(unittest.TestCase):
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
+        # hack for testing
+        for i in p._meta.fields:
+            if i.name == "cn":
+                i._max_instances = 2
+
+        # test rename with success
+        with tldap.transaction.commit_on_success():
+            p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            p.rename('cn', 'tux')
+            self.assertEqual(p.cn, [ "Tux Torvalds", "tux" ])
+            p.sn = "Tuz"
+            p.save()
+            self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(get(dn="cn=tux, ou=People, dc=python-ldap,dc=org").sn, "Tuz")
+            self.assertEqual(get(dn="cn=tux, ou=People, dc=python-ldap,dc=org").uid, None)
+            self.assertEqual(get(dn="cn=tux, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds", "tux" ])
+        self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(get(dn="cn=tux, ou=People, dc=python-ldap,dc=org").sn, "Tuz")
+        self.assertEqual(get(dn="cn=tux, ou=People, dc=python-ldap,dc=org").uid, None)
+        self.assertEqual(get(dn="cn=tux, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds", "tux" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=tux, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename back with success
+        with tldap.transaction.commit_on_success():
+            p = get(dn="cn=tux, ou=People, dc=python-ldap,dc=org")
+            p.rename('uid', 'tux')
+            self.assertEqual(p.cn, [ "Tux Torvalds" ])
+            p.sn = "Gates"
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+            self.assertRaises(DoesNotExist, get, dn="cn=tux, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").uid, "tux")
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds" ])
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+        self.assertRaises(DoesNotExist, get, dn="cn=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").uid, "tux")
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=tux, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename with success
+        with tldap.transaction.commit_on_success():
+            p = get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            p.rename('cn', 'Tux Torvalds')
+            self.assertEqual(p.cn, [ "Tux Torvalds" ])
+            p.sn = "Tuz"
+            p.save()
+            self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org").sn, "Tuz")
+            self.assertEqual(get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org").uid, None)
+            self.assertEqual(get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds" ])
+        self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org").sn, "Tuz")
+        self.assertEqual(get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org").uid, None)
+        self.assertEqual(get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", c)
+
+        # test rename back with success
+        with tldap.transaction.commit_on_success():
+            p = get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
+            p.cn = [ 'sss', 'Tux Torvalds' ]
+            p.save()
+            p.rename('uid', 'tux')
+            self.assertEqual(p.cn, [ "sss", "Tux Torvalds" ])
+            p.sn = "Gates"
+            p.cn = ['Tux Torvalds' ]
+            p.save()
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+            self.assertRaises(DoesNotExist, get, dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").uid, "tux")
+            self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds" ])
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+        self.assertRaises(DoesNotExist, get, dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").uid, "tux")
+        self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").cn, [ "Tux Torvalds" ])
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", c)
+
+        # unhack for testing
+        for i in p._meta.fields:
+            if i.name == "cn":
+                i._max_instances = 1
 
         # test roll back on error of delete and add of same user
         with tldap.transaction.commit_on_success():
@@ -545,6 +681,8 @@ class ModelTest(unittest.TestCase):
             c.fail() # raises TestFailure during commit causing rollback
             self.assertRaises(tldap.exceptions.TestFailure, c.commit)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").sn, "Gates")
+        assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
+        assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
         # test delate
         with tldap.transaction.commit_on_success():

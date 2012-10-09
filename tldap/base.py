@@ -203,9 +203,10 @@ class LDAPobject(object):
             value = field.to_db(value)
             # if dn attribute given, it must match the dn
             if name == dn0k:
-                if len(value) > 1 or (len(value) == 1 and value[0] != dn0v):
-                    raise ValueError("value of %r is %r not %r from dn %r"%(name, value, dn0v, self.dn))
-                value = dn0v
+                if len(value) < 1:
+                    value = [ dn0v]
+                if dn0v.lower() not in set(v.lower() for v in value):
+                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self.dn))
             moddict[name] = value
 
         # turn moddict into a modlist
@@ -247,9 +248,10 @@ class LDAPobject(object):
             value = field.to_db(value)
             # if dn attribute given, it must match the dn
             if name == dn0k:
-                if len(value) > 1 or (len(value)==1 and value[0] != dn0v):
-                    raise ValueError("value of %r is %r not %r from dn %r"%(name, value, dn0v, self.dn))
-                value = dn0v
+                if len(value) < 1:
+                    value = [ dn0v]
+                if dn0v.lower() not in set(v.lower() for v in value):
+                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self.dn))
             moddict[name] = value
 
         # turn moddict into a modlist
@@ -283,12 +285,47 @@ class LDAPobject(object):
         tmplist = []
         tmplist.append(split_newrdn[0])
         tmplist.extend(split_dn[1:])
-        self.dn = ldap.dn.dn2str(tmplist)
+        self.dn = ldap.dn.dn2str(tmplist).lower()
 
-        # FIXME: do we need to delete old rdn field?
-
-        # update dn attribute in object
+        # get set of field_names
         fields = self._meta.fields
-        field_names = set([f.name for f in fields])
-        if name in field_names:
-            setattr(self, name, value)
+
+        # get old rdn values
+        split_oldrdn = ldap.dn.str2dn(self.dn)
+        old_key,old_value,_ = split_dn[0][0]
+
+        for field in fields:
+            # delete old rdn attribute in object
+            if field.name == old_key:
+                v = getattr(self, old_key, [])
+                if v is None:
+                    pass
+                elif isinstance(v, list):
+                    if old_value in v:
+                        v.remove(old_value)
+                    if len(v)==0:
+                        v = None
+                elif old_value == v:
+                    v = None
+                v = field.to_db(v)
+                if v == None:
+                    del self._db_values[using][old_key]
+                else:
+                    self._db_values[using][old_key] = v
+                v = field.clean(v)
+                setattr(self, old_key, v)
+
+            # update new rdn attribute in object
+            if field.name == name:
+                v = getattr(self, name, None)
+                if v is None:
+                    v = value
+                elif isinstance(v, list):
+                    if value not in v:
+                        v.append(value)
+                elif v != value:
+                    v = [ v, value ]
+                v = field.to_db(v)
+                self._db_values[using][name] = v
+                v = field.clean(v)
+                setattr(self, name, v)

@@ -38,6 +38,7 @@ import ldap.dn
 import ldaptor
 import ldaptor.entryhelpers
 import tldap.exceptions
+import copy
 
 # hardcoded settings for this module
 
@@ -147,7 +148,7 @@ class LDAPwrapper(object):
     def _cache_normalize_dn(self, dn):
         """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
         is not possible to have two or more cache entries representing the same ldap entry. """
-        return ldap.dn.dn2str(ldap.dn.str2dn(dn))
+        return ldap.dn.dn2str(ldap.dn.str2dn(dn)).lower()
 
     def _cache_get_for_dn(self, dn):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
@@ -462,8 +463,16 @@ class LDAPwrapper(object):
         debug("--> rename cache", dn, newdn)
         self._cache_rename_dn(dn, newdn)
         cache = self._cache_get_for_dn(newdn)
-        key,value,_ = split_newrdn[0][0]
-        cache[key] = [ value ]
+        old_key,old_value,_ = split_dn[0][0]
+        if old_value in cache[old_key]:
+            cache[old_key].remove(old_value)
+        if len(cache[old_key]) == 0:
+            del cache[old_key]
+        new_key,new_value,_ = split_newrdn[0][0]
+        if new_key not in cache:
+            cache[new_key] = [ ]
+        if new_value not in cache[new_key]:
+            cache[new_key].append(new_value)
 
         return self._process(oncommit, onrollback)
 
@@ -519,12 +528,12 @@ class LDAPwrapper(object):
         # convert results to dictionary
         rdict = {}
         for v in rarray:
-            dn = v[0]
+            dn = v[0].lower()
             rdict[dn] = v[1]
         debug("---> rdict (ldap)", rdict)
         
         # is this dn in the search scope?
-        split_base = ldap.dn.str2dn(base)
+        split_base = ldap.dn.str2dn(base.lower())
         base = ldap.dn.dn2str(split_base)
         def check_scope(dn):
             split_dn = ldap.dn.str2dn(dn)
@@ -568,7 +577,7 @@ class LDAPwrapper(object):
                 t = _MatchMixin(dn, v)
                 if filterobj is None or t.match(filterobj):
                     debug("---> match")
-                    rdict[dn] = v 
+                    rdict[dn] = copy.copy(v)
                 else:
                     debug("---> nomatch")
             else:
