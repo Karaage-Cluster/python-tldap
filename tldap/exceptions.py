@@ -32,8 +32,12 @@ class MultipleObjectsReturned(Exception):
 
 class ObjectAlreadyExists(Exception):
     "The requested object already exists"
+    pass
 
 class ValidationError(Exception):
     """An error while validating data."""
     pass
 
+class RollbackError(Exception):
+    """An error in rollback and consistency cannot be guaranteed."""
+    pass

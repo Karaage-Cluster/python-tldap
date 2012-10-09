@@ -39,6 +39,7 @@ import ldaptor
 import ldaptor.entryhelpers
 import tldap.exceptions
 import copy
+import sys
 
 # hardcoded settings for this module
 
@@ -267,9 +268,11 @@ class LDAPwrapper(object):
                 # execute it
                 debug("rolling back", onrollback)
                 self._do_with_retry(onrollback)
-        except:
+        except Exception, e:
             debug("rollback failed")
-            raise
+            exc_class, exc, tb = sys.exc_info()
+            new_exc = tldap.exceptions.RollbackError("FATAL Unrecoverable rollback error")
+            raise new_exc.__class__, new_exc, tb
         finally:
             # reset everything to clean state
             self.reset(forceflushcache=True)
