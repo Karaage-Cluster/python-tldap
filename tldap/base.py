@@ -24,6 +24,8 @@ import tldap.manager
 import ldap.dn
 import ldap.modlist
 
+import copy
+
 class LDAPmeta(type):
     def __new__(cls, name, bases, attrs):
         super_new = super(LDAPmeta, cls).__new__
@@ -119,11 +121,9 @@ class LDAPobject(object):
                 raise TypeError("'%s' is an invalid keyword argument for this function" % k)
 
 
-    def reload_db_values(self, using=None):
+    def _reload_db_values(self, using=None):
         """
-        Hack in case cached _db_values fall out of sync for any reason, e.g.
-        because a transaction was rolled back. A transaction rolling back will not
-        update the _db_values attribute of this object unless this function is called.
+        Hack in case cached _db_values fall out of sync for any reason. Should not be needed anymore.
         """
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
@@ -145,7 +145,7 @@ class LDAPobject(object):
 
         self._db_values[using] = db_values[0][1]
 
-    reload_db_values.alters_data = True
+    _reload_db_values.alters_data = True
 
 
     def save(self, force_add=False, force_modify=False, using=None):
@@ -179,8 +179,14 @@ class LDAPobject(object):
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
+
+        # what to do if transaction is reversed
+        old_values = self._db_values[using]
+        def onfailure():
+            self._db_values[using] = old_values
+
         # delete it
-        c.delete(self.dn)
+        c.delete(self.dn, onfailure)
         del self._db_values[using]
 
     delete.alters_data = True
@@ -215,9 +221,13 @@ class LDAPobject(object):
         # what database should we be using?
         c = tldap.connections[using]
 
+        # what to do if transaction is reversed
+        def onfailure():
+            del self._db_values[using]
+
         # do it
         try:
-            c.add(self.dn, modlist)
+            c.add(self.dn, modlist, onfailure)
         except ldap.ALREADY_EXISTS:
             raise self.AlreadyExists("Object with dn %r already exists doing add"%(self.dn,))
 
@@ -257,9 +267,14 @@ class LDAPobject(object):
         # turn moddict into a modlist
         modlist = ldap.modlist.modifyModlist(self._db_values[using], moddict)
 
+        # what to do if transaction is reversed
+        old_values = self._db_values[using]
+        def onfailure():
+            self._db_values[using] = old_values
+
         # do it
         try:
-            c.modify(self.dn, modlist)
+            c.modify(self.dn, modlist, onfailure)
         except ldap.NO_SUCH_OBJECT:
             raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self.dn,))
 
@@ -273,10 +288,17 @@ class LDAPobject(object):
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
 
+        # what to do if transaction is reversed
+        old_dn = self.dn
+        old_values = copy.copy(self._db_values[using])
+        def onfailure():
+            self.dn = old_dn
+            self._db_values[using] = old_values
+
         # do the rename
         split_newrdn = [[(name, value, 1)]]
         new_rdn = ldap.dn.dn2str(split_newrdn)
-        c.rename(self.dn, new_rdn)
+        c.rename(self.dn, new_rdn, onfailure)
 
         # reconstruct dn
         split_dn = ldap.dn.str2dn(self.dn)
@@ -329,3 +351,5 @@ class LDAPobject(object):
                 self._db_values[using][name] = v
                 v = field.clean(v)
                 setattr(self, name, v)
+
+    rename.alters_data = True

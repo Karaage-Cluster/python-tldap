@@ -238,7 +238,7 @@ class LDAPwrapper(object):
         debug("commit", self._oncommit)
         try:
             # for every action ...
-            for oncommit, onrollback in self._oncommit:
+            for oncommit, onrollback, _ in self._oncommit:
                 # execute it
                 debug("---> commiting", oncommit)
                 self._do_with_retry(oncommit)
@@ -268,16 +268,22 @@ class LDAPwrapper(object):
                 # execute it
                 debug("rolling back", onrollback)
                 self._do_with_retry(onrollback)
-        except Exception, e:
+
+            for _, _, onfailure in reversed(self._oncommit):
+                if onfailure is not None:
+                    debug("failure", onfailure)
+                    onfailure()
+
+        except:
             debug("rollback failed")
             exc_class, exc, tb = sys.exc_info()
-            new_exc = tldap.exceptions.RollbackError("FATAL Unrecoverable rollback error")
+            new_exc = tldap.exceptions.RollbackError("FATAL Unrecoverable rollback error: %r"%(exc))
             raise new_exc.__class__, new_exc, tb
         finally:
             # reset everything to clean state
             self.reset(forceflushcache=True)
 
-    def _process(self, oncommit, onrollback):
+    def _process(self, oncommit, onrollback, onfailure):
         """ Add action to list. oncommit is a callback to execute on commit(),
         onrollback is a callback to execute if the oncommit() has been called and
         a rollback is required """
@@ -286,14 +292,14 @@ class LDAPwrapper(object):
             self.reset()
             return result
         else:
-            self._oncommit.append( (oncommit, onrollback) )
+            self._oncommit.append( (oncommit, onrollback, onfailure) )
             return None
 
     ##################################
     # Functions needing Transactions #
     ##################################
 
-    def add(self, dn, modlist):
+    def add(self, dn, modlist, onfailure=None):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
@@ -314,10 +320,10 @@ class LDAPwrapper(object):
                 cache[k] = [v]
 
         # process this action
-        return self._process(oncommit, onrollback)
+        return self._process(oncommit, onrollback, onfailure)
 
 
-    def modify(self, dn, modlist):
+    def modify(self, dn, modlist, onfailure=None):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
@@ -404,9 +410,9 @@ class LDAPwrapper(object):
         # now the hard stuff is over, we get to the easy stuff
         oncommit   = lambda obj: obj.modify_s(dn, modlist)
         onrollback = lambda obj: obj.modify_s(dn, revlist)
-        return self._process(oncommit, onrollback)
+        return self._process(oncommit, onrollback, onfailure)
 
-    def delete(self, dn):
+    def delete(self, dn, onfailure=None):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
 
@@ -435,9 +441,9 @@ class LDAPwrapper(object):
         # on commit carry out action; on rollback restore cached state
         oncommit   = lambda obj: obj.delete_s(dn)
         onrollback = lambda obj: obj.add_s(dn, modlist)
-        return self._process(oncommit, onrollback)
+        return self._process(oncommit, onrollback, onfailure)
 
-    def rename(self, dn, newrdn):
+    def rename(self, dn, newrdn, onfailure=None):
         """ rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
 
@@ -477,7 +483,7 @@ class LDAPwrapper(object):
         if new_value not in cache[new_key]:
             cache[new_key].append(new_value)
 
-        return self._process(oncommit, onrollback)
+        return self._process(oncommit, onrollback, onfailure)
 
     def fail(self):
         """ for testing purposes only. always fail in commit """
@@ -487,7 +493,7 @@ class LDAPwrapper(object):
         # on commit carry out action; on rollback reverse rename
         oncommit   = lambda obj: raise_testfailure("commit")
         onrollback = lambda obj: raise_testfailure("rollback")
-        return self._process(oncommit, onrollback)
+        return self._process(oncommit, onrollback, None)
 
     # read only stuff
 

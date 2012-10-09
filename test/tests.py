@@ -444,7 +444,6 @@ class ModelTest(unittest.TestCase):
 
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
-            p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
@@ -468,7 +467,6 @@ class ModelTest(unittest.TestCase):
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         # test adding attribute with success
         with tldap.transaction.commit_on_success():
-            p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "111")
@@ -490,7 +488,6 @@ class ModelTest(unittest.TestCase):
 
         # test replacing attribute with success
         with tldap.transaction.commit_on_success():
-            p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, "222")
@@ -513,7 +510,6 @@ class ModelTest(unittest.TestCase):
 
         # test deleting attribute *of new object* with success
         with tldap.transaction.commit_on_success():
-            p.reload_db_values()
             p.save()
             self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
         self.assertEqual(get(dn="uid=tux, ou=People, dc=python-ldap,dc=org").telephoneNumber, None)
@@ -673,6 +669,7 @@ class ModelTest(unittest.TestCase):
                 i._max_instances = 1
 
         # test roll back on error of delete and add of same user
+        old_p = p
         with tldap.transaction.commit_on_success():
             p.delete()
             self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
@@ -686,7 +683,7 @@ class ModelTest(unittest.TestCase):
 
         # test delate
         with tldap.transaction.commit_on_success():
-            p.delete()
+            old_p.delete()
         self.assertRaises(DoesNotExist, get, dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
