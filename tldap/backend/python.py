@@ -118,17 +118,17 @@ class LDAPwrapper(object):
     # Functions needing Transactions #
     ##################################
 
-    def add(self, dn, modlist):
+    def add(self, dn, modlist, onfailure=None):
         return self._do_with_retry(lambda obj: obj.add_s(dn, modlist))
 
 
-    def modify(self, dn, modlist):
+    def modify(self, dn, modlist, onfailure=None):
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
-    def delete(self, dn):
+    def delete(self, dn, onfailure=None):
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
-    def rename(self, dn, newrdn):
+    def rename(self, dn, newrdn, onfailure=None):
         return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn))
 
     def search(self, base, scope, *args, **kwargs):
