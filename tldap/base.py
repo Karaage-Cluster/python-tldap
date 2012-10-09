@@ -142,7 +142,7 @@ class LDAPobject(object):
         field_names = [ f.name for f in fields ]
 
         # get values
-        db_values = list(c.search(self._dn, ldap.SCOPE_BASE, "(objectClass=*)", field_names))
+        db_values = list(c.search(self._dn, ldap.SCOPE_BASE, attrlist=field_names))
         num = len(db_values)
         if num==0:
             raise self.DoesNotExist("%s matching query does not exist."
