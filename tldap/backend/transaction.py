@@ -497,31 +497,22 @@ class LDAPwrapper(object):
 
     # read only stuff
 
-    def search(self, base, scope, *args, **kwargs):
-        debug("search", base, scope, args, kwargs)
-        
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
+        debug("search", base, scope, filterstr)
+
+        # Note: we do not use the attrlist, instead we always get all
+        # attributes, this ensures the cache remains consistent with what is
+        # stored on the server.  Might have to change this latter if it is a
+        # problem (e.g. accessing hidden attributes).
+
         # do the real ldap search
         try:
-            rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, *args, **kwargs))
+            rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, filterstr))
         except ldap.NO_SUCH_OBJECT:
             # if base doesn't exist in LDAP, it really should exist in cache
             self._cache_get_for_dn(base)
             rarray = []
         debug("---> rarray", rarray)
-        
-        # parse specific arguments
-        def get_arg(name):
-            get_arg.num = get_arg.num + 1
-            
-            if name in kwargs:
-                return kwargs[name]
-            if get_arg.num < len(args):
-                return args[get_arg.num]
-            return None
-        get_arg.num = -1
-           
-        filterstr = get_arg('filterstr')
-        attrlist = get_arg('attrlist')
 
         # now parse the filter string
         debug("---> filterstr", filterstr)
