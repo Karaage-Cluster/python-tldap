@@ -129,10 +129,13 @@ class FieldListManager(LDAPmanager):
         if not isinstance(value, list):
             value = [ value ]
 
-        query = tldap.Q("OR")
+        query = None
         for v in value:
             kwargs = { self._key: v }
-            query = query | tldap.Q(**kwargs)
+            if query is None:
+                query = tldap.Q(**kwargs)
+            else:
+                query = query | tldap.Q(**kwargs)
         return super(FieldListManager,self).get_query_set().filter(query)
 
     def get_or_create(self, **kwargs):
