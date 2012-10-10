@@ -41,8 +41,8 @@ class LDAPmanager(object):
     def all(self):
         return self.get_query_set()
 
-    def get(self, **kwargs):
-        return self.get_query_set().get(**kwargs)
+    def get(self, *args, **kwargs):
+        return self.get_query_set().get(*args, **kwargs)
 
     def get_or_create(self, **kwargs):
         return self.get_query_set().get_or_create(**kwargs)
@@ -50,8 +50,8 @@ class LDAPmanager(object):
     def create(self, **kwargs):
         return self.get_query_set().create(**kwargs)
 
-    def filter(self, **kwargs):
-        return self.get_query_set().filter(**kwargs)
+    def filter(self, *args, **kwargs):
+        return self.get_query_set().filter(*args, **kwargs)
 
 
     def using(self, *args, **kwargs):

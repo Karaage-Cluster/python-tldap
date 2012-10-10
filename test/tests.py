@@ -691,6 +691,30 @@ class ModelTest(unittest.TestCase):
 
         return
 
+    def test_query(self):
+        person = tldap.models.person
+
+        self.assertEqual(
+            person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
+            "(&(uid=t\\5cux))")
+        self.assertEqual(
+            person.objects.all()._get_filter(~tldap.Q(uid='tux')),
+            "(&(!(uid=tux)))")
+        self.assertEqual(
+            person.objects.all()._get_filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz')),
+            "(|(uid=tux)(uid=tuz))")
+        self.assertEqual(
+            person.objects.all()._get_filter(tldap.Q(uid='tux') & tldap.Q(uid='tuz')),
+            "(&(uid=tux)(uid=tuz))")
+        self.assertEqual(
+            person.objects.all()._get_filter(tldap.Q(uid='tux') & ( tldap.Q(uid='tuz') | tldap.Q(uid='meow'))),
+            "(&(uid=tux)(|(uid=tuz)(uid=meow)))")
+
+        r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+        self.assertEqual(len(r), 0)
+
+#        person.objects.get(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+#        person.objects.get(~tldap.Q(uid='tuz'))
 
 if __name__ == '__main__':
     unittest.main()

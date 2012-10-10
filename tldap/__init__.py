@@ -16,6 +16,7 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import tldap.utils
+from tldap.query_utils import Q
 from tldap.utils import DEFAULT_LDAP_ALIAS
 
 connections = None

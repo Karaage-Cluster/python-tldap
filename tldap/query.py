@@ -27,6 +27,10 @@ import ldap.filter
 
 import tldap
 
+import copy
+
+import django.utils.tree
+
 class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
@@ -34,7 +38,7 @@ class QuerySet(object):
     def __init__(self, cls, alias):
         self._cls = cls
         self._alias = alias
-        self._attrs = {}
+        self._query = []
         self._base_dn = None
         self._iter = None
         self._result_cache = None
@@ -96,6 +100,25 @@ class QuerySet(object):
     # METHODS THAT DO DATABASE QUERIES #
     ####################################
 
+    def _get_filter(self, q):
+        if q.negated:
+            op = "!"
+        elif q.connector == "AND":
+            op = "&"
+        elif q.connector == "OR":
+            op = "|"
+        else:
+            raise ValueError("Invalid value of op found")
+
+        search = []
+        for child in q.children:
+            if isinstance(child, django.utils.tree.Node):
+                search.append(self._get_filter(child))
+            else:
+                search.append(ldap.filter.filter_format("(%s=%s)",[child[0], child[1]]))
+
+        return "("+ op + "".join(search) + ")"
+
     def iterator(self):
         """
         An iterator over the results from applying this QuerySet to the
@@ -106,18 +129,17 @@ class QuerySet(object):
         object_classes = self._cls._meta.object_classes
 
         # add object classes to search array
-        search = []
+        query = tldap.Q()
         for oc in object_classes:
-            search.append(ldap.filter.filter_format("(%s=%s)",['objectClass', oc]))
+            query = query & tldap.Q(objectClass=oc)
+
+        # add filter spec to search array
+        for q in self._query:
+            query = query & q
 
         # get dn to search for, if given do a SCOPE_BASE search with this as a base;
         # otherwise do a SCOPE_SUBTREE with base_dn as base.
-        attrs = dict(self._attrs)
-        dn = attrs.pop('dn' or None)
-
-        # add filter spec to search array
-        for k,v in attrs.iteritems():
-            search.append(ldap.filter.filter_format("(%s=%s)",[k,v]))
+        dn = self._dn
 
         # set the base_dn as required
         base_dn = dn or self._base_dn or self._cls._meta.meta.base_dn
@@ -130,7 +152,7 @@ class QuerySet(object):
         field_names = [ f.name for f in fields ]
 
         # construct search filter string
-        search_filter = "(&"+"".join(search)+")"
+        search_filter = self._get_filter(query)
 
         # work out the search scope
         scope = ldap.SCOPE_SUBTREE
@@ -162,16 +184,15 @@ class QuerySet(object):
                 # give caller this result
                 yield o
         except ldap.NO_SUCH_OBJECT:
-            if dn is None:
-                raise RuntimeError("Should never happen")
             # return with no results
+            pass
 
-    def get(self, **kwargs):
+    def get(self, *args, **kwargs):
         """
         Performs the query and returns a single object matching the given
         keyword arguments.
         """
-        qs = self.filter(**kwargs)
+        qs = self.filter(*args, **kwargs)
         num = len(qs)
         if num == 1:
             return qs._result_cache[0]
@@ -213,15 +234,31 @@ class QuerySet(object):
     # PUBLIC METHODS THAT ALTER ATTRIBUTES AND RETURN A NEW QUERYSET #
     ##################################################################
 
-    def filter(self, **attrs):
+    def filter(self, *args, **kwargs):
         """
         Returns a new QuerySet instance with the args ANDed to the existing
         set.
         """
-        qs = self._clone()
-        qs._attrs = dict(self._attrs)
-        qs._attrs.update(attrs)
-        return qs
+        return self._filter_or_exclude(False, *args, **kwargs)
+
+    def exclude(self, *args, **kwargs):
+        """
+        Returns a new QuerySet instance with NOT (args) ANDed to the existing
+        set.
+        """
+        return self._filter_or_exclude(True, *args, **kwargs)
+
+    def _filter_or_exclude(self, negate, *args, **kwargs):
+        dn = kwargs.pop('dn', None)
+
+        clone = self._clone()
+        if negate:
+            clone._query.append(~tldap.Q(*args, **kwargs))
+            clone._dn = dn
+        else:
+            clone._query.append(tldap.Q(*args, **kwargs))
+            clone._dn = dn
+        return clone
 
     def using(self, alias):
         """
@@ -246,7 +283,7 @@ class QuerySet(object):
 
     def _clone(self):
         qs = QuerySet(self._cls, self._alias)
-        qs._attrs = self._attrs
+        qs._query = copy.deepcopy(self._query)
         qs._base_dn = self._base_dn
         return qs
 
