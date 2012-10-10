@@ -395,9 +395,6 @@ class ModelTest(unittest.TestCase):
             'o': "Linux Rules",
             'userPassword': "silly",
         }
-        p = person(dn="ou=People, dc=python-ldap,dc=org", **kwargs)
-        # self.assertRaises(DoesNotExist, lambda: p.save(force_modify=True))
-        p.save()
 
         # test explicit roll back
         with tldap.transaction.commit_on_success():
@@ -695,7 +692,22 @@ class ModelTest(unittest.TestCase):
         return
 
     def test_query(self):
+        organizationalUnit = tldap.models.organizationalUnit
+        organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org", ou="People")
+
         person = tldap.models.person
+
+        kwargs = {
+            'givenName': "Tux",
+            'sn': "Torvalds",
+            'cn': "Tux Torvalds",
+            'telephoneNumber': "000",
+            'mail': "tuz@example.org",
+            'o': "Linux Rules",
+            'userPassword': "silly",
+        }
+        person.objects.create(uid="tux", **kwargs)
+        person.objects.create(uid="tuz", **kwargs)
 
         self.assertEqual(
             person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
@@ -714,10 +726,16 @@ class ModelTest(unittest.TestCase):
             "(&(uid=tux)(|(uid=tuz)(uid=meow)))")
 
         r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(r), 2)
 
-#        person.objects.get(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-#        person.objects.get(~tldap.Q(uid='tuz'))
+        print "---------------------"
+        r = person.objects.filter(~tldap.Q(uid='tuz'))
+        for i in r:
+            print i.dn
+        print "---------------------"
+
+        self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+        person.objects.get(~tldap.Q(uid='tuz'))
 
 if __name__ == '__main__':
     unittest.main()
