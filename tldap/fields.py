@@ -37,7 +37,7 @@ class Field(object):
         # we will be changing it.
         if value is None:
             value = []
-        elif isinstance(value, str):
+        elif not isinstance(value, list):
             value = [value]
         else:
             value = list(value)
@@ -80,7 +80,7 @@ class Field(object):
         # ensure value is a list
         if value is None:
             value = []
-        elif isinstance(value, str):
+        elif not isinstance(value, list):
             value = [ value ]
 
         # validate every item in list
@@ -141,6 +141,13 @@ class IntegerField(Field):
             return value
         try:
             return int(value)
+        except (TypeError, ValueError):
+            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+        try:
+            return str(int(value))
         except (TypeError, ValueError):
             raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
 
