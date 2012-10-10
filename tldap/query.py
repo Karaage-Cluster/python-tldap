@@ -142,7 +142,8 @@ class QuerySet(object):
         dn = self._dn
 
         # set the base_dn as required
-        base_dn = dn or self._base_dn or self._cls._meta.meta.base_dn
+        base_dn = dn or self._base_dn or self._cls._meta.base_dn
+        assert base_dn is not None
 
         # set the database we should use as required
         alias = self._alias or tldap.DEFAULT_LDAP_ALIAS

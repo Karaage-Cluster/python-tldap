@@ -89,6 +89,10 @@ class LDAPmeta(type):
                 parent_field_names.add(field.name)
 
             new_class._meta.object_classes.update(base._meta.object_classes)
+            base_dn = new_class._meta.base_dn
+            base_dn = getattr(base._meta.meta, 'base_dn', None)
+            base_dn = getattr(new_class._meta.meta, 'base_dn', base_dn)
+            new_class._meta.base_dn = base_dn
 
 
         new_class.add_to_class('objects', tldap.manager.LDAPmanager())
@@ -135,7 +139,7 @@ class LDAPobject(object):
             raise ValueError("Makes no sense to set both dn and base_dn")
 
         if self._dn is None and self._base_dn is None:
-            self._base_dn = self._meta.meta.base_dn
+            self._base_dn = self._meta.base_dn
 
     def _reload_db_values(self, using=None):
         """
