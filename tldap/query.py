@@ -199,7 +199,7 @@ class QuerySet(object):
         if not num:
             raise self._cls.DoesNotExist("%s matching query does not exist."
                     % self._cls._meta.object_name)
-        raise self.model.MultipleObjectsReturned("get() returned more than one %s -- it returned %s! Lookup parameters were %s"
+        raise self._cls.MultipleObjectsReturned("get() returned more than one %s -- it returned %s! Lookup parameters were %s"
                 % (self._cls._meta.object_name, num, kwargs))
 
     def create(self, **kwargs):
