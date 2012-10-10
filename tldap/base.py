@@ -63,7 +63,7 @@ class LDAPmeta(type):
 
         new_fields = new_class._meta.fields
         field_names = set([f.name for f in new_fields])
-        parent_field_names = set()
+        parent_field_names = dict()
 
         for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn" ]:
             if i in field_names:
@@ -82,11 +82,13 @@ class LDAPmeta(type):
                                      'with field of similar name from base class %r' %
                                         (field.name, name, base.__name__))
                 if field.name in parent_field_names:
-                    raise tldap.exceptions.FieldError('Field %r from parent of class %r clashes '
-                                     'with field of similar name from base class %r' %
-                                        (field.name, name, base.__name__))
-                new_class._meta.add_field(field)
-                parent_field_names.add(field.name)
+                    if type(field) != type(parent_field_names[field.name]):
+                        raise tldap.exceptions.FieldError('In class %r field %r from parent clashes '
+                                     'with field of similar name from base class %r and is different type' %
+                                        (name, field.name, base.__name__))
+                else:
+                    new_class._meta.add_field(field)
+                    parent_field_names[field.name] = field
 
             new_class._meta.object_classes.update(base._meta.object_classes)
             base_dn = new_class._meta.base_dn
