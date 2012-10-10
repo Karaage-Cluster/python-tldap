@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+import tldap
 import tldap.query
 import django.utils.importlib
 
@@ -104,3 +105,42 @@ class FieldDescriptor(object):
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
         return FieldManager(self._dst_key, getattr(instance, self._src_key), cls)
+
+class FieldListManager(LDAPmanager):
+    def __init__(self, key, value, cls=None):
+        super(FieldListManager,self).__init__()
+        self._key = key
+        self._value = value
+        self._cls = cls
+
+    def get_query_set(self):
+        value = self._value
+        if not isinstance(value, list):
+            value = [ value ]
+
+        query = tldap.Q("OR")
+        for v in value:
+            kwargs = { self._key: v }
+            query = query | tldap.Q(**kwargs)
+        return super(FieldListManager,self).get_query_set().filter(query)
+
+
+class FieldListDescriptor(object):
+    # This class ensures managers aren't accessible via model instances.
+    # For example, Poll.objects works, but poll_obj.objects raises AttributeError.
+    def __init__(self, src_key, dst_key, cls):
+        self._src_key = src_key
+        self._dst_key = dst_key
+
+        self._cls = cls
+
+    def __get__(self, instance, type=None):
+        cls = self._cls
+        if isinstance(cls, str):
+            module_name, _, name = cls.rpartition(".")
+            module = django.utils.importlib.import_module(module_name)
+            cls = getattr(module, name)
+
+        if instance is None:
+            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
+        return FieldListManager(self._dst_key, getattr(instance, self._src_key), cls)

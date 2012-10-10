@@ -712,8 +712,8 @@ class ModelTest(unittest.TestCase):
         }
         p1 = person.objects.create(uid="tux", **kwargs)
         p2 = person.objects.create(uid="tuz", **kwargs)
-        g = group.objects.create(cn="group1", gidNumber=10, memberUid="tux")
-        g = group.objects.create(cn="group2", gidNumber=11, memberUid="tux")
+        g1 = group.objects.create(cn="group1", gidNumber=10, memberUid="tux")
+        g2 = group.objects.create(cn="group2", gidNumber=11, memberUid=[ "tux", "tuz" ])
 
         self.assertEqual(
             person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
@@ -734,20 +734,20 @@ class ModelTest(unittest.TestCase):
         r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         self.assertEqual(len(r), 2)
 
-        print "---------------------"
-        r = person.objects.filter(~tldap.Q(uid='tuz'))
-        for i in r:
-            print i.dn
-        print "---------------------"
-
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
+
+        r = g1.users.all()
+        self.assertEqual(len(r), 1)
+
+        r = g2.users.all()
+        self.assertEqual(len(r), 2)
 
         r = p1.groups.all()
         self.assertEqual(len(r), 2)
 
         r = p2.groups.all()
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(r), 1)
 
 if __name__ == '__main__':
     unittest.main()

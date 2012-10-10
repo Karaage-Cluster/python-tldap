@@ -207,8 +207,11 @@ class posix_group(tldap.base.LDAPobject):
     cn = tldap.fields.CharField(required=True)
     gidNumber = tldap.fields.IntegerField(required=True)
     userPassword = tldap.fields.CharField()
-    memberUid = tldap.fields.CharField()
+    memberUid = tldap.fields.CharField(max_instances=None)
     description = tldap.fields.CharField()
+
+    # users
+    users = tldap.manager.FieldListDescriptor('memberUid', 'uid', person)
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
