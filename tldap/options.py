@@ -19,10 +19,9 @@ class Options(object):
     def __init__(self, name, meta):
         self.meta = meta
         self.fields = []
-        self.object_classes = set(getattr(meta, 'object_classes', name))
+        self.object_classes = set(getattr(meta, 'object_classes', []))
+        self.base_dn = getattr(meta, 'base_dn', None)
         self.object_name = name
 
     def add_field(self, field):
         self.fields.append(field)
-
-
