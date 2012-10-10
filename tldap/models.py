@@ -86,6 +86,9 @@ class person(tldap.base.LDAPobject):
     userSMIMECertificate = tldap.fields.CharField()
     userPKCS12 = tldap.fields.CharField()
 
+    def construct_dn(self):
+        return self.rdn_to_dn('uid')
+
     class Meta:
         base_dn = django.conf.settings.LDAP_USER_BASE
         object_classes = { 'top', 'person', 'organizationalPerson', 'inetOrgPerson', }

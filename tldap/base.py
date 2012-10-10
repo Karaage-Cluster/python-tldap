@@ -65,10 +65,9 @@ class LDAPmeta(type):
         field_names = set([f.name for f in new_fields])
         parent_field_names = set()
 
-        if '_db_values' in field_names:
-            raise tldap.exceptions.FieldError('Local field _db_values clashes with reserved name from base class %r'%(name))
-        if '_dn' in field_names:
-            raise tldap.exceptions.FieldError('Local field _dn clashes with reserved name from base class %r'%(name))
+        for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn" ]:
+            if i in field_names:
+                raise tldap.exceptions.FieldError('Local field %s clashes with reserved name from base class %r'%(i, name))
 
         for base in parents:
             if not hasattr(base, '_meta'):
@@ -116,6 +115,8 @@ class LDAPobject(object):
     def __init__(self, **kwargs):
         self._db_values = {}
         self._alias = None
+        self._dn = None
+        self._base_dn = None
 
         fields = self._meta.fields
         field_names = set([f.name for f in fields])
@@ -123,11 +124,18 @@ class LDAPobject(object):
         for k,v in kwargs.iteritems():
             if k in field_names:
                 setattr(self, k, v)
+            elif k == 'base_dn':
+                setattr(self, '_base_dn', v)
             elif k == 'dn':
                 setattr(self, '_dn', v)
             else:
                 raise TypeError("'%s' is an invalid keyword argument for this function" % k)
 
+        if self._dn is not None and self._base_dn is not None:
+            raise ValueError("Makes no sense to set both dn and base_dn")
+
+        if self._base_dn is None:
+            self._base_dn = self._meta.meta.base_dn
 
     def _reload_db_values(self, using=None):
         """
@@ -155,6 +163,18 @@ class LDAPobject(object):
 
     _reload_db_values.alters_data = True
 
+    def construct_dn(self):
+        raise RuntimeError("Need a full DN for this object")
+
+    def rdn_to_dn(self, name):
+        value = getattr(self, name)
+
+        split_base = ldap.dn.str2dn(self._base_dn)
+        split_newrdn = [[(name, value, 1)]] + split_base
+
+        new_rdn = ldap.dn.dn2str(split_newrdn)
+
+        return new_rdn
 
     def save(self, force_add=False, force_modify=False, using=None):
         """
@@ -165,6 +185,9 @@ class LDAPobject(object):
         that the "save" must be an SQL insert or update (or equivalent for
         non-SQL backends), respectively. Normally, they should not be set.
         """
+        if self._dn is None:
+            self._dn = self.construct_dn()
+
         if force_add and force_modify:
             raise ValueError("Cannot force both insert and updating in model saving.")
 
