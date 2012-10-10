@@ -290,7 +290,7 @@ class LDAPobject(object):
             # if dn attribute given, it must match the dn
             if name == dn0k:
                 if len(value) < 1:
-                    value = [ dn0v]
+                    value = [ dn0v ]
                 if dn0v.lower() not in set(v.lower() for v in value):
                     raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
             moddict[name] = value
