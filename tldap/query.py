@@ -220,10 +220,9 @@ class QuerySet(object):
         assert kwargs, \
                 'get_or_create() must be passed at least one keyword argument'
         defaults = kwargs.pop('defaults', {})
-        lookup = kwargs.copy()
         try:
             return self.get(**kwargs), False
-        except self.cls.DoesNotExist:
+        except self._cls.DoesNotExist:
             params = dict(kwargs)
             params.update(defaults)
             obj = self._cls(**params)

@@ -86,6 +86,16 @@ class FieldManager(LDAPmanager):
         kwargs = { self._key: self._value }
         return super(FieldManager,self).get_query_set().filter(**kwargs)
 
+    def get_or_create(self, **kwargs):
+        kwargs[self._key] = self._value
+        if self._key in kwargs['defaults']:
+            kwargs['defaults'][self._key].append(self._value)
+        return super(FieldManager,self).get_or_create(**kwargs)
+
+    def create(self, **kwargs):
+        kwargs[self._key] =self._value
+        return super(FieldManager,self).create(**kwargs)
+
 class FieldDescriptor(object):
     # This class ensures managers aren't accessible via model instances.
     # For example, Poll.objects works, but poll_obj.objects raises AttributeError.
@@ -107,11 +117,12 @@ class FieldDescriptor(object):
         return FieldManager(self._dst_key, getattr(instance, self._src_key), cls)
 
 class FieldListManager(LDAPmanager):
-    def __init__(self, key, value, cls=None):
+    def __init__(self, key, value, cls=None, groupcls=None):
         super(FieldListManager,self).__init__()
         self._key = key
         self._value = value
         self._cls = cls
+        self._groupcls = groupcls
 
     def get_query_set(self):
         value = self._value
@@ -124,6 +135,24 @@ class FieldListManager(LDAPmanager):
             query = query | tldap.Q(**kwargs)
         return super(FieldListManager,self).get_query_set().filter(query)
 
+    def get_or_create(self, **kwargs):
+        r = super(FieldListManager,self).get_or_create(**kwargs)
+        if r[1]:
+            if 'uid' not in self._groupcls.memberUid:
+                self._groupcls.memberUid.append(kwargs['uid'])
+        # yuck. but what else can we do?
+        self._groupcls.save()
+        return r
+
+    def create(self, **kwargs):
+        r = super(FieldListManager,self).create(**kwargs)
+        if not isinstance(self._groupcls.memberUid, list):
+            self._groupcls.memberUid = [ self._groupcls.memberUid ]
+        if 'uid' not in self._groupcls.memberUid:
+            self._groupcls.memberUid.append(kwargs['uid'])
+        # yuck. but what else can we do?
+        self._groupcls.save()
+        return r
 
 class FieldListDescriptor(object):
     # This class ensures managers aren't accessible via model instances.
@@ -143,4 +172,4 @@ class FieldListDescriptor(object):
 
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
-        return FieldListManager(self._dst_key, getattr(instance, self._src_key), cls)
+        return FieldListManager(self._dst_key, getattr(instance, self._src_key), cls, instance)

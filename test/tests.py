@@ -749,5 +749,36 @@ class ModelTest(unittest.TestCase):
         r = p2.groups.all()
         self.assertEqual(len(r), 1)
 
+        p1.groups.create(cn="drwho", gidNumber=12)
+
+        o,c = p1.groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
+        self.assertEqual(c, True)
+
+        o,c = p1.groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
+        self.assertEqual(c, False)
+
+        g1.users.create(uid="dalek", sn="Exterminate", cn="You will be Exterminated!")
+        self.assertEqual(g1.memberUid, [ 'tux', 'dalek' ])
+
+        o,c = g1.users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
+        self.assertEqual(c, True)
+        self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
+
+        o,c = g1.users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
+        self.assertEqual(c, False)
+        self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
+
+        r = g1.users.all()
+        self.assertEqual(len(r), 3)
+
+        r = g2.users.all()
+        self.assertEqual(len(r), 2)
+
+        r = p1.groups.all()
+        self.assertEqual(len(r), 4)
+
+        r = p2.groups.all()
+        self.assertEqual(len(r), 1)
+
 if __name__ == '__main__':
     unittest.main()
