@@ -22,8 +22,9 @@ import tldap.manager
 
 import django.conf
 
+#    objectClass = tldap.fields.CharField(required=True, max_instances=None)
+
 class organizationalUnit(tldap.base.LDAPobject):
-    # organizationalUnit
     ou = tldap.fields.CharField(required=True)
     userPassword = tldap.fields.CharField()
     searchGuide = tldap.fields.CharField()
@@ -51,12 +52,9 @@ class organizationalUnit(tldap.base.LDAPobject):
         return self.rdn_to_dn('dc')
 
     class Meta:
-        object_classes = { 'organizationalUnit' }
+        object_classes = { 'organizationalUnit', }
 
 class person(tldap.base.LDAPobject):
-    objectClass = tldap.fields.CharField(required=True, max_instances=None)
-
-    # person
     sn = tldap.fields.CharField(required=True)
     cn = tldap.fields.CharField(required=True)
     userPassword = tldap.fields.CharField()
@@ -64,7 +62,10 @@ class person(tldap.base.LDAPobject):
     seeAlso = tldap.fields.CharField()
     description = tldap.fields.CharField()
 
-    # organizationalPerson
+    class Meta:
+        object_classes = { 'person', }
+
+class organizationalPerson(tldap.base.LDAPobject):
     title = tldap.fields.CharField()
     x121Address = tldap.fields.CharField()
     registeredAddresss = tldap.fields.CharField()
@@ -72,7 +73,7 @@ class person(tldap.base.LDAPobject):
     preferredDeliveryMethod = tldap.fields.CharField()
     telexNumber = tldap.fields.CharField()
     teletexTerminalIdentifier = tldap.fields.CharField()
-    #telephoneNumber = tldap.fields.CharField()
+    telephoneNumber = tldap.fields.CharField()
     internationaliSDNNumber = tldap.fields.CharField()
     facsimileTelephoneNumber = tldap.fields.CharField()
     street = tldap.fields.CharField()
@@ -84,7 +85,10 @@ class person(tldap.base.LDAPobject):
     st = tldap.fields.CharField()
     l = tldap.fields.CharField()
 
-    # inetOrgPerson
+    class Meta:
+        object_classes = { 'organizationalPerson', }
+
+class inetOrgPerson(tldap.base.LDAPobject):
     audio = tldap.fields.CharField()
     businessCategory = tldap.fields.CharField()
     carLicense = tldap.fields.CharField()
@@ -113,30 +117,25 @@ class person(tldap.base.LDAPobject):
     userSMIMECertificate = tldap.fields.CharField()
     userPKCS12 = tldap.fields.CharField()
 
-    # groups
-    groups = tldap.manager.FieldDescriptor('uid', 'memberUid', 'tldap.models.posix_group')
-
-    def construct_dn(self):
-        return self.rdn_to_dn('uid')
-
     class Meta:
-        base_dn = django.conf.settings.LDAP_USER_BASE
-        object_classes = { 'top', 'person', 'organizationalPerson', 'inetOrgPerson', }
+        object_classes = { 'inetOrgPerson', }
 
-class posix_account(person):
-    # posixAccount
-    # cn = tldap.fields.CharField(required=True)
-    # uid = tldap.fields.CharField(required=True)
+class posixAccount(tldap.base.LDAPobject):
+    cn = tldap.fields.CharField(required=True)
+    uid = tldap.fields.CharField(required=True)
     uidNumber = tldap.fields.IntegerField(required=True)
     gidNumber = tldap.fields.IntegerField(required=True)
     homeDirectory = tldap.fields.CharField(required=True)
-    # userPassword = tldap.fields.CharField()
+    userPassword = tldap.fields.CharField()
     loginShell = tldap.fields.CharField()
     gecos = tldap.fields.CharField()
-    # description = tldap.fields.CharField()
+    description = tldap.fields.CharField()
 
-    # shadowAccount
-    # userPassword = tldap.fields.CharField()
+    class Meta:
+        object_classes = { 'posixAccount', }
+
+class shadowAccount(tldap.base.LDAPobject):
+    userPassword = tldap.fields.CharField()
     shadowLastChange = tldap.fields.CharField()
     shadowMin = tldap.fields.CharField()
     shadowMax = tldap.fields.CharField()
@@ -144,17 +143,16 @@ class posix_account(person):
     shadowInactive = tldap.fields.CharField()
     shadowExpire = tldap.fields.CharField()
     shadowFlag = tldap.fields.CharField()
-    # description = tldap.fields.CharField()
+    description = tldap.fields.CharField()
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_USER_BASE
-        object_classes = { 'posixAccount', 'shadowAccount', }
+        object_classes = { 'shadowAccount', }
 
-class samba_account(posix_account):
+class sambaSamAccount(tldap.base.LDAPobject):
     # sambaSamAccount
-    # uid = tldap.fields.CharField(required=True)
+    uid = tldap.fields.CharField(required=True)
     sambaSID = tldap.fields.CharField(required=True)
-    # cn = tldap.fields.CharField()
+    cn = tldap.fields.CharField()
     sambaLMPassword = tldap.fields.CharField()
     sambaNTPassword = tldap.fields.CharField()
     sambaPwdLastSet = tldap.fields.CharField()
@@ -164,12 +162,12 @@ class samba_account(posix_account):
     sambaPwdCanChange = tldap.fields.CharField()
     sambaPwdMustChange = tldap.fields.CharField()
     sambaAcctFlags = tldap.fields.CharField()
-    # displayName = tldap.fields.CharField()
+    displayName = tldap.fields.CharField()
     sambaHomePath = tldap.fields.CharField()
     sambaHomeDrive = tldap.fields.CharField()
     sambaLogonScript = tldap.fields.CharField()
     sambaProfilePath = tldap.fields.CharField()
-    # description = tldap.fields.CharField()
+    description = tldap.fields.CharField()
     sambaUserWorkstations = tldap.fields.CharField()
     sambaPrimaryGroupSID = tldap.fields.CharField()
     sambaDomainName = tldap.fields.CharField()
@@ -180,78 +178,66 @@ class samba_account(posix_account):
     sambaLogonHours = tldap.fields.CharField()
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_USER_BASE
         object_classes = { 'sambaSamAccount', }
 
-class posix_pwd_account(posix_account):
+class posix_pwd_account(tldap.base.LDAPobject):
     pwdAccountLockedTime = tldap.fields.CharField(required=True)
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_USER_BASE
         object_classes = { '???' }
 
-class ad_account(person):
+class ad_user(tldap.base.LDAPobject):
     sAMAccountName = tldap.fields.CharField(required=True)
     unicodePwd = tldap.fields.CharField()
     loginShell = tldap.fields.CharField()
     unixHomeDirectory = tldap.fields.CharField()
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_USER_BASE
         object_classes = { 'user', }
 
-class posix_group(tldap.base.LDAPobject):
-    objectClass = tldap.fields.CharField(required=True, max_instances=None)
-
-    # posixGroup
+class posixGroup(tldap.base.LDAPobject):
     cn = tldap.fields.CharField(required=True)
     gidNumber = tldap.fields.IntegerField(required=True)
     userPassword = tldap.fields.CharField()
     memberUid = tldap.fields.CharField(max_instances=None)
     description = tldap.fields.CharField()
 
-    # users
-    users = tldap.manager.FieldListDescriptor('memberUid', 'uid', person)
-
-    def construct_dn(self):
-        return self.rdn_to_dn('cn')
-
     class Meta:
-        base_dn = django.conf.settings.LDAP_GROUP_BASE
         object_classes = { 'posixGroup', }
 
-class samba_group(posix_group):
+class sambaGroupMapping(tldap.base.LDAPobject):
     # posixGroup
-    # gidNumber = tldap.fields.IntegerField(required=True)
+    gidNumber = tldap.fields.IntegerField(required=True)
     sambaSID = tldap.fields.CharField(required=True)
     sambaGroupType = tldap.fields.CharField(required=True)
     displayName = tldap.fields.CharField()
     sambaSIDList = tldap.fields.CharField()
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_GROUP_BASE
         object_classes = { 'sambaGroupMapping', }
 
-###########
-# TESTING #
-###########
-#posixAccount = ldap_account
 
-#pa = posixAccount()
-#print [ i.name for i in pa._meta.fields ]
-#pa.dn = "uid=brian,ou=People,dc=nodomain"
-#pa.cn = "Brian May"
-#pa.sn = "May"
-#pa.save()
 
-#qs = posixAccount.objects.filter(uid='brian')
-#print "qs", qs
-#for i in posixAccount.objects.filter(uid='brian'):
-#    for attr in dir(i):
-#        if attr != "objects":
-#            print "obj.%s = %s" % (attr, getattr(i, attr))
+class hperson(person, organizationalPerson, inetOrgPerson):
+    # groups
+    groups = tldap.manager.FieldDescriptor('uid', 'memberUid', 'tldap.models.hgroup')
 
-#a = posixAccount.objects.get(uid='brian')
-#a.description = [ "test only" ]
-#a.save()
+    def construct_dn(self):
+        return self.rdn_to_dn('uid')
 
+    class Meta:
+        base_dn = django.conf.settings.LDAP_USER_BASE
+
+class haccount(hperson, posixAccount, shadowAccount):
+    pass
+
+class hgroup(posixGroup):
+
+    # users
+    users = tldap.manager.FieldListDescriptor('memberUid', 'uid', hperson)
+
+    def construct_dn(self):
+        return self.rdn_to_dn('cn')
+
+    class Meta:
+        base_dn = django.conf.settings.LDAP_GROUP_BASE
