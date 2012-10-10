@@ -86,15 +86,16 @@ class LDAPmeta(type):
                         raise tldap.exceptions.FieldError('In class %r field %r from parent clashes '
                                      'with field of similar name from base class %r and is different type' %
                                         (name, field.name, base.__name__))
-                else:
-                    new_class._meta.add_field(field)
-                    parent_field_names[field.name] = field
+                parent_field_names[field.name] = field
 
             new_class._meta.object_classes.update(base._meta.object_classes)
             base_dn = new_class._meta.base_dn
             base_dn = getattr(base._meta.meta, 'base_dn', None)
             base_dn = getattr(new_class._meta.meta, 'base_dn', base_dn)
             new_class._meta.base_dn = base_dn
+
+        for _, field in parent_field_names.iteritems():
+            new_class._meta.add_field(field)
 
 
         new_class.add_to_class('objects', tldap.manager.LDAPmanager())
