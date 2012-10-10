@@ -25,6 +25,36 @@ import django.conf
 #import ldap
 #import ldap.filter
 
+class organizationalUnit(tldap.base.LDAPobject):
+    # organizationalUnit
+    ou = tldap.fields.CharField(required=True)
+    userPassword = tldap.fields.CharField()
+    searchGuide = tldap.fields.CharField()
+    seeAlso = tldap.fields.CharField()
+    businessCategory = tldap.fields.CharField()
+    x121Address = tldap.fields.CharField()
+    registeredAddress = tldap.fields.CharField()
+    destinationIndicator = tldap.fields.CharField()
+    preferredDeliveryMethod = tldap.fields.CharField()
+    telexNumber = tldap.fields.CharField()
+    teletexTerminalIdentifier = tldap.fields.CharField()
+    telephoneNumber = tldap.fields.CharField()
+    internationaliSDNNumber = tldap.fields.CharField()
+    facsimileTelephoneNumber = tldap.fields.CharField()
+    street = tldap.fields.CharField()
+    postOfficeBox = tldap.fields.CharField()
+    postalCode = tldap.fields.CharField()
+    postalAddress = tldap.fields.CharField()
+    physicalDeliveryOfficeName = tldap.fields.CharField()
+    st = tldap.fields.CharField()
+    l = tldap.fields.CharField()
+    description = tldap.fields.CharField()
+
+    def construct_dn(self):
+        return self.rdn_to_dn('dc')
+
+    class Meta:
+        object_classes = { 'organizationalUnit' }
 
 class person(tldap.base.LDAPobject):
     objectClass = tldap.fields.CharField(required=True, max_instances=None)

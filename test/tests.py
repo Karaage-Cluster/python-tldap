@@ -373,6 +373,9 @@ class ModelTest(unittest.TestCase):
         tldap.connection.reset(forceflushcache=True)
 
     def test_transactions(self):
+        organizationalUnit = tldap.models.organizationalUnit
+        organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org", ou="People")
+
         c = tldap.connection
         c.autoflushcache = False
 
