@@ -695,7 +695,11 @@ class ModelTest(unittest.TestCase):
         organizationalUnit = tldap.models.organizationalUnit
         organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org", ou="People")
 
+        organizationalUnit = tldap.models.organizationalUnit
+        organizationalUnit.objects.create(dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
+
         person = tldap.models.person
+        group = tldap.models.posix_group
 
         kwargs = {
             'givenName': "Tux",
@@ -706,8 +710,10 @@ class ModelTest(unittest.TestCase):
             'o': "Linux Rules",
             'userPassword': "silly",
         }
-        person.objects.create(uid="tux", **kwargs)
-        person.objects.create(uid="tuz", **kwargs)
+        p1 = person.objects.create(uid="tux", **kwargs)
+        p2 = person.objects.create(uid="tuz", **kwargs)
+        g = group.objects.create(cn="group1", gidNumber=10, memberUid="tux")
+        g = group.objects.create(cn="group2", gidNumber=11, memberUid="tux")
 
         self.assertEqual(
             person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
@@ -736,6 +742,12 @@ class ModelTest(unittest.TestCase):
 
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
+
+        r = p1.groups.all()
+        self.assertEqual(len(r), 2)
+
+        r = p2.groups.all()
+        self.assertEqual(len(r), 0)
 
 if __name__ == '__main__':
     unittest.main()
