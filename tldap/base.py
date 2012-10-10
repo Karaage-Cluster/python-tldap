@@ -288,7 +288,9 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # generate moddict values
-        moddict = {}
+        moddict = {
+            'objectClass': self._db_values[using]['objectClass']
+        }
         for field in fields:
             name = field.name
             value = getattr(self, name, [])
