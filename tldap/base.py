@@ -134,7 +134,7 @@ class LDAPobject(object):
         if self._dn is not None and self._base_dn is not None:
             raise ValueError("Makes no sense to set both dn and base_dn")
 
-        if self._base_dn is None:
+        if self._dn is None and self._base_dn is None:
             self._base_dn = self._meta.meta.base_dn
 
     def _reload_db_values(self, using=None):
