@@ -228,7 +228,7 @@ class LDAPobject(object):
         dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
 
         # ensure objectClass is set
-        self.objectClass = getattr(self, "objectClass", self._meta.object_classes)
+        self.objectClass = getattr(self, "objectClass", list(self._meta.object_classes))
 
         # generate moddict values
         moddict = {
