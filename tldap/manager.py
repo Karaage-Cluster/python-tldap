@@ -133,11 +133,15 @@ def _create_link_manager(superclass, linked_update):
                 return super(LinkManager,self).create(**kwargs)
 
             def add(self, obj):
+                linked_cls = self._linked_cls
+                assert isinstance(obj, linked_cls)
                 this_value = self._this_value
-                assert not isinstance(linked_value, list)
+                assert not isinstance(this_value, list)
 
                 linked_key = self._linked_key
                 linked_value = getattr(obj, linked_key, [])
+                if not isinstance(linked_value, list):
+                    linked_value = [ linked_value ]
 
                 if self._this_value not in linked_value:
                     linked_value.append(this_value)
@@ -145,11 +149,15 @@ def _create_link_manager(superclass, linked_update):
                 obj.save()
 
             def delete(self, obj):
+                linked_cls = self._linked_cls
+                assert isinstance(obj, linked_cls)
                 this_value = self._this_value
-                assert not isinstance(linked_value, list)
+                assert not isinstance(this_value, list)
 
                 linked_key = self._linked_key
                 linked_value = getattr(obj, linked_key, [])
+                if not isinstance(linked_value, list):
+                    linked_value = [ linked_value ]
 
                 if self._this_value in linked_value:
                     linked_value.remove(this_value)
@@ -205,7 +213,13 @@ def _create_link_manager(superclass, linked_update):
                 self._this_instance.save()
 
             def add(self, obj):
+                linked_cls = self._linked_cls
+                assert isinstance(obj, linked_cls)
+
+                this_instance = self._this_instance
                 this_value = self._this_value
+                if not isinstance(this_value, list):
+                    this_value = [ this_value ]
 
                 linked_key = self._linked_key
                 linked_value = getattr(obj, linked_key, [])
@@ -217,8 +231,13 @@ def _create_link_manager(superclass, linked_update):
                 this_instance.save()
 
             def delete(self, obj):
+                linked_cls = self._linked_cls
+                assert isinstance(obj, linked_cls)
+
                 this_instance = self._this_instance
                 this_value = self._this_value
+                if not isinstance(this_value, list):
+                    this_value = [ this_value ]
 
                 linked_key = self._linked_key
                 linked_value = getattr(obj, linked_key, [])

@@ -781,12 +781,21 @@ class ModelTest(unittest.TestCase):
         r = p2.secondary_groups.all()
         self.assertEqual(len(r), 1)
 
-        g1.primary_users.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
+        u = g1.primary_users.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
 
         r = g1.primary_users.all()
         self.assertEqual(len(r), 1)
 
-        r[0].primary_group
+        group = r[0].primary_group
+
+        group.primary_users.add(u)
+        group.primary_users.delete(u)
+
+        group.secondary_users.add(p1)
+        group.secondary_users.delete(p1)
+
+        u.secondary_groups.add(group)
+        u.secondary_groups.delete(group)
 
 if __name__ == '__main__':
     unittest.main()
