@@ -296,6 +296,15 @@ class ManyToOneDescriptor(object):
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
         return lm.get()
 
+    def __set__(self, instance, value):
+        this_key = self._this_key
+        linked_key = self._linked_key
+        if value is not None:
+            linked_value = getattr(value, linked_key)
+        else:
+            linked_value = None
+        setattr(instance, this_key, linked_value)
+
 class OneToManyDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
         self._this_key = this_key

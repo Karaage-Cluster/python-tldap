@@ -797,5 +797,14 @@ class ModelTest(unittest.TestCase):
         u.secondary_groups.add(group)
         u.secondary_groups.delete(group)
 
+        u.primary_group = g2
+        u.save()
+
+        r = g2.primary_users.all()
+        self.assertEqual(len(r), 1)
+
+        u.primary_group = None
+        self.assertRaises(tldap.exceptions.ValidationError, u.save)
+
 if __name__ == '__main__':
     unittest.main()
