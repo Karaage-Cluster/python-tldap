@@ -75,104 +75,115 @@ class ManagerDescriptor(object):
             raise AttributeError("Manager isn't accessible via %s instances" % type.__name__)
         return self._manager
 
-class FieldManager(LDAPmanager):
-    def __init__(self, key, value, cls=None):
-        super(FieldManager,self).__init__()
-        self._key = key
-        self._value = value
-        self._cls = cls
+class ManyToManyManager(LDAPmanager):
+    def __init__(self, this_instance, this_key, linked_cls, linked_key, linked_update):
+        super(ManyToManyManager,self).__init__()
+        self._this_instance = this_instance
+        self._this_key = this_key
+        self._this_value = getattr(this_instance, this_key)
+        self._linked_cls = linked_cls
+        self._linked_key = linked_key
+        self._linked_update = linked_update
+
+        self._cls = linked_cls
 
     def get_query_set(self):
-        kwargs = { self._key: self._value }
-        return super(FieldManager,self).get_query_set().filter(**kwargs)
-
-    def get_or_create(self, **kwargs):
-        kwargs[self._key] = self._value
-        if self._key in kwargs['defaults']:
-            kwargs['defaults'][self._key].append(self._value)
-        return super(FieldManager,self).get_or_create(**kwargs)
-
-    def create(self, **kwargs):
-        kwargs[self._key] =self._value
-        return super(FieldManager,self).create(**kwargs)
-
-class FieldDescriptor(object):
-    # This class ensures managers aren't accessible via model instances.
-    # For example, Poll.objects works, but poll_obj.objects raises AttributeError.
-    def __init__(self, src_key, dst_key, cls):
-        self._src_key = src_key
-        self._dst_key = dst_key
-
-        self._cls = cls
-
-    def __get__(self, instance, type=None):
-        cls = self._cls
-        if isinstance(cls, str):
-            module_name, _, name = cls.rpartition(".")
-            module = django.utils.importlib.import_module(module_name)
-            cls = getattr(module, name)
-
-        if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
-        return FieldManager(self._dst_key, getattr(instance, self._src_key), cls)
-
-class FieldListManager(LDAPmanager):
-    def __init__(self, key, value, cls=None, groupcls=None):
-        super(FieldListManager,self).__init__()
-        self._key = key
-        self._value = value
-        self._cls = cls
-        self._groupcls = groupcls
-
-    def get_query_set(self):
-        value = self._value
+        value = self._this_value
         if not isinstance(value, list):
             value = [ value ]
 
         query = None
         for v in value:
-            kwargs = { self._key: v }
+            kwargs = { self._linked_key: v }
             if query is None:
                 query = tldap.Q(**kwargs)
             else:
                 query = query | tldap.Q(**kwargs)
-        return super(FieldListManager,self).get_query_set().filter(query)
+        return super(ManyToManyManager,self).get_query_set().filter(query)
 
     def get_or_create(self, **kwargs):
-        r = super(FieldListManager,self).get_or_create(**kwargs)
-        if r[1]:
-            if 'uid' not in self._groupcls.memberUid:
-                self._groupcls.memberUid.append(kwargs['uid'])
-        # yuck. but what else can we do?
-        self._groupcls.save()
-        return r
+        if self._linked_update:
+            this_value = self._this_value
+            linked_key = self._linked_key
+            assert not isinstance(this_value, list)
+
+            kwargs[linked_key] = this_value
+            if linked_key in kwargs['defaults']:
+                kwargs['defaults'][linked_key].append(value)
+            return super(ManyToManyManager,self).get_or_create(**kwargs)
+        else:
+            this_instance = self._this_instance
+            this_key = self._this_key
+            this_value = self._this_value
+            linked_key = self._linked_key
+
+            if not isinstance(this_value, list):
+                this_value = [ this_value ]
+                setattr(this_instance, this_key, this_value)
+
+            r = super(ManyToManyManager,self).get_or_create(**kwargs)
+            v = kwargs[linked_key]
+            if v not in this_value:
+                this_value.append(v)
+
+            # yuck. but what else can we do?
+            this_instance.save()
+            return r
 
     def create(self, **kwargs):
-        r = super(FieldListManager,self).create(**kwargs)
-        if not isinstance(self._groupcls.memberUid, list):
-            self._groupcls.memberUid = [ self._groupcls.memberUid ]
-        if 'uid' not in self._groupcls.memberUid:
-            self._groupcls.memberUid.append(kwargs['uid'])
-        # yuck. but what else can we do?
-        self._groupcls.save()
-        return r
+        print "----------"
+        print kwargs
+        print "this instance", self._this_instance
+        print "this key", self._this_key
+        print "this value", self._this_value
+        print "linked cls",self._linked_cls
+        print "linked key",self._linked_key
+        print "linked update",self._linked_update
+        if self._linked_update:
+            this_value = self._this_value
+            linked_key = self._linked_key
+            assert not isinstance(this_value, list)
 
-class FieldListDescriptor(object):
+            kwargs[linked_key] = this_value
+            return super(ManyToManyManager,self).create(**kwargs)
+        else:
+            this_instance = self._this_instance
+            this_key = self._this_key
+            this_value = self._this_value
+            linked_key = self._linked_key
+
+            if not isinstance(this_value, list):
+                this_value = [ this_value ]
+                setattr(this_instance, this_key, this_value)
+
+            r = super(ManyToManyManager,self).create(**kwargs)
+            v = kwargs[linked_key]
+            if v not in this_value:
+                this_value.append(v)
+
+            # yuck. but what else can we do?
+            this_instance.save()
+            return r
+
+class ManyToManyDescriptor(object):
     # This class ensures managers aren't accessible via model instances.
     # For example, Poll.objects works, but poll_obj.objects raises AttributeError.
-    def __init__(self, src_key, dst_key, cls):
-        self._src_key = src_key
-        self._dst_key = dst_key
-
-        self._cls = cls
+    def __init__(self, this_key, linked_cls, linked_key, linked_update):
+        self._this_key = this_key
+        self._linked_cls = linked_cls
+        self._linked_key = linked_key
+        self._linked_update = linked_update
 
     def __get__(self, instance, type=None):
-        cls = self._cls
-        if isinstance(cls, str):
-            module_name, _, name = cls.rpartition(".")
+        linked_cls = self._linked_cls
+        if isinstance(linked_cls, str):
+            module_name, _, name = linked_cls.rpartition(".")
             module = django.utils.importlib.import_module(module_name)
-            cls = getattr(module, name)
+            try:
+                linked_cls = getattr(module, name)
+            except AttributeError:
+                raise AttributeError("%s reference cannot be found in %s class" % (linked_cls, type.__name__))
 
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
-        return FieldListManager(self._dst_key, getattr(instance, self._src_key), cls, instance)
+        return ManyToManyManager(instance, self._this_key, linked_cls, self._linked_key, self._linked_update)

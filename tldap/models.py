@@ -24,6 +24,8 @@ import django.conf
 
 #    objectClass = tldap.fields.CharField(required=True, max_instances=None)
 
+# Standard LDAP
+
 class organizationalUnit(tldap.base.LDAPobject):
     ou = tldap.fields.CharField(required=True)
     userPassword = tldap.fields.CharField()
@@ -47,9 +49,6 @@ class organizationalUnit(tldap.base.LDAPobject):
     st = tldap.fields.CharField()
     l = tldap.fields.CharField()
     description = tldap.fields.CharField()
-
-    def construct_dn(self):
-        return self.rdn_to_dn('dc')
 
     class Meta:
         object_classes = { 'organizationalUnit', }
@@ -148,8 +147,45 @@ class shadowAccount(tldap.base.LDAPobject):
     class Meta:
         object_classes = { 'shadowAccount', }
 
+class pwdPolicy(tldap.base.LDAPobject):
+    pwdAttribute = tldap.fields.CharField(required=True)
+    pwdAccountLockedTime = tldap.fields.CharField()
+    pwdMinAge = tldap.fields.CharField()
+    pwdMaxAge = tldap.fields.CharField()
+    pwdInHistory = tldap.fields.CharField()
+    pwdCheckQuality = tldap.fields.CharField()
+    pwdMinLength = tldap.fields.CharField()
+    pwdExpireWarning = tldap.fields.CharField()
+    pwdGraceAuthNLimit = tldap.fields.CharField()
+    pwdLockout = tldap.fields.CharField()
+    pwdLockoutDuration = tldap.fields.CharField()
+    pwdMaxFailure = tldap.fields.CharField()
+    pwdFailureCountInterval = tldap.fields.CharField()
+    pwdMustChange = tldap.fields.CharField()
+    pwdAllowUserChange = tldap.fields.CharField()
+    pwdSafeModify = tldap.fields.CharField()
+
+    class Meta:
+        object_classes = { 'pwdPolicy' }
+
+class posixGroup(tldap.base.LDAPobject):
+    cn = tldap.fields.CharField(required=True)
+    gidNumber = tldap.fields.IntegerField(required=True)
+    userPassword = tldap.fields.CharField()
+    memberUid = tldap.fields.CharField(max_instances=None)
+    description = tldap.fields.CharField()
+
+    class Meta:
+        object_classes = { 'posixGroup', }
+
+# Directory Server
+
+class Meow(tldap.base.LDAPobject):
+    nsAccountLock = tldap.fields.CharField()
+
+# Samba
+
 class sambaSamAccount(tldap.base.LDAPobject):
-    # sambaSamAccount
     uid = tldap.fields.CharField(required=True)
     sambaSID = tldap.fields.CharField(required=True)
     cn = tldap.fields.CharField()
@@ -180,31 +216,6 @@ class sambaSamAccount(tldap.base.LDAPobject):
     class Meta:
         object_classes = { 'sambaSamAccount', }
 
-class posix_pwd_account(tldap.base.LDAPobject):
-    pwdAccountLockedTime = tldap.fields.CharField(required=True)
-
-    class Meta:
-        object_classes = { '???' }
-
-class ad_user(tldap.base.LDAPobject):
-    sAMAccountName = tldap.fields.CharField(required=True)
-    unicodePwd = tldap.fields.CharField()
-    loginShell = tldap.fields.CharField()
-    unixHomeDirectory = tldap.fields.CharField()
-
-    class Meta:
-        object_classes = { 'user', }
-
-class posixGroup(tldap.base.LDAPobject):
-    cn = tldap.fields.CharField(required=True)
-    gidNumber = tldap.fields.IntegerField(required=True)
-    userPassword = tldap.fields.CharField()
-    memberUid = tldap.fields.CharField(max_instances=None)
-    description = tldap.fields.CharField()
-
-    class Meta:
-        object_classes = { 'posixGroup', }
-
 class sambaGroupMapping(tldap.base.LDAPobject):
     # posixGroup
     gidNumber = tldap.fields.IntegerField(required=True)
@@ -216,17 +227,74 @@ class sambaGroupMapping(tldap.base.LDAPobject):
     class Meta:
         object_classes = { 'sambaGroupMapping', }
 
+class eduPerson(tldap.base.LDAPobject):
+    eduPersonAffiliation = tldap.fields.CharField()
+    eduPersonNickname = tldap.fields.CharField()
+    eduPersonOrgDN = tldap.fields.CharField()
+    eduPersonOrgUnitDN = tldap.fields.CharField()
+    eduPersonPrimaryAffiliation = tldap.fields.CharField()
+    eduPersonPrincipalName = tldap.fields.CharField()
+    eduPersonEntitlement = tldap.fields.CharField()
+    eduPersonPrimaryOrgUnitDN = tldap.fields.CharField()
+    eduPersonScopedAffiliation = tldap.fields.CharField()
+    eduPersonTargetedID = tldap.fields.CharField()
+    eduPersonAssurance = tldap.fields.CharField()
 
+    class Meta:
+        object_classes = { 'eduPerson', }
+
+class auEduPerson(tldap.base.LDAPobject):
+    auEduPersonID = tldap.fields.CharField()
+    auEduPersonSalutation = tldap.fields.CharField()
+    auEduPersonPreferredGivenName = tldap.fields.CharField()
+    auEduPersonPreferredSurname = tldap.fields.CharField()
+    auEduPersonExpiryDate = tldap.fields.CharField()
+    auEduPersonType = tldap.fields.CharField()
+    auEduPersonSubType = tldap.fields.CharField()
+    auEduPersonEmailAddress = tldap.fields.CharField()
+    auEduPersonLibraryBarCodeNumber = tldap.fields.CharField()
+    auEduPersonLibraryPIN = tldap.fields.CharField()
+    auEduPersonActiveUnit = tldap.fields.CharField()
+    member = tldap.fields.CharField()
+    auEduPersonAffiliation = tldap.fields.CharField()
+    auEduPersonLegalName = tldap.fields.CharField()
+    auEduPersonAuthenticationLOA = tldap.fields.CharField()
+    auEduPersonIdentityLOA = tldap.fields.CharField()
+    auEduPersonSharedToken = tldap.fields.CharField()
+
+    class Meta:
+        object_classes = { 'auEduPerson', }
+
+# Active Directory
+
+class user(tldap.base.LDAPobject):
+    givenName = tldap.fields.CharField()
+    loginShell = tldap.fields.CharField()
+    mail = tldap.fields.CharField()
+    o = tldap.fields.CharField()
+    sAMAccountName = tldap.fields.CharField(required=True)
+    sn = tldap.fields.CharField()
+    telephoneNumber = tldap.fields.CharField()
+    title = tldap.fields.CharField()
+    unicodePwd = tldap.fields.CharField()
+    unixHomeDirectory = tldap.fields.CharField()
+    userAccountControl = tldap.fields.CharField()
+
+    class Meta:
+        object_classes = { 'user', }
+
+# OpenLDAP objects
 
 class hperson(person, organizationalPerson, inetOrgPerson):
     # groups
-    groups = tldap.manager.FieldDescriptor('uid', 'memberUid', 'tldap.models.hgroup')
+    groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True)
 
     def construct_dn(self):
         return self.rdn_to_dn('uid')
 
     class Meta:
         base_dn = django.conf.settings.LDAP_USER_BASE
+        object_classes = { 'top', }
 
 class haccount(hperson, posixAccount, shadowAccount):
     pass
@@ -234,10 +302,12 @@ class haccount(hperson, posixAccount, shadowAccount):
 class hgroup(posixGroup):
 
     # users
-    users = tldap.manager.FieldListDescriptor('memberUid', 'uid', hperson)
+    users = tldap.manager.ManyToManyDescriptor('memberUid', hperson, 'uid', False)
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
 
     class Meta:
         base_dn = django.conf.settings.LDAP_GROUP_BASE
+        object_classes = { 'top', }
+
