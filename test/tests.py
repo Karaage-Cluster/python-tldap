@@ -380,7 +380,7 @@ class ModelTest(unittest.TestCase):
         c = tldap.connection
         c.autoflushcache = False
 
-        person = tldap.models.hperson
+        person = tldap.models.std_person
         DoesNotExist = person.DoesNotExist
         AlreadyExists = person.AlreadyExists
         get = person.objects.get
@@ -699,8 +699,8 @@ class ModelTest(unittest.TestCase):
         organizationalUnit = tldap.models.organizationalUnit
         organizationalUnit.objects.create(dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
-        person = tldap.models.hperson
-        group = tldap.models.hgroup
+        person = tldap.models.std_person
+        group = tldap.models.std_group
 
         kwargs = {
             'givenName': "Tux",

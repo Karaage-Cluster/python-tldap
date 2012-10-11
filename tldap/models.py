@@ -278,16 +278,27 @@ class user(tldap.base.LDAPobject):
     title = tldap.fields.CharField()
     unicodePwd = tldap.fields.CharField()
     unixHomeDirectory = tldap.fields.CharField()
-    userAccountControl = tldap.fields.CharField()
+    userAccountControl = tldap.fields.IntegerField()
 
     class Meta:
         object_classes = { 'user', }
 
-# OpenLDAP objects
+class group(tldap.base.LDAPobject):
+    cn = tldap.fields.CharField()
+    gidNumber = tldap.fields.CharField()
+    name = tldap.fields.CharField()
+    sAMAccountName = tldap.fields.CharField()
 
-class hperson(person, organizationalPerson, inetOrgPerson):
+    class Meta:
+        object_classes = { 'group', }
+
+########################################################
+
+# standard objects
+
+class std_person(person, organizationalPerson, inetOrgPerson):
     # groups
-#    groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True, "users")
+#    groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True, "std_users")
 
     def construct_dn(self):
         return self.rdn_to_dn('uid')
@@ -296,14 +307,13 @@ class hperson(person, organizationalPerson, inetOrgPerson):
         base_dn = django.conf.settings.LDAP_USER_BASE
         object_classes = { 'top', }
 
-class haccount(hperson, posixAccount, shadowAccount):
+class std_account(std_person, posixAccount, shadowAccount):
     pass
 
-class hgroup(posixGroup):
-
+class std_group(posixGroup):
     # users
-    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', haccount, 'gidNumber', "primary_group")
-    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', hperson, 'uid', False, "secondary_groups")
+    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', std_account, 'gidNumber', "primary_group")
+    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', std_person, 'uid', False, "secondary_groups")
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
@@ -312,3 +322,76 @@ class hgroup(posixGroup):
         base_dn = django.conf.settings.LDAP_GROUP_BASE
         object_classes = { 'top', }
 
+# pwdPolicy objects
+
+class pp_person(std_person, pwdPolicy):
+    def is_locked(self):
+        return self.pwdAccountLockedTime is not None
+
+    def lock(self):
+        self.pwdAccountLockedTime='000001010000Z'
+
+    def unlock(self):
+        self.pwdAccountLockedTime=None
+
+
+class pp_account(std_account, pwdPolicy):
+    def is_locked(self):
+        return self.pwdAccountLockedTime is not None
+
+    def lock(self):
+        self.pwdAccountLockedTime='000001010000Z'
+
+    def unlock(self):
+        self.pwdAccountLockedTime=None
+
+class pp_group(posixGroup):
+    # users
+    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', pp_account, 'gidNumber', "primary_group")
+    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', pp_person, 'uid', False, "secondary_groups")
+
+    def construct_dn(self):
+        return self.rdn_to_dn('cn')
+
+# Active Directory
+
+class ad_person(std_person):
+    pass
+
+class ad_account(std_person, user):
+    def is_locked(self):
+        return self.userAccountControl != 512
+
+    def lock(self):
+        self.userAccountControl=514
+
+    def unlock(self):
+        self.userAccountControl=512
+
+    def save(self, *args, **kwargs):
+        if self.userAccountControl is None:
+            self.userAccountControl = 512
+        self.sAMAccountName = self.uid
+        self.unicodePwd = self.userPassword
+        self.unixUserPassword = self.userPassword
+        super(ad_account, self).save(*args, **kwargs)
+
+class ad_group(group):
+    # users
+    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', ad_account, 'gidNumber', "primary_group")
+    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', ad_person, 'uid', False, "secondary_groups")
+
+    def construct_dn(self):
+        return self.rdn_to_dn('cn')
+
+    class Meta:
+        base_dn = django.conf.settings.LDAP_GROUP_BASE
+        object_classes = { 'top', }
+
+    def save(self, *args, **kwargs):
+        self.member = [ user.dn for user in self.secondary_users ]
+        super(ad_group, self).save(*args, **kwargs)
+
+    class Meta:
+        base_dn = django.conf.settings.LDAP_GROUP_BASE
+        object_classes = { 'top', }
