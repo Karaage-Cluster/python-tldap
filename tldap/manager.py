@@ -70,19 +70,19 @@ class ManagerDescriptor(object):
     def __init__(self, manager):
         self._manager = manager
 
-    def __get__(self, instance, type=None):
+    def __get__(self, instance, cls=None):
         if instance is not None:
-            raise AttributeError("Manager isn't accessible via %s instances" % type.__name__)
+            raise AttributeError("Manager isn't accessible via %s instances" % cls.__name__)
         return self._manager
 
-def _lookup(cls, type):
+def _lookup(cls, in_cls):
     if isinstance(cls, str):
         module_name, _, name = cls.rpartition(".")
         module = django.utils.importlib.import_module(module_name)
         try:
             cls = getattr(module, name)
         except AttributeError:
-            AttributeError("%s reference cannot be found in %s class" % (linked_cls, type.__name__))
+            raise AttributeError("%s reference cannot be found in %s class" % (cls, in_cls.__name__))
     return(cls)
 
 def _create_link_manager(superclass, linked_update):
@@ -264,11 +264,11 @@ class ManyToManyDescriptor(object):
             reverse = ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_update)
             setattr(self._linked_cls, self._related_name, reverse)
 
-    def __get__(self, instance, type=None):
+    def __get__(self, instance, cls=None):
         if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
+            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
 
-        linked_cls = _lookup(self._linked_cls, type)
+        linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, self._linked_update)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
@@ -286,11 +286,11 @@ class ManyToOneDescriptor(object):
             reverse = OneToManyDescriptor(self._linked_key, cls, self._this_key)
             setattr(self._linked_cls, self._related_name, reverse)
 
-    def __get__(self, instance, type=None):
+    def __get__(self, instance, cls=None):
         if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
+            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
 
-        linked_cls = _lookup(self._linked_cls, type)
+        linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
@@ -309,11 +309,11 @@ class OneToManyDescriptor(object):
             reverse = ManyToOneDescriptor(self._linked_key, cls, self._this_key)
             setattr(self._linked_cls, self._related_name, reverse)
 
-    def __get__(self, instance, type=None):
+    def __get__(self, instance, cls=None):
         if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
+            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
 
-        linked_cls = _lookup(self._linked_cls, type)
+        linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, True)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
