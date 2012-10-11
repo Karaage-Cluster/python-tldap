@@ -36,6 +36,8 @@ class QuerySet(object):
     Represents a lazy database lookup for a set of objects.
     """
     def __init__(self, cls, alias):
+        assert cls is not None
+
         self._cls = cls
         self._alias = alias
         self._query = []
