@@ -131,14 +131,6 @@ class ManyToManyManager(LDAPmanager):
             return r
 
     def create(self, **kwargs):
-        print "----------"
-        print kwargs
-        print "this instance", self._this_instance
-        print "this key", self._this_key
-        print "this value", self._this_value
-        print "linked cls",self._linked_cls
-        print "linked key",self._linked_key
-        print "linked update",self._linked_update
         if self._linked_update:
             this_value = self._this_value
             linked_key = self._linked_key
