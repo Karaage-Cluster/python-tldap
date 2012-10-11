@@ -131,6 +131,31 @@ def _create_link_manager(superclass, linked_update):
 
                 kwargs[linked_key] = this_value
                 return super(LinkManager,self).create(**kwargs)
+
+            def add(self, obj):
+                this_value = self._this_value
+                assert len(this_value) == 1
+
+                linked_key = self._linked_key
+                linked_value = getattr(obj, linked_key, [])
+
+                if self._this_value not in linked_value:
+                    linked_value.append(this_value)
+
+                obj.save()
+
+            def delete(self, obj):
+                this_value = self._this_value
+                assert len(this_value) == 1
+
+                linked_key = self._linked_key
+                linked_value = getattr(obj, linked_key, [])
+
+                if self._this_value in linked_value:
+                    linked_value.remove(this_value)
+
+                obj.save()
+
         else:
 
             def get_or_create(self, **kwargs):
@@ -170,6 +195,39 @@ def _create_link_manager(superclass, linked_update):
                 # yuck. but what else can we do?
                 this_instance.save()
                 return r
+
+            def add(self, obj):
+                self._this_value += obj.linked_key
+                self._this_instance.save()
+
+            def delete(self, obj):
+                self._this_value -= obj.linked_key
+                self._this_instance.save()
+
+            def add(self, obj):
+                this_value = self._this_value
+
+                linked_key = self._linked_key
+                linked_value = getattr(obj, linked_key, [])
+                assert len(linked_value) == 1
+
+                if linked_value not in self._this_value:
+                    this_value.append(linked_value)
+
+                this_instance.save()
+
+            def delete(self, obj):
+                this_instance = self._this_instance
+                this_value = self._this_value
+
+                linked_key = self._linked_key
+                linked_value = getattr(obj, linked_key, [])
+                assert len(linked_value) == 1
+
+                if linked_value in self._this_value:
+                    this_value.remove(linked_value)
+
+                this_instance.save()
 
     return LinkManager
 
