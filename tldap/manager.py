@@ -75,107 +75,169 @@ class ManagerDescriptor(object):
             raise AttributeError("Manager isn't accessible via %s instances" % type.__name__)
         return self._manager
 
-class ManyToManyManager(LDAPmanager):
-    def __init__(self, this_instance, this_key, linked_cls, linked_key, linked_update):
-        super(ManyToManyManager,self).__init__()
-        self._this_instance = this_instance
-        self._this_key = this_key
-        self._this_value = getattr(this_instance, this_key)
-        self._linked_cls = linked_cls
-        self._linked_key = linked_key
-        self._linked_update = linked_update
+def _lookup(cls, type):
+    if isinstance(cls, str):
+        module_name, _, name = cls.rpartition(".")
+        module = django.utils.importlib.import_module(module_name)
+        try:
+            cls = getattr(module, name)
+        except AttributeError:
+            AttributeError("%s reference cannot be found in %s class" % (linked_cls, type.__name__))
+    return(cls)
 
-        self._cls = linked_cls
+def _create_link_manager(superclass, linked_update):
+    class LinkManager(superclass):
+        def __init__(self, this_instance, this_key, linked_cls, linked_key):
+            super(LinkManager,self).__init__()
 
-    def get_query_set(self):
-        value = self._this_value
-        if not isinstance(value, list):
-            value = [ value ]
+            self._this_instance = this_instance
+            self._this_key = this_key
+            self._this_value = getattr(this_instance, this_key)
+            self._linked_cls = linked_cls
+            self._linked_key = linked_key
 
-        query = None
-        for v in value:
-            kwargs = { self._linked_key: v }
-            if query is None:
-                query = tldap.Q(**kwargs)
-            else:
-                query = query | tldap.Q(**kwargs)
-        return super(ManyToManyManager,self).get_query_set().filter(query)
+            self._cls = linked_cls
 
-    def get_or_create(self, **kwargs):
-        if self._linked_update:
+        def get_query_set(self):
             this_value = self._this_value
-            linked_key = self._linked_key
-            assert not isinstance(this_value, list)
-
-            kwargs[linked_key] = this_value
-            if linked_key in kwargs['defaults']:
-                kwargs['defaults'][linked_key].append(value)
-            return super(ManyToManyManager,self).get_or_create(**kwargs)
-        else:
-            this_instance = self._this_instance
-            this_key = self._this_key
-            this_value = self._this_value
-            linked_key = self._linked_key
-
             if not isinstance(this_value, list):
                 this_value = [ this_value ]
-                setattr(this_instance, this_key, this_value)
 
-            r = super(ManyToManyManager,self).get_or_create(**kwargs)
-            v = kwargs[linked_key]
-            if v not in this_value:
-                this_value.append(v)
+            query = None
+            for v in this_value:
+                kwargs = { self._linked_key: v }
+                if query is None:
+                    query = tldap.Q(**kwargs)
+                else:
+                    query = query | tldap.Q(**kwargs)
+            return super(LinkManager,self).get_query_set().filter(query)
 
-            # yuck. but what else can we do?
-            this_instance.save()
-            return r
+        if linked_update:
 
-    def create(self, **kwargs):
-        if self._linked_update:
-            this_value = self._this_value
-            linked_key = self._linked_key
-            assert not isinstance(this_value, list)
+            def get_or_create(self, **kwargs):
+                this_value = self._this_value
+                linked_key = self._linked_key
+                assert not isinstance(this_value, list)
 
-            kwargs[linked_key] = this_value
-            return super(ManyToManyManager,self).create(**kwargs)
+                kwargs[linked_key] = this_value
+                if linked_key in kwargs['defaults']:
+                    kwargs['defaults'][linked_key].append(value)
+                return super(LinkManager,self).get_or_create(**kwargs)
+
+            def create(self, **kwargs):
+                this_value = self._this_value
+                linked_key = self._linked_key
+                assert not isinstance(this_value, list)
+
+                kwargs[linked_key] = this_value
+                return super(LinkManager,self).create(**kwargs)
         else:
-            this_instance = self._this_instance
-            this_key = self._this_key
-            this_value = self._this_value
-            linked_key = self._linked_key
 
-            if not isinstance(this_value, list):
-                this_value = [ this_value ]
-                setattr(this_instance, this_key, this_value)
+            def get_or_create(self, **kwargs):
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = self._this_value
+                linked_key = self._linked_key
 
-            r = super(ManyToManyManager,self).create(**kwargs)
-            v = kwargs[linked_key]
-            if v not in this_value:
-                this_value.append(v)
+                if not isinstance(this_value, list):
+                    this_value = [ this_value ]
+                    setattr(this_instance, this_key, this_value)
 
-            # yuck. but what else can we do?
-            this_instance.save()
-            return r
+                r = super(LinkManager,self).get_or_create(**kwargs)
+                v = kwargs[linked_key]
+                if v not in this_value:
+                    this_value.append(v)
+
+                # yuck. but what else can we do?
+                this_instance.save()
+                return r
+
+            def create(self, **kwargs):
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = self._this_value
+                linked_key = self._linked_key
+
+                if not isinstance(this_value, list):
+                    this_value = [ this_value ]
+                    setattr(this_instance, this_key, this_value)
+
+                r = super(LinkManager,self).create(**kwargs)
+                v = kwargs[linked_key]
+                if v not in this_value:
+                    this_value.append(v)
+
+                # yuck. but what else can we do?
+                this_instance.save()
+                return r
+
+    return LinkManager
 
 class ManyToManyDescriptor(object):
-    # This class ensures managers aren't accessible via model instances.
-    # For example, Poll.objects works, but poll_obj.objects raises AttributeError.
-    def __init__(self, this_key, linked_cls, linked_key, linked_update):
+    def __init__(self, this_key, linked_cls, linked_key, linked_update, related_name=None):
         self._this_key = this_key
         self._linked_cls = linked_cls
         self._linked_key = linked_key
         self._linked_update = linked_update
+        self._related_name = related_name
+
+    def contribute_to_class(self, cls, name):
+        setattr(cls, name, self)
+        if self._related_name is not None:
+            reverse = ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_update)
+            setattr(self._linked_cls, self._related_name, reverse)
 
     def __get__(self, instance, type=None):
-        linked_cls = self._linked_cls
-        if isinstance(linked_cls, str):
-            module_name, _, name = linked_cls.rpartition(".")
-            module = django.utils.importlib.import_module(module_name)
-            try:
-                linked_cls = getattr(module, name)
-            except AttributeError:
-                raise AttributeError("%s reference cannot be found in %s class" % (linked_cls, type.__name__))
-
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
-        return ManyToManyManager(instance, self._this_key, linked_cls, self._linked_key, self._linked_update)
+
+        linked_cls = _lookup(self._linked_cls, type)
+        superclass = linked_cls.objects.__class__
+        LinkManager = _create_link_manager(superclass, self._linked_update)
+        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+
+class ManyToOneDescriptor(object):
+    def __init__(self, this_key, linked_cls, linked_key, related_name=None):
+        self._this_key = this_key
+        self._linked_cls = linked_cls
+        self._linked_key = linked_key
+        self._related_name = related_name
+
+    def contribute_to_class(self, cls, name):
+        setattr(cls, name, self)
+        if self._related_name is not None:
+            reverse = OneToManyDescriptor(self._linked_key, cls, self._this_key)
+            setattr(self._linked_cls, self._related_name, reverse)
+
+    def __get__(self, instance, type=None):
+        if instance is None:
+            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
+
+        linked_cls = _lookup(self._linked_cls, type)
+        superclass = linked_cls.objects.__class__
+        LinkManager = _create_link_manager(superclass, False)
+        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        return lm.get()
+
+class OneToManyDescriptor(object):
+    def __init__(self, this_key, linked_cls, linked_key, related_name=None):
+        self._this_key = this_key
+        self._linked_cls = linked_cls
+        self._linked_key = linked_key
+        self._related_name = related_name
+
+    def contribute_to_class(self, cls, name):
+        setattr(cls, name, self)
+        if self._related_name is not None:
+            reverse = ManyToOneDescriptor(self._linked_key, cls, self._this_key)
+            setattr(self._linked_cls, self._related_name, reverse)
+
+    def __get__(self, instance, type=None):
+        if instance is None:
+            raise AttributeError("Manager isn't accessible via %s class" % type.__name__)
+
+        linked_cls = _lookup(self._linked_cls, type)
+        superclass = linked_cls.objects.__class__
+        LinkManager = _create_link_manager(superclass, True)
+        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+

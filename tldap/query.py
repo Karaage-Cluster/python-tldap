@@ -102,7 +102,10 @@ class QuerySet(object):
     # METHODS THAT DO DATABASE QUERIES #
     ####################################
 
-    def _get_filter(self, q):
+    def _get_filter(self, q, fields=None):
+        if fields is None:
+            fields = { f.name: f for f in self._cls._meta.fields }
+
         if q.negated:
             op = "!"
         elif q.connector == "AND":
@@ -115,9 +118,12 @@ class QuerySet(object):
         search = []
         for child in q.children:
             if isinstance(child, django.utils.tree.Node):
-                search.append(self._get_filter(child))
+                search.append(self._get_filter(child, fields))
             else:
-                search.append(ldap.filter.filter_format("(%s=%s)",[child[0], child[1]]))
+                name,value = child
+                if name in fields:
+                    value = fields[name].value_to_db(value)
+                search.append(ldap.filter.filter_format("(%s=%s)",[name, value]))
 
         return "("+ op + "".join(search) + ")"
 

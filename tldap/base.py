@@ -40,6 +40,7 @@ class LDAPmeta(type):
         attr_meta = attrs.pop('Meta', None)
 
         new_class.add_to_class('_meta', tldap.options.Options(name, attr_meta))
+        new_class.add_to_class('objects', tldap.manager.LDAPmanager())
 
         # Add all attributes to the class.
         ObjectDoesNotExist = tldap.exceptions.ObjectDoesNotExist
@@ -89,16 +90,12 @@ class LDAPmeta(type):
                 parent_field_names[field.name] = field
 
             new_class._meta.object_classes.update(base._meta.object_classes)
-            base_dn = new_class._meta.base_dn
-            base_dn = getattr(base._meta.meta, 'base_dn', None)
-            base_dn = getattr(new_class._meta.meta, 'base_dn', base_dn)
+            base_dn = getattr(new_class._meta, 'base_dn', None) or getattr(base._meta, 'base_dn', None)
             new_class._meta.base_dn = base_dn
 
         for _, field in parent_field_names.iteritems():
             new_class._meta.add_field(field)
 
-
-        new_class.add_to_class('objects', tldap.manager.LDAPmanager())
         return new_class
 
     def add_to_class(cls, name, value):

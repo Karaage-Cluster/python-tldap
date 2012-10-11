@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: UTF-8 -*-
 
 # Copyright 2012 VPAC
 #
@@ -707,7 +708,7 @@ class ModelTest(unittest.TestCase):
             'cn': "Tux Torvalds",
             'telephoneNumber': "000",
             'mail': "tuz@example.org",
-            'o': "Linux Rules",
+            'o': "Linux Rules £",
             'userPassword': "silly",
         }
         p1 = person.objects.create(uid="tux", **kwargs)
@@ -737,48 +738,55 @@ class ModelTest(unittest.TestCase):
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
 
-        r = g1.users.all()
+        r = g1.secondary_users.all()
         self.assertEqual(len(r), 1)
 
-        r = g2.users.all()
+        r = g2.secondary_users.all()
         self.assertEqual(len(r), 2)
 
-        r = p1.groups.all()
+        r = p1.secondary_groups.all()
         self.assertEqual(len(r), 2)
 
-        r = p2.groups.all()
+        r = p2.secondary_groups.all()
         self.assertEqual(len(r), 1)
 
-        p1.groups.create(cn="drwho", gidNumber=12)
+        p1.secondary_groups.create(cn="drwho", gidNumber=12)
 
-        o,c = p1.groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
+        o,c = p1.secondary_groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
         self.assertEqual(c, True)
 
-        o,c = p1.groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
+        o,c = p1.secondary_groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
         self.assertEqual(c, False)
 
-        g1.users.create(uid="dalek", sn="Exterminate", cn="You will be Exterminated!")
+        g1.secondary_users.create(uid="dalek", sn="Exterminate", cn="You will be Exterminated!")
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek' ])
 
-        o,c = g1.users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
+        o,c = g1.secondary_users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
         self.assertEqual(c, True)
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
 
-        o,c = g1.users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
+        o,c = g1.secondary_users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
         self.assertEqual(c, False)
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
 
-        r = g1.users.all()
+        r = g1.secondary_users.all()
         self.assertEqual(len(r), 3)
 
-        r = g2.users.all()
+        r = g2.secondary_users.all()
         self.assertEqual(len(r), 2)
 
-        r = p1.groups.all()
+        r = p1.secondary_groups.all()
         self.assertEqual(len(r), 4)
 
-        r = p2.groups.all()
+        r = p2.secondary_groups.all()
         self.assertEqual(len(r), 1)
+
+        g1.primary_users.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
+
+        r = g1.primary_users.all()
+        self.assertEqual(len(r), 1)
+
+        r[0].primary_group
 
 if __name__ == '__main__':
     unittest.main()

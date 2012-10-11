@@ -287,7 +287,7 @@ class user(tldap.base.LDAPobject):
 
 class hperson(person, organizationalPerson, inetOrgPerson):
     # groups
-    groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True)
+#    groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True, "users")
 
     def construct_dn(self):
         return self.rdn_to_dn('uid')
@@ -302,7 +302,8 @@ class haccount(hperson, posixAccount, shadowAccount):
 class hgroup(posixGroup):
 
     # users
-    users = tldap.manager.ManyToManyDescriptor('memberUid', hperson, 'uid', False)
+    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', haccount, 'gidNumber', "primary_group")
+    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', hperson, 'uid', False, "secondary_groups")
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
