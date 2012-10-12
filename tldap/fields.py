@@ -33,20 +33,17 @@ class Field(object):
         # ensure value is valid
         self.validate(value)
 
-        # ensure value is a new list. We have to make a copy, as
-        # we will be changing it.
-        if value is None:
-            value = []
-        elif not isinstance(value, list):
-            value = [value]
+        # do we expect a list or just a single value?
+        if self._max_instances == 1:
+            assert not isinstance(value, list)
+            value = [ self.value_to_db(value) ]
         else:
-            value = list(value)
-
-        # convert every value in list
-        for i,v in enumerate(value):
-            value[i] = self.value_to_db(v)
+            assert isinstance(value, list)
+            for i,v in enumerate(value):
+                value[i] = self.value_to_db(v)
 
         # return result
+        assert isinstance(value, list)
         return value
 
     def to_python(self, value):
@@ -76,26 +73,31 @@ class Field(object):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-
-        # ensure value is a list
-        if value is None:
-            value = []
-        elif not isinstance(value, list):
-            value = [ value ]
-
-        # validate every item in list
-        for v in value:
-            self.value_validate(v)
-
-        # check this required value is given
-        if self._required:
-            if value is None or len(value)==0:
-                raise tldap.exceptions.ValidationError("%r is required"%self.name)
-
-        # check max_instances not exceeded
-        if self._max_instances is not None:
-            if len(value) > self._max_instances:
-                raise tldap.exceptions.ValidationError("%r is has more then %d values"%(self.name, self._max_instances))
+        # do we expect a list or just a single value?
+        if self._max_instances == 1:
+            # check object type
+            if isinstance(value, list):
+                raise tldap.exceptions.ValidationError("%r is a list and max_instances is %s"%(self.name, self._max_instances))
+            # check this required value is given
+            if self._required:
+                if value is None:
+                    raise tldap.exceptions.ValidationError("%r is required"%self.name)
+            # validate the value
+            self.value_validate(value)
+        else:
+            # check object type
+            if not isinstance(value, list):
+                raise tldap.exceptions.ValidationError("%r is not a list and max_instances is %s"%(self.name, self._max_instances))
+            # check maximum instances
+            if self._max_instances is not None and len(value) > self._max_instances:
+                raise tldap.exceptions.ValidationError("%r exceeds max_instances of %d"%(self.name, self._max_instances))
+            # check this required value is given
+            if self._required:
+                if len(value) == 0:
+                    raise tldap.exceptions.ValidationError("%r is required"%self.name)
+            # validate the value
+            for i,v in enumerate(value):
+                self.value_validate(v)
 
     def clean(self, value):
         """
@@ -109,6 +111,7 @@ class Field(object):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
+        assert value is None or isinstance(value, str)
         return value
 
     def value_to_python(self, value):
@@ -117,6 +120,8 @@ class Field(object):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
         return value
 
     def value_validate(self, value):
@@ -124,7 +129,8 @@ class Field(object):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        pass
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
 
 
 class CharField(Field):

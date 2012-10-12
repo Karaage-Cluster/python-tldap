@@ -121,9 +121,20 @@ class QuerySet(object):
                 search.append(self._get_filter(child, fields))
             else:
                 name,value = child
-                if name in fields:
-                    value = fields[name].value_to_db(value)
-                search.append(ldap.filter.filter_format("(%s=%s)",[name, value]))
+                if isinstance(value, list) and len(value)==1:
+                    value = value[0]
+                    assert isinstance(value, str)
+                if isinstance(value, list):
+                    s = []
+                    for v in value:
+                        if name in fields:
+                            v = fields[name].value_to_db(v)
+                        s.append(ldap.filter.filter_format("(%s=%s)",[name, v]))
+                    search.append("(&".join(search) + ")")
+                else:
+                    if name in fields:
+                        value = fields[name].value_to_db(value)
+                    search.append(ldap.filter.filter_format("(%s=%s)",[name, value]))
 
         return "("+ op + "".join(search) + ")"
 

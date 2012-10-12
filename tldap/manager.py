@@ -85,21 +85,22 @@ def _lookup(cls, in_cls):
             raise AttributeError("%s reference cannot be found in %s class" % (cls, in_cls.__name__))
     return(cls)
 
-def _create_link_manager(superclass, linked_update):
+def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
     class LinkManager(superclass):
         def __init__(self, this_instance, this_key, linked_cls, linked_key):
             super(LinkManager,self).__init__()
 
             self._this_instance = this_instance
             self._this_key = this_key
-            self._this_value = getattr(this_instance, this_key)
             self._linked_cls = linked_cls
             self._linked_key = linked_key
 
             self._cls = linked_cls
 
         def get_query_set(self):
-            this_value = self._this_value
+            this_instance = self._this_instance
+            this_key = self._this_key
+            this_value = getattr(this_instance, this_key)
             if not isinstance(this_value, list):
                 this_value = [ this_value ]
 
@@ -112,74 +113,120 @@ def _create_link_manager(superclass, linked_update):
                     query = query | tldap.Q(**kwargs)
             return super(LinkManager,self).get_query_set().filter(query)
 
-        if linked_update:
+        if linked_has_foreign_key:
 
             def get_or_create(self, **kwargs):
-                this_value = self._this_value
-                linked_key = self._linked_key
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
 
-                kwargs[linked_key] = this_value
-                if linked_key in kwargs['defaults']:
-                    kwargs['defaults'][linked_key].append(value)
+                linked_key = self._linked_key
+
+                if foreign_key_is_list:
+                    kwargs[linked_key] = [ this_value ]
+                    if linked_key in kwargs['defaults']:
+                        assert isinstance(kwargs['defaults'][linked_key], list)
+                        kwargs['defaults'][linked_key].append(this_value)
+                else:
+                    kwargs[linked_key] = this_value
+                    if linked_key in kwargs['defaults']:
+                        assert not isinstance(kwargs['defaults'][linked_key], list)
+                        assert kwargs['defaults'][linked_key] == this_value
                 return super(LinkManager,self).get_or_create(**kwargs)
 
             def create(self, **kwargs):
-                this_value = self._this_value
-                linked_key = self._linked_key
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
 
-                kwargs[linked_key] = this_value
+                linked_key = self._linked_key
+
+                if foreign_key_is_list:
+                    kwargs[linked_key] = [ this_value ]
+                else:
+                    kwargs[linked_key] = this_value
                 return super(LinkManager,self).create(**kwargs)
 
             def add(self, obj):
-                linked_cls = self._linked_cls
-                assert isinstance(obj, linked_cls)
-                this_value = self._this_value
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
 
+                linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key, [])
-                if not isinstance(linked_value, list):
-                    linked_value = [ linked_value ]
+                linked_value = getattr(obj, linked_key)
+                assert isinstance(obj, linked_cls)
 
-                if self._this_value not in linked_value:
-                    linked_value.append(this_value)
+                if foreign_key_is_list:
+                    assert isinstance(linked_value, list)
+                    if this_value not in linked_value:
+                        linked_value.append(this_value)
+                else:
+                    assert not isinstance(linked_value, list)
+                    linked_value = this_value
+                    setattr(obj, linked_key, linked_value)
 
                 obj.save()
 
             def delete(self, obj):
-                linked_cls = self._linked_cls
-                assert isinstance(obj, linked_cls)
-                this_value = self._this_value
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
 
+                linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key, [])
-                if not isinstance(linked_value, list):
-                    linked_value = [ linked_value ]
+                linked_value = getattr(obj, linked_key)
+                assert isinstance(obj, linked_cls)
 
-                if self._this_value in linked_value:
-                    linked_value.remove(this_value)
+                if foreign_key_is_list:
+                    assert isinstance(linked_value, list)
+                    if this_value in linked_value:
+                        linked_value.remove(this_value)
+                else:
+                    assert not isinstance(linked_value, list)
+                    assert linked_value is None or linked_value == this_value
+                    linked_value = None
+                    setattr(obj, linked_key, linked_value)
 
                 obj.save()
+
+            def replace(self, value):
+                for obj in self.get_query_set():
+                    self.delete(obj)
+                if foreign_key_is_list:
+                    assert isinstance(value, list)
+                    for obj in value:
+                        self.add(value)
+                else:
+                    assert not isinstance(value, list)
+                    self.add(value)
 
         else:
 
             def get_or_create(self, **kwargs):
                 this_instance = self._this_instance
                 this_key = self._this_key
-                this_value = self._this_value
+                this_value = getattr(this_instance, this_key)
                 linked_key = self._linked_key
-
-                if not isinstance(this_value, list):
-                    this_value = [ this_value ]
-                    setattr(this_instance, this_key, this_value)
+                linked_value = kwargs[linked_key]
+                assert not isinstance(linked_value, list)
 
                 r = super(LinkManager,self).get_or_create(**kwargs)
-                v = kwargs[linked_key]
-                if v not in this_value:
-                    this_value.append(v)
+
+                if foreign_key_is_list:
+                    assert isinstance(this_value, list)
+                    if linked_value not in this_value:
+                        this_value.append(linked_value)
+                else:
+                    assert not isinstance(this_value, list)
+                    assert this_value is None or this_value == r[0]
+                    this_value = linked_value
+                    self._this_value = this_value
+                    setattr(this_instance, this_key, this_value)
 
                 # yuck. but what else can we do?
                 this_instance.save()
@@ -188,80 +235,112 @@ def _create_link_manager(superclass, linked_update):
             def create(self, **kwargs):
                 this_instance = self._this_instance
                 this_key = self._this_key
-                this_value = self._this_value
+                this_value = getattr(this_instance, this_key)
                 linked_key = self._linked_key
-
-                if not isinstance(this_value, list):
-                    this_value = [ this_value ]
-                    setattr(this_instance, this_key, this_value)
+                linked_value = kwargs[linked_key]
+                assert not isinstance(linked_value, list)
 
                 r = super(LinkManager,self).create(**kwargs)
                 v = kwargs[linked_key]
-                if v not in this_value:
-                    this_value.append(v)
+
+                if foreign_key_is_list:
+                    assert isinstance(this_value, list)
+                    if linked_value not in this_value:
+                        this_value.append(linked_value)
+                else:
+                    assert not isinstance(this_value, list)
+                    assert this_value is None or this_value == linked_value
+                    this_value = None
+                    setattr(this_instance, this_key, this_value)
 
                 # yuck. but what else can we do?
                 this_instance.save()
                 return r
 
             def add(self, obj):
-                self._this_value += obj.linked_key
-                self._this_instance.save()
-
-            def delete(self, obj):
-                self._this_value -= obj.linked_key
-                self._this_instance.save()
-
-            def add(self, obj):
-                linked_cls = self._linked_cls
-                assert isinstance(obj, linked_cls)
-
                 this_instance = self._this_instance
-                this_value = self._this_value
-                if not isinstance(this_value, list):
-                    this_value = [ this_value ]
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
 
+                linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key, [])
+                linked_value = getattr(obj, linked_key)
+                assert isinstance(obj, linked_cls)
                 assert not isinstance(linked_value, list)
 
-                if linked_value not in self._this_value:
-                    this_value.append(linked_value)
+                if foreign_key_is_list:
+                    assert isinstance(this_value, list)
+                    if linked_value not in this_value:
+                        this_value.append(linked_value)
+                else:
+                    assert not isinstance(this_value, list)
+                    assert this_value is None or this_value == linked_value
+                    this_value = linked_value
+                    self._this_value = this_value
+                    setattr(this_instance, this_key, this_value)
 
                 this_instance.save()
 
             def delete(self, obj):
-                linked_cls = self._linked_cls
-                assert isinstance(obj, linked_cls)
-
                 this_instance = self._this_instance
-                this_value = self._this_value
-                if not isinstance(this_value, list):
-                    this_value = [ this_value ]
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
 
+                linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key, [])
+                linked_value = getattr(obj, linked_key)
+                assert isinstance(obj, linked_cls)
                 assert not isinstance(linked_value, list)
 
-                if linked_value in self._this_value:
-                    this_value.remove(linked_value)
+                if foreign_key_is_list:
+                    assert isinstance(this_value, list)
+                    if linked_value in this_value:
+                        this_value.remove(linked_value)
+                else:
+                    assert not isinstance(this_value, list)
+                    assert this_value is None or this_value == linked_value
+                    this_value = None
+                    setattr(this_instance, this_key, this_value)
 
                 this_instance.save()
+
+            def replace(self, value):
+                this_instance = self._this_instance
+                this_key = self._this_key
+                this_value = getattr(this_instance, this_key)
+
+                # delete existing value
+                if foreign_key_is_list:
+                    this_value = []
+                else:
+                    this_value = None
+                self._this_value = this_value
+                setattr(this_instance, this_key, this_value)
+
+                # set new value
+                if foreign_key_is_list:
+                    assert isinstance(value, list)
+                    for obj in value:
+                        self.add(obj)
+                else:
+                    assert not isinstance(value, list)
+                    if value is not None:
+                        self.add(value)
 
     return LinkManager
 
 class ManyToManyDescriptor(object):
-    def __init__(self, this_key, linked_cls, linked_key, linked_update, related_name=None):
+    def __init__(self, this_key, linked_cls, linked_key, linked_has_foreign_key, related_name=None):
         self._this_key = this_key
         self._linked_cls = linked_cls
         self._linked_key = linked_key
-        self._linked_update = linked_update
+        self._linked_has_foreign_key = linked_has_foreign_key
         self._related_name = related_name
 
     def contribute_to_class(self, cls, name):
         setattr(cls, name, self)
         if self._related_name is not None:
-            reverse = ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_update)
+            reverse = ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_has_foreign_key)
             setattr(self._linked_cls, self._related_name, reverse)
 
     def __get__(self, instance, cls=None):
@@ -270,8 +349,16 @@ class ManyToManyDescriptor(object):
 
         linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
-        LinkManager = _create_link_manager(superclass, self._linked_update)
+        LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+
+    def __set__(self, instance, value):
+        assert isinstance(value, list)
+        linked_cls = _lookup(self._linked_cls, instance.__class__)
+        superclass = linked_cls.objects.__class__
+        LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
+        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm.replace(value)
 
 class ManyToOneDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
@@ -292,18 +379,17 @@ class ManyToOneDescriptor(object):
 
         linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
-        LinkManager = _create_link_manager(superclass, False)
+        LinkManager = _create_link_manager(superclass, False, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
         return lm.get()
 
     def __set__(self, instance, value):
-        this_key = self._this_key
-        linked_key = self._linked_key
-        if value is not None:
-            linked_value = getattr(value, linked_key)
-        else:
-            linked_value = None
-        setattr(instance, this_key, linked_value)
+        assert not isinstance(value, list)
+        linked_cls = _lookup(self._linked_cls, instance.__class__)
+        superclass = linked_cls.objects.__class__
+        LinkManager = _create_link_manager(superclass, False, False)
+        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm.replace(value)
 
 class OneToManyDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
@@ -324,6 +410,13 @@ class OneToManyDescriptor(object):
 
         linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
-        LinkManager = _create_link_manager(superclass, True)
+        LinkManager = _create_link_manager(superclass, True, False)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
 
+    def __set__(self, instance, value):
+        assert isinstance(value, list)
+        linked_cls = _lookup(self._linked_cls, instance.__class__)
+        superclass = linked_cls.objects.__class__
+        LinkManager = _create_link_manager(superclass, True, False)
+        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm.replace(value)

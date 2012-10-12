@@ -713,7 +713,7 @@ class ModelTest(unittest.TestCase):
         }
         p1 = person.objects.create(uid="tux", **kwargs)
         p2 = person.objects.create(uid="tuz", **kwargs)
-        g1 = group.objects.create(cn="group1", gidNumber=10, memberUid="tux")
+        g1 = group.objects.create(cn="group1", gidNumber=10, memberUid=[ "tux" ])
         g2 = group.objects.create(cn="group2", gidNumber=11, memberUid=[ "tux", "tuz" ])
 
         self.assertEqual(
@@ -789,7 +789,7 @@ class ModelTest(unittest.TestCase):
         group = r[0].primary_group
 
         group.primary_users.add(u)
-        group.primary_users.delete(u)
+        self.assertRaises(tldap.exceptions.ValidationError, group.primary_users.delete, u)
 
         group.secondary_users.add(p1)
         group.secondary_users.delete(p1)
