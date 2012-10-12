@@ -311,9 +311,10 @@ class std_account(std_person, posixAccount, shadowAccount):
     pass
 
 class std_group(posixGroup):
-    # users
-    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', std_account, 'gidNumber', "primary_group")
-    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', std_person, 'uid', False, "secondary_groups")
+    # accounts
+    primary_accounts = tldap.manager.OneToManyDescriptor('gidNumber', std_account, 'gidNumber', "primary_group")
+    secondary_people = tldap.manager.ManyToManyDescriptor('memberUid', std_person, 'uid', False, "secondary_groups")
+    secondary_accounts = tldap.manager.ManyToManyDescriptor('memberUid', std_account, 'uid', False, "secondary_groups")
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
@@ -346,9 +347,10 @@ class pp_account(std_account, pwdPolicy):
         self.pwdAccountLockedTime=None
 
 class pp_group(posixGroup):
-    # users
-    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', pp_account, 'gidNumber', "primary_group")
-    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', pp_person, 'uid', False, "secondary_groups")
+    # accounts
+    primary_accounts = tldap.manager.OneToManyDescriptor('gidNumber', pp_account, 'gidNumber', "primary_group")
+    secondary_people = tldap.manager.ManyToManyDescriptor('memberUid', pp_person, 'uid', False, "secondary_groups")
+    secondary_accounts = tldap.manager.ManyToManyDescriptor('memberUid', pp_account, 'uid', False, "secondary_groups")
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
@@ -377,9 +379,10 @@ class ad_account(std_person, user):
         super(ad_account, self).save(*args, **kwargs)
 
 class ad_group(group):
-    # users
-    primary_users = tldap.manager.OneToManyDescriptor('gidNumber', ad_account, 'gidNumber', "primary_group")
-    secondary_users = tldap.manager.ManyToManyDescriptor('memberUid', ad_person, 'uid', False, "secondary_groups")
+    # accounts
+    primary_accounts = tldap.manager.OneToManyDescriptor('gidNumber', ad_account, 'gidNumber', "primary_group")
+    secondary_people = tldap.manager.ManyToManyDescriptor('memberUid', ad_person, 'uid', False, "secondary_groups")
+    secondary_accounts = tldap.manager.ManyToManyDescriptor('memberUid', ad_account, 'uid', False, "secondary_groups")
 
     def construct_dn(self):
         return self.rdn_to_dn('cn')
@@ -389,7 +392,7 @@ class ad_group(group):
         object_classes = { 'top', }
 
     def save(self, *args, **kwargs):
-        self.member = [ user.dn for user in self.secondary_users ]
+        self.member = [ user.dn for user in self.secondary_people ]
         super(ad_group, self).save(*args, **kwargs)
 
     class Meta:

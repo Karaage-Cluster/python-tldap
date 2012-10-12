@@ -738,10 +738,10 @@ class ModelTest(unittest.TestCase):
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
 
-        r = g1.secondary_users.all()
+        r = g1.secondary_people.all()
         self.assertEqual(len(r), 1)
 
-        r = g2.secondary_users.all()
+        r = g2.secondary_people.all()
         self.assertEqual(len(r), 2)
 
         r = p1.secondary_groups.all()
@@ -758,21 +758,21 @@ class ModelTest(unittest.TestCase):
         o,c = p1.secondary_groups.get_or_create(cn="startrek", defaults = { 'gidNumber': 13 })
         self.assertEqual(c, False)
 
-        g1.secondary_users.create(uid="dalek", sn="Exterminate", cn="You will be Exterminated!")
+        g1.secondary_people.create(uid="dalek", sn="Exterminate", cn="You will be Exterminated!")
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek' ])
 
-        o,c = g1.secondary_users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
+        o,c = g1.secondary_people.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
         self.assertEqual(c, True)
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
 
-        o,c = g1.secondary_users.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
+        o,c = g1.secondary_people.get_or_create(uid="dalek_leader", sn="Exterminate", defaults = { 'cn': "You will be Exterminated!" })
         self.assertEqual(c, False)
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
 
-        r = g1.secondary_users.all()
+        r = g1.secondary_people.all()
         self.assertEqual(len(r), 3)
 
-        r = g2.secondary_users.all()
+        r = g2.secondary_people.all()
         self.assertEqual(len(r), 2)
 
         r = p1.secondary_groups.all()
@@ -781,18 +781,18 @@ class ModelTest(unittest.TestCase):
         r = p2.secondary_groups.all()
         self.assertEqual(len(r), 1)
 
-        u = g1.primary_users.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
+        u = g1.primary_accounts.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
 
-        r = g1.primary_users.all()
+        r = g1.primary_accounts.all()
         self.assertEqual(len(r), 1)
 
         group = r[0].primary_group
 
-        group.primary_users.add(u)
-        self.assertRaises(tldap.exceptions.ValidationError, group.primary_users.delete, u)
+        group.primary_accounts.add(u)
+        self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.delete, u)
 
-        group.secondary_users.add(p1)
-        group.secondary_users.delete(p1)
+        group.secondary_people.add(p1)
+        group.secondary_people.delete(p1)
 
         u.secondary_groups.add(group)
         u.secondary_groups.delete(group)
@@ -800,7 +800,7 @@ class ModelTest(unittest.TestCase):
         u.primary_group = g2
         u.save()
 
-        r = g2.primary_users.all()
+        r = g2.primary_accounts.all()
         self.assertEqual(len(r), 1)
 
         u.primary_group = None
