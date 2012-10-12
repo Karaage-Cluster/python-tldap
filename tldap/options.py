@@ -18,10 +18,21 @@
 class Options(object):
     def __init__(self, name, meta):
         self.meta = meta
-        self.fields = []
+        self._fields = {}
         self.object_classes = set(getattr(meta, 'object_classes', []))
         self.base_dn = getattr(meta, 'base_dn', None)
         self.object_name = name
 
     def add_field(self, field):
-        self.fields.append(field)
+        self._fields[field.name] = field
+
+    def get_field_by_name(self, name):
+        return self._fields[name]
+
+    def get_all_field_names(self):
+        return self._fields.keys()
+
+    @property
+    def fields(self):
+        return self._fields.values()
+
