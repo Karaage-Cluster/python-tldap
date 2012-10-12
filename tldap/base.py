@@ -63,7 +63,7 @@ class LDAPmeta(type):
             new_class.add_to_class(obj_name, obj)
 
         new_fields = new_class._meta.fields
-        field_names = set([f.name for f in new_fields])
+        field_names = new_class._meta.get_all_field_names()
         parent_field_names = dict()
 
         for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn" ]:
@@ -88,13 +88,11 @@ class LDAPmeta(type):
                                      'with field of similar name from base class %r and is different type' %
                                         (name, field.name, base.__name__))
                 parent_field_names[field.name] = field
+                new_class._meta.add_field(field)
 
             new_class._meta.object_classes.update(base._meta.object_classes)
             base_dn = getattr(new_class._meta, 'base_dn', None) or getattr(base._meta, 'base_dn', None)
             new_class._meta.base_dn = base_dn
-
-        for _, field in parent_field_names.iteritems():
-            new_class._meta.add_field(field)
 
         return new_class
 
@@ -122,8 +120,7 @@ class LDAPobject(object):
         self._dn = None
         self._base_dn = None
 
-        fields = self._meta.fields
-        field_names = set([f.name for f in fields])
+        field_names = self._meta.get_all_field_names()
 
         for k,v in kwargs.iteritems():
             if k in field_names:
@@ -150,8 +147,7 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # what fields should we get?
-        fields = self._meta.fields
-        field_names = [ f.name for f in fields ]
+        field_names = self._meta.get_all_field_names()
 
         # get values
         db_values = list(c.search(self._dn, ldap.SCOPE_BASE, attrlist=field_names))
@@ -268,7 +264,7 @@ class LDAPobject(object):
             raise self.AlreadyExists("Object with dn %r already exists doing add"%(self._dn,))
 
         # update dn attribute in object
-        field_names = set([f.name for f in fields])
+        field_names = self._meta.get_all_field_names()
         if dn0k in field_names:
             setattr(self, dn0k, dn0v)
 

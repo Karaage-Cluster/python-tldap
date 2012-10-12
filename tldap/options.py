@@ -30,7 +30,7 @@ class Options(object):
         return self._fields[name]
 
     def get_all_field_names(self):
-        return self._fields.keys()
+        return set(self._fields.keys())
 
     @property
     def fields(self):

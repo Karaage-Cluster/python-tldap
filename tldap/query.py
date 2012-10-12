@@ -102,10 +102,7 @@ class QuerySet(object):
     # METHODS THAT DO DATABASE QUERIES #
     ####################################
 
-    def _get_filter(self, q, fields=None):
-        if fields is None:
-            fields = { f.name: f for f in self._cls._meta.fields }
-
+    def _get_filter(self, q):
         if q.negated:
             op = "!"
         elif q.connector == "AND":
@@ -118,22 +115,24 @@ class QuerySet(object):
         search = []
         for child in q.children:
             if isinstance(child, django.utils.tree.Node):
-                search.append(self._get_filter(child, fields))
+                search.append(self._get_filter(child))
             else:
                 name,value = child
+                try:
+                    field = self._cls._meta.get_field_by_name(name)
+                except KeyError:
+                    field = tldap.fields.CharField()
                 if isinstance(value, list) and len(value)==1:
                     value = value[0]
                     assert isinstance(value, str)
                 if isinstance(value, list):
                     s = []
                     for v in value:
-                        if name in fields:
-                            v = fields[name].value_to_db(v)
+                        v = field.value_to_db(v)
                         s.append(ldap.filter.filter_format("(%s=%s)",[name, v]))
                     search.append("(&".join(search) + ")")
                 else:
-                    if name in fields:
-                        value = fields[name].value_to_db(value)
+                    value = field.value_to_db(value)
                     search.append(ldap.filter.filter_format("(%s=%s)",[name, value]))
 
         return "("+ op + "".join(search) + ")"
@@ -169,7 +168,7 @@ class QuerySet(object):
 
         # get list of field names we support
         fields = self._cls._meta.fields
-        field_names = [ f.name for f in fields ]
+        field_names = self._cls._meta.get_all_field_names()
 
         # construct search filter string
         search_filter = self._get_filter(query)
