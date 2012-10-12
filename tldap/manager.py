@@ -341,6 +341,9 @@ class ManyToManyDescriptor(object):
         setattr(cls, name, self)
         if self._related_name is not None:
             reverse = ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_has_foreign_key)
+            if self._related_name in self._linked_cls.__dict__:
+                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
+                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
 
     def __get__(self, instance, cls=None):
@@ -371,6 +374,9 @@ class ManyToOneDescriptor(object):
         setattr(cls, name, self)
         if self._related_name is not None:
             reverse = OneToManyDescriptor(self._linked_key, cls, self._this_key)
+            if self._related_name in self._linked_cls.__dict__:
+                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
+                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
 
     def __get__(self, instance, cls=None):
@@ -402,6 +408,9 @@ class OneToManyDescriptor(object):
         setattr(cls, name, self)
         if self._related_name is not None:
             reverse = ManyToOneDescriptor(self._linked_key, cls, self._this_key)
+            if self._related_name in self._linked_cls.__dict__:
+                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
+                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
 
     def __get__(self, instance, cls=None):

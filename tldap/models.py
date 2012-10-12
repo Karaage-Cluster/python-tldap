@@ -298,7 +298,7 @@ class group(tldap.base.LDAPobject):
 
 class std_person(person, organizationalPerson, inetOrgPerson):
     # groups
-#    groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True)
+#    secondary_groups = tldap.manager.ManyToManyDescriptor('uid', 'tldap.models.hgroup', 'memberUid', True)
 
     def construct_dn(self):
         return self.rdn_to_dn('uid')
