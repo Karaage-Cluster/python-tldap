@@ -110,17 +110,11 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             if not isinstance(this_value, list):
                 this_value = [ this_value ]
 
-            if this_value == []:
-                return self.get_empty_query_set()
-
-            query = None
+            query = self.get_empty_query_set()
             for v in this_value:
                 kwargs = { self._linked_key: v }
-                if query is None:
-                    query = tldap.Q(**kwargs)
-                else:
-                    query = query | tldap.Q(**kwargs)
-            return super(LinkManager,self).get_query_set().filter(query)
+                query = query | super(LinkManager,self).get_query_set().filter(**kwargs)
+            return query
 
         if linked_has_foreign_key:
 

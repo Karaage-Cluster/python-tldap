@@ -41,7 +41,7 @@ class QuerySet(object):
         self._cls = cls
         self._dn = None
         self._alias = alias
-        self._query = []
+        self._query = None
         self._base_dn = None
         self._iter = None
         self._result_cache = None
@@ -99,19 +99,25 @@ class QuerySet(object):
         return list(self)[k]
 
     def __and__(self, other):
+        assert isinstance(other, QuerySet)
         self._merge_sanity_check(other)
+        if self._query is None:
+            return other._clone()
         if isinstance(other, EmptyQuerySet):
             return other._clone()
         combined = self._clone()
-        combined.query.combine(other.query, sql.AND)
+        combined._query = combined._query & other._query
         return combined
 
     def __or__(self, other):
+        assert isinstance(other, QuerySet)
         self._merge_sanity_check(other)
         combined = self._clone()
+        if self._query is None:
+            return combined
         if isinstance(other, EmptyQuerySet):
             return combined
-        combined.query.combine(other.query, sql.OR)
+        combined._query = combined._query | other._query
         return combined
 
     ####################################
@@ -121,9 +127,9 @@ class QuerySet(object):
     def _get_filter(self, q):
         if q.negated:
             op = "!"
-        elif q.connector == "AND":
+        elif q.connector == tldap.Q.AND:
             op = "&"
-        elif q.connector == "OR":
+        elif q.connector == tldap.Q.OR:
             op = "|"
         else:
             raise ValueError("Invalid value of op found")
@@ -168,8 +174,8 @@ class QuerySet(object):
             query = query & tldap.Q(objectClass=oc)
 
         # add filter spec to search array
-        for q in self._query:
-            query = query & q
+        if self._query is not None:
+            query = query & self._query
 
         # get dn to search for, if given do a SCOPE_BASE search with this as a base;
         # otherwise do a SCOPE_SUBTREE with base_dn as base.
@@ -293,11 +299,15 @@ class QuerySet(object):
 
         clone = self._clone()
         if negate:
-            clone._query.append(~tldap.Q(*args, **kwargs))
+            q = ~tldap.Q(*args, **kwargs)
             clone._dn = dn
         else:
-            clone._query.append(tldap.Q(*args, **kwargs))
-            clone._dn = dn
+            q = tldap.Q(*args, **kwargs)
+        if clone._query is None:
+            clone._query = q
+        else:
+            clone._query = clone._query & q
+        clone._dn = dn
         return clone
 
     def using(self, alias):
@@ -339,6 +349,14 @@ class QuerySet(object):
             except StopIteration:
                 self._iter = None
 
+    def _merge_sanity_check(self, other):
+        """
+        Checks that we are merging two comparable QuerySet classes. By default
+        this does nothing, but see the ValuesQuerySet for an example of where
+        it's useful.
+        """
+        pass
+
 
 class EmptyQuerySet(QuerySet):
     def __init__(self, cls, alias):
@@ -346,9 +364,11 @@ class EmptyQuerySet(QuerySet):
         self._result_cache = []
 
     def __and__(self, other):
+        assert isinstance(other, QuerySet)
         return self._clone()
 
     def __or__(self, other):
+        assert isinstance(other, QuerySet)
         return other._clone()
 
     def count(self):
