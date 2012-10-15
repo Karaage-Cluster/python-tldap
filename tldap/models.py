@@ -19,6 +19,7 @@ import tldap
 import tldap.base
 import tldap.fields
 import tldap.manager
+import tldap.ldap_passwd
 
 import django.conf
 
@@ -310,6 +311,19 @@ class std_person(person, organizationalPerson, inetOrgPerson):
     def __unicode__(self):
         return u"P:%s"%self.cn
 
+    def change_password(password, scheme):
+        if isinstance(password, unicode):
+            password = password.encode()
+
+        up = tldap.ldap_passwd.UserPassword()
+        self.userPassword = up.encodePassword(raw_password, scheme)
+        #self.sambaNTPassword=smbpasswd.nthash(raw_password)
+        #self.sambaLMPassword=smbpasswd.lmhash(raw_password)
+        #self.sambaPwdMustChange=None
+        # unicode_password = unicode("\"" + str(raw_password) + "\"", "iso-8859-1").encode("utf-16-le")
+        # self.unicodePwd=unicode_password
+        self.sambaPwdLastSet=str(int(time.mktime(datetime.datetime.now().timetuple())))
+
 class std_account(std_person, posixAccount, shadowAccount):
 
     def __unicode__(self):
@@ -382,8 +396,8 @@ class ad_account(std_person, user):
         if self.userAccountControl is None:
             self.userAccountControl = 512
         self.sAMAccountName = self.uid
-        self.unicodePwd = self.userPassword
-        self.unixUserPassword = self.userPassword
+        # self.unicodePwd = self.userPassword
+        # self.unixUserPassword = self.userPassword
         super(ad_account, self).save(*args, **kwargs)
 
 class ad_group(group):
