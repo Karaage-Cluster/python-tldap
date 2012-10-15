@@ -307,8 +307,13 @@ class std_person(person, organizationalPerson, inetOrgPerson):
         base_dn = django.conf.settings.LDAP_USER_BASE
         object_classes = { 'top', }
 
+    def __unicode__(self):
+        return u"P:%s"%self.cn
+
 class std_account(std_person, posixAccount, shadowAccount):
-    pass
+
+    def __unicode__(self):
+        return u"A:%s"%self.cn
 
 class std_group(posixGroup):
     # accounts
@@ -322,6 +327,9 @@ class std_group(posixGroup):
     class Meta:
         base_dn = django.conf.settings.LDAP_GROUP_BASE
         object_classes = { 'top', }
+
+    def __unicode__(self):
+        return u"G:%s"%self.cn
 
 # pwdPolicy objects
 
