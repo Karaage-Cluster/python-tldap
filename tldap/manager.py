@@ -174,7 +174,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 obj.save()
 
-            def delete(self, obj):
+            def remove(self, obj):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -197,16 +197,9 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 obj.save()
 
-            def replace(self, value):
+            def clear(self):
                 for obj in self.get_query_set():
                     self.delete(obj)
-                if foreign_key_is_list:
-                    assert isinstance(value, list)
-                    for obj in value:
-                        self.add(value)
-                else:
-                    assert not isinstance(value, list)
-                    self.add(value)
 
         else:
 
@@ -284,7 +277,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 this_instance.save()
 
-            def delete(self, obj):
+            def remove(self, obj):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -307,7 +300,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 this_instance.save()
 
-            def replace(self, value):
+            def clear(self):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -319,16 +312,6 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     this_value = None
                 self._this_value = this_value
                 setattr(this_instance, this_key, this_value)
-
-                # set new value
-                if foreign_key_is_list:
-                    assert isinstance(value, list)
-                    for obj in value:
-                        self.add(obj)
-                else:
-                    assert not isinstance(value, list)
-                    if value is not None:
-                        self.add(value)
 
     return LinkManager
 
@@ -364,7 +347,9 @@ class ManyToManyDescriptor(object):
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
-        lm.replace(value)
+        lm.clear()
+        for v in value:
+            lm.add(value)
 
 class ManyToOneDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
@@ -398,7 +383,9 @@ class ManyToOneDescriptor(object):
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, False, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
-        lm.replace(value)
+        lm.clear()
+        if value is not None:
+            lm.add(value)
 
 class OneToManyDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
@@ -431,4 +418,6 @@ class OneToManyDescriptor(object):
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, True, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
-        lm.replace(value)
+        lm.clear()
+        for v in value:
+            lm.add(value)

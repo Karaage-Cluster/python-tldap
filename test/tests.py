@@ -789,13 +789,13 @@ class ModelTest(unittest.TestCase):
         group = r[0].primary_group
 
         group.primary_accounts.add(u)
-        self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.delete, u)
+        self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.remove, u)
 
         group.secondary_people.add(p1)
-        group.secondary_people.delete(p1)
+        group.secondary_people.remove(p1)
 
         u.secondary_groups.add(group)
-        u.secondary_groups.delete(group)
+        u.secondary_groups.remove(group)
 
         u.primary_group = g2
         u.save()
