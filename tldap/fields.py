@@ -145,6 +145,8 @@ class IntegerField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
         if value is None:
             return value
         try:
