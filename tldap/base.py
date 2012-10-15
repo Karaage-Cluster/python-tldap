@@ -114,6 +114,10 @@ class LDAPobject(object):
         """Get the current dn."""
         return self._dn
 
+    def get_fields(self):
+        for i in self._meta.get_all_field_names():
+            yield i, getattr(self, i)
+
     def __init__(self, **kwargs):
         self._db_values = {}
         self._alias = None
