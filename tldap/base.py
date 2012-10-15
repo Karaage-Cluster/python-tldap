@@ -40,7 +40,7 @@ class LDAPmeta(type):
         attr_meta = attrs.pop('Meta', None)
 
         new_class.add_to_class('_meta', tldap.options.Options(name, attr_meta))
-        new_class.add_to_class('objects', tldap.manager.LDAPmanager())
+        new_class.add_to_class('objects', tldap.manager.Manager())
 
         # Add all attributes to the class.
         ObjectDoesNotExist = tldap.exceptions.ObjectDoesNotExist

@@ -19,7 +19,7 @@ import tldap
 import tldap.query
 import django.utils.importlib
 
-class LDAPmanager(object):
+class Manager(object):
     def __init__(self):
         self._cls = None
         self._alias = None
@@ -37,7 +37,13 @@ class LDAPmanager(object):
     # PROXIES TO QUERYSET #
     #######################
 
+    def get_empty_query_set(self):
+        return tldap.query.EmptyQuerySet(self._cls, self._alias)
+
     def get_query_set(self):
+        """Returns a new QuerySet object.  Subclasses can override this method
+        to easily customize the behavior of the Manager.
+        """
         return tldap.query.QuerySet(self._cls, self._alias)
 
     def all(self):
@@ -103,6 +109,9 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             this_value = getattr(this_instance, this_key)
             if not isinstance(this_value, list):
                 this_value = [ this_value ]
+
+            if this_value == []:
+                return self.get_empty_query_set()
 
             query = None
             for v in this_value:

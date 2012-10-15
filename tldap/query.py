@@ -39,6 +39,7 @@ class QuerySet(object):
         assert cls is not None
 
         self._cls = cls
+        self._dn = None
         self._alias = alias
         self._query = []
         self._base_dn = None
@@ -97,6 +98,21 @@ class QuerySet(object):
         """
         return list(self)[k]
 
+    def __and__(self, other):
+        self._merge_sanity_check(other)
+        if isinstance(other, EmptyQuerySet):
+            return other._clone()
+        combined = self._clone()
+        combined.query.combine(other.query, sql.AND)
+        return combined
+
+    def __or__(self, other):
+        self._merge_sanity_check(other)
+        combined = self._clone()
+        if isinstance(other, EmptyQuerySet):
+            return combined
+        combined.query.combine(other.query, sql.OR)
+        return combined
 
     ####################################
     # METHODS THAT DO DATABASE QUERIES #
@@ -248,6 +264,12 @@ class QuerySet(object):
             obj.save(force_add=True, using=self._alias)
             return obj, True
 
+    def none(self):
+        """
+        Returns an empty QuerySet.
+        """
+        return self._clone(klass=EmptyQuerySet)
+
     ##################################################################
     # PUBLIC METHODS THAT ALTER ATTRIBUTES AND RETURN A NEW QUERYSET #
     ##################################################################
@@ -317,4 +339,49 @@ class QuerySet(object):
             except StopIteration:
                 self._iter = None
 
+
+class EmptyQuerySet(QuerySet):
+    def __init__(self, cls, alias):
+        super(EmptyQuerySet, self).__init__(cls, alias)
+        self._result_cache = []
+
+    def __and__(self, other):
+        return self._clone()
+
+    def __or__(self, other):
+        return other._clone()
+
+    def count(self):
+        return 0
+
+    def delete(self):
+        pass
+
+    def _clone(self, klass=None, setup=False, **kwargs):
+        c = super(EmptyQuerySet, self)._clone(klass, setup=setup, **kwargs)
+        c._result_cache = []
+        return c
+
+    def iterator(self):
+        # This slightly odd construction is because we need an empty generator
+        # (it raises StopIteration immediately).
+        yield iter([]).next()
+
+    def all(self):
+        """
+        Always returns EmptyQuerySet.
+        """
+        return self
+
+    def filter(self, *args, **kwargs):
+        """
+        Always returns EmptyQuerySet.
+        """
+        return self
+
+    def exclude(self, *args, **kwargs):
+        """
+        Always returns EmptyQuerySet.
+        """
+        return self
 
