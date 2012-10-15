@@ -39,6 +39,7 @@ class Field(object):
             value = [ self.value_to_db(value) ]
         else:
             assert isinstance(value, list)
+            value = list(value)
             for i,v in enumerate(value):
                 value[i] = self.value_to_db(v)
 
@@ -52,8 +53,10 @@ class Field(object):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
+        assert isinstance(value, list)
 
         # convert every value in list
+        value = list(value)
         for i,v in enumerate(value):
             value[i] = self.value_to_python(v)
 
