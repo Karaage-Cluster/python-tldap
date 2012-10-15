@@ -791,11 +791,36 @@ class ModelTest(unittest.TestCase):
         group.primary_accounts.add(u)
         self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.remove, u)
 
+        r = group.secondary_people.all()
+        print "-----", group.dn
+        for v in r:
+            print "+++++", v.dn
+        self.assertEqual(len(r), 3)
+
+        group.secondary_people.clear()
+
+        r = group.secondary_people.all()
+        self.assertEqual(len(r), 0)
+
         group.secondary_people.add(p1)
+
+        r = group.secondary_people.all()
+        self.assertEqual(len(r), 1)
+
         group.secondary_people.remove(p1)
 
+        r = group.secondary_people.all()
+        self.assertEqual(len(r), 0)
+
         u.secondary_groups.add(group)
+
+        r = group.secondary_people.all()
+        self.assertEqual(len(r), 1)
+
         u.secondary_groups.remove(group)
+
+        r = group.secondary_people.all()
+        self.assertEqual(len(r), 0)
 
         u.primary_group = g2
         u.save()
