@@ -171,7 +171,9 @@ class LDAPobject(object):
         raise RuntimeError("Need a full DN for this object")
 
     def rdn_to_dn(self, name):
+        field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
+        value = field.value_to_db(value)
 
         split_base = ldap.dn.str2dn(self._base_dn)
         split_newrdn = [[(name, value, 1)]] + split_base
