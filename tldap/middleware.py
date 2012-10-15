@@ -26,17 +26,16 @@ class TransactionMiddleware(object):
     """
     def process_request(self, request):
         """Enters transaction management"""
-       tldap.transaction.enter_transaction_management()
+        tldap.transaction.enter_transaction_management()
 
     def process_exception(self, request, exception):
         """Rolls back the database and leaves transaction management"""
-        if transaction.is_dirty():
-            transaction.rollback()
-        tldap.transaction.leave_transaction_management()
+        if tldap.transaction.is_dirty():
+            tldap.transaction.rollback()
 
     def process_response(self, request, response):
         """Commits and leaves transaction management."""
-        if transaction.is_dirty():
-            transaction.commit()
+        if tldap.transaction.is_dirty():
+            tldap.transaction.commit()
         tldap.transaction.leave_transaction_management()
         return response
