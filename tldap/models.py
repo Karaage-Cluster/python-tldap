@@ -314,6 +314,9 @@ class std_person(person, organizationalPerson, inetOrgPerson):
     def __unicode__(self):
         return u"P:%s"%self.cn
 
+    def check_password(self, password):
+        return tldap.connection.check_password(self.dn, password)
+
     def change_password(self, password, scheme):
         if isinstance(password, unicode):
             password = password.encode()

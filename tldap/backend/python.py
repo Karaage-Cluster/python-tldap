@@ -41,6 +41,17 @@ class LDAPwrapper(object):
             self._reconnect()
 
 
+    def check_password(self, dn, password):
+        s = self.settings_dict
+        l = ldap.initialize(s['URI'])
+        try:
+            l.simple_bind_s(dn, password)
+            return True
+        except ldap.INVALID_CREDENTIALS:
+            return False
+        return True
+
+
     #########################
     # Connection Management #
     #########################
