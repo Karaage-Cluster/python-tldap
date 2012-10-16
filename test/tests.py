@@ -373,7 +373,7 @@ class ModelTest(unittest.TestCase):
 
     def test_transactions(self):
         organizationalUnit = tldap.models.organizationalUnit
-        organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org", ou="People")
+        organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org")
 
         c = tldap.connection
 
