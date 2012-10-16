@@ -26,6 +26,7 @@ django.core.management.setup_environ(test.settings)
 import unittest
 
 import tldap
+import tldap.test.data
 import tldap.test.slapd
 import tldap.transaction
 import tldap.exceptions
@@ -825,6 +826,218 @@ class ModelTest(unittest.TestCase):
 
         u.primary_group = None
         self.assertRaises(tldap.exceptions.ValidationError, u.save)
+
+class UserAPITest(unittest.TestCase):
+    def setUp(self):
+        server = tldap.test.slapd.Slapd()
+        server.set_port(38911)
+        server.start()
+        base = server.get_dn_suffix()
+
+        server.ldapadd("\n".join(tldap.test.data.test_ldif)+"\n")
+
+        self.server = server
+
+        self.group = tldap.models.std_group
+        self.person = tldap.models.std_person
+
+    def tearDown(self):
+        self.server.stop()
+
+    def test_get_users(self):
+        self.failUnlessEqual(len(self.person.objects.all()), 3)
+
+    def test_get_user(self):
+        u = self.person.objects.get(uid='testuser3')
+        self.failUnlessEqual(u.mail, 't.user3@example.com')
+
+    def test_delete_user(self):
+        self.failUnlessEqual(len(self.person.objects.all()), 3)
+        u = self.person.objects.get(uid='testuser2')
+        u.delete()
+        self.failUnlessEqual(len(self.person.objects.all()), 2)
+
+    def test_in_ldap(self):
+        u = self.person.objects.get(uid='testuser1')
+        self.failUnlessRaises(self.person.DoesNotExist, self.person.objects.get, cn='testuser4')
+
+    def test_update_user(self):
+        u = self.person.objects.get(uid='testuser1')
+        self.failUnlessEqual(u.sn, 'User')
+        u.sn = "Bloggs"
+        u.save()
+        u = self.person.objects.get(uid='testuser1')
+        self.failUnlessEqual(u.sn, 'Bloggs')
+
+    def test_update_user_no_modifications(self):
+        u = self.person.objects.get(uid='testuser1')
+        self.failUnlessEqual(u.sn, 'User')
+        u.sn = "User"
+        u.save()
+        u = self.person.objects.get(uid='testuser1')
+        self.failUnlessEqual(u.sn, 'User')
+
+#    def test_lock_unlock(self):
+#        u = self.person.objects.get(uid='testuser1')
+#        u.unlock()
+#        u.save()
+#
+#        u = self.person.objects.get(uid='testuser1')
+#        self.failUnlessEqual(u.is_locked(), False)
+#        u.lock()
+#        u.save()
+#
+#        u = self.person.objects.get(uid='testuser1')
+#        self.failUnlessEqual(u.is_locked(), True)
+#
+#        u.unlock()
+#        u.save()
+#        self.failUnlessEqual(u.is_locked(), False)
+
+    def test_user_search(self):
+        users = self.person.objects.filter(cn__contains='User')
+        self.failUnlessEqual(len(users), 3)
+
+    def test_user_search_one(self):
+        users = self.person.objects.filter(uid__contains='testuser1')
+        self.failUnlessEqual(len(users), 1)
+
+    def test_user_search_empty(self):
+        users = self.person.objects.filter(cn__contains='nothing')
+        self.failUnlessEqual(len(users), 0)
+
+    def test_user_search_multi(self):
+        users = self.person.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
+        self.failUnlessEqual(len(users), 3)
+
+class GroupAPITest(unittest.TestCase):
+    def setUp(self):
+        server = tldap.test.slapd.Slapd()
+        server.set_port(38911)
+        server.start()
+        base = server.get_dn_suffix()
+
+        server.ldapadd("\n".join(tldap.test.data.test_ldif)+"\n")
+
+        self.server = server
+
+        self.group = tldap.models.std_group
+        self.person = tldap.models.std_person
+
+    def tearDown(self):
+        self.server.stop()
+
+    def test_get_groups(self):
+        self.failUnlessEqual(len(self.group.objects.all()), 3)
+
+    def test_get_group(self):
+        g = self.group.objects.get(cn="systems")
+        self.failUnlessEqual(g.cn, 'systems')
+        g = self.group.objects.get(cn="empty")
+        self.failUnlessEqual(g.cn, 'empty')
+        g = self.group.objects.get(cn="full")
+        self.failUnlessEqual(g.cn, 'full')
+
+    def test_delete_group(self):
+        g = self.group.objects.get(cn="full")
+        g.delete()
+        self.failUnlessEqual(len(self.group.objects.all()), 2)
+
+    def test_update_group(self):
+        g = self.group.objects.get(cn="empty")
+        self.failUnlessEqual(g.description, 'Empty Group')  
+        g.description = "No Members"
+        g.save()
+        g = self.group.objects.get(cn="empty")
+        self.failUnlessEqual(g.description, 'No Members')
+
+    def test_update_group_no_modifications(self):
+        g = self.group.objects.get(cn="empty")
+        self.failUnlessEqual(g.description, 'Empty Group')  
+        g.description = "Empty Group"
+        g.save()
+        g = self.group.objects.get(cn="empty")
+        self.failUnlessEqual(g.description, 'Empty Group')
+
+    def test_no_group(self):
+        self.failUnlessRaises(self.group.DoesNotExist, self.group.objects.get, cn='nosuchgroup')
+
+    def test_get_members_empty(self):
+        g = self.group.objects.get(cn="empty")
+        members = g.secondary_accounts.all()
+        self.failUnlessEqual(len(members), 0)
+
+    def test_get_members_one(self):
+        g = self.group.objects.get(cn="systems")
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 1)
+
+    def test_get_members_many(self):
+        g = self.group.objects.get(cn="full")
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 3)
+
+    def test_remove_group_member(self):
+        g = self.group.objects.get(cn="full")
+        u = g.secondary_people.get(uid="testuser2")
+        g.secondary_people.remove(u)
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 2)
+
+    def test_remove_group_member_one(self):
+        g = self.group.objects.get(cn="systems")
+        u = g.secondary_people.get(uid="testuser1")
+        g.secondary_people.remove(u)
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 0)
+
+    def test_remove_group_member_empty(self):
+        g = self.group.objects.get(cn="empty")
+        g.secondary_people.clear()
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 0)
+
+    def test_add_member(self):
+        g = self.group.objects.get(cn="systems")
+        u = self.person.objects.get(uid="testuser2")
+        g.secondary_people.add(u)
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 2)
+
+    def test_add_member_empty(self):
+        g = self.group.objects.get(cn="empty")
+        u = self.person.objects.get(uid="testuser2")
+        g.secondary_people.add(u)
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 1)
+
+    def test_add_member_exists(self):
+        g = self.group.objects.get(cn="full")
+        u = self.person.objects.get(uid="testuser2")
+        g.secondary_people.add(u)
+        members = g.secondary_people.all()
+        self.failUnlessEqual(len(members), 3)
+
+    def test_add_group(self):
+        self.group.objects.create(cn='Admin', gidNumber=10004)
+        self.failUnlessEqual(len(self.group.objects.all()), 4)
+        g = self.group.objects.get(cn="Admin")
+        self.failUnlessEqual(g.gidNumber, 10004)
+
+    def test_add_group_required_attributes(self):
+        self.failUnlessRaises(tldap.exceptions.ValidationError, self.group.objects.create, description='Admin Group')
+
+    def test_add_group_override_generated(self):
+        self.group.objects.create(cn='Admin', gidNumber=10008)
+        self.failUnlessEqual(len(self.group.objects.all()), 4)
+        g = self.group.objects.get(cn="Admin")
+        self.failUnlessEqual(g.gidNumber, 10008)
+
+    def test_add_group_optional(self):
+        self.group.objects.create(cn='Admin', gidNumber=10004, description='Admin Group')
+        self.failUnlessEqual(len(self.group.objects.all()), 4)
+        g = self.group.objects.get(cn="Admin")
+        self.failUnlessEqual(g.description, 'Admin Group')
 
 if __name__ == '__main__':
     unittest.main()
