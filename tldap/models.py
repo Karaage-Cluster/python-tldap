@@ -23,6 +23,9 @@ import tldap.ldap_passwd
 
 import django.conf
 
+import time
+import datetime
+
 #    objectClass = tldap.fields.CharField(required=True, max_instances=None)
 
 # Standard LDAP
@@ -311,16 +314,16 @@ class std_person(person, organizationalPerson, inetOrgPerson):
     def __unicode__(self):
         return u"P:%s"%self.cn
 
-    def change_password(password, scheme):
+    def change_password(self, password, scheme):
         if isinstance(password, unicode):
             password = password.encode()
 
         up = tldap.ldap_passwd.UserPassword()
-        self.userPassword = up.encodePassword(raw_password, scheme)
-        #self.sambaNTPassword=smbpasswd.nthash(raw_password)
-        #self.sambaLMPassword=smbpasswd.lmhash(raw_password)
+        self.userPassword = up.encodePassword(password, scheme)
+        #self.sambaNTPassword=smbpasswd.nthash(password)
+        #self.sambaLMPassword=smbpasswd.lmhash(password)
         #self.sambaPwdMustChange=None
-        # unicode_password = unicode("\"" + str(raw_password) + "\"", "iso-8859-1").encode("utf-16-le")
+        # unicode_password = unicode("\"" + str(password) + "\"", "iso-8859-1").encode("utf-16-le")
         # self.unicodePwd=unicode_password
         self.sambaPwdLastSet=str(int(time.mktime(datetime.datetime.now().timetuple())))
 
