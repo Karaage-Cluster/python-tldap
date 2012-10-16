@@ -66,6 +66,9 @@ class _MatchMixin(ldaptor.entryhelpers.MatchMixin):
     def get(self, key, default):
         return self._attributes.get(key, default)
 
+    def __getitem__(self, key):
+        return self._attributes.get(key)
+
     def __contains__(self, item):
         return item in self._attributes
 
