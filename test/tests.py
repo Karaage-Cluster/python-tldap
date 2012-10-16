@@ -911,18 +911,22 @@ class UserAPITest(unittest.TestCase):
 #        self.failUnlessEqual(u.is_locked(), False)
 
     def test_user_search(self):
+        u = self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='User')
         self.failUnlessEqual(len(users), 3)
 
     def test_user_search_one(self):
+        self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(uid__contains='testuser1')
         self.failUnlessEqual(len(users), 1)
 
     def test_user_search_empty(self):
+        self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='nothing')
         self.failUnlessEqual(len(users), 0)
 
     def test_user_search_multi(self):
+        self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
         self.failUnlessEqual(len(users), 3)
 
