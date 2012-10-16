@@ -299,6 +299,9 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # generate moddict values
+        modold = {
+            'objectClass': self._db_values[using]['objectClass']
+        }
         moddict = {
             'objectClass': self._db_values[using]['objectClass']
         }
@@ -313,10 +316,11 @@ class LDAPobject(object):
                     value = [ dn0v ]
                 if dn0v.lower() not in set(v.lower() for v in value):
                     raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
+            modold[name] = self._db_values[using].get(name, [])
             moddict[name] = value
 
         # turn moddict into a modlist
-        modlist = ldap.modlist.modifyModlist(self._db_values[using], moddict)
+        modlist = ldap.modlist.modifyModlist(modold, moddict)
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
