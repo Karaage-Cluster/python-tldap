@@ -124,6 +124,19 @@ class QuerySet(object):
     # METHODS THAT DO DATABASE QUERIES #
     ####################################
 
+    def _get_filter_item(self, name, value):
+        name, _, operation = name.rpartition("__")
+        if name == "":
+            name, operation = operation, None
+
+        if operation is None:
+            return ldap.filter.filter_format("(%s=%s)",[name, value])
+        elif operation == "contains":
+            assert value != ""
+            return ldap.filter.filter_format("(%s=*%s*)",[name, value])
+        else:
+            raise RuntimeError("Unknown search operation %s"%operation)
+
     def _get_filter(self, q):
         if q.negated:
             op = "!"
@@ -151,11 +164,11 @@ class QuerySet(object):
                     s = []
                     for v in value:
                         v = field.value_to_db(v)
-                        s.append(ldap.filter.filter_format("(%s=%s)",[name, v]))
+                        s.append(self._get_filter_item(name, v))
                     search.append("(&".join(search) + ")")
                 else:
                     value = field.value_to_db(value)
-                    search.append(ldap.filter.filter_format("(%s=%s)",[name, value]))
+                    search.append(self._get_filter_item(name, value))
 
         return "("+ op + "".join(search) + ")"
 
