@@ -792,9 +792,6 @@ class ModelTest(unittest.TestCase):
         self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.remove, u)
 
         r = group.secondary_people.all()
-        print "-----", group.dn
-        for v in r:
-            print "+++++", v.dn
         self.assertEqual(len(r), 3)
 
         group.secondary_people.clear()
