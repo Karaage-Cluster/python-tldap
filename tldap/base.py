@@ -239,29 +239,73 @@ class LDAPobject(object):
     delete.alters_data = True
 
 
-    def _add(self, using):
-        fields = self._meta.fields
+    def _get_moddict(self, default_object_class, default_object_class_db, using):
         dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
 
-        # ensure objectClass is set
-        self.objectClass = getattr(self, "objectClass", list(self._meta.object_classes))
+        # get field for objectClass or a default if there is none.
+        try:
+            object_class_field = self._meta.get_field_by_name("objectClass")
+        except KeyError:
+            object_class_field = tldap.fields.CharField(max_instances = None)
+
+        # convert python value to db value or vice versa as required.
+        if default_object_class is None:
+            default_object_class = object_class_field.clean(default_object_class_db)
+        elif default_object_class_db is None:
+            default_object_class_db = object_class_field.to_db(default_object_class)
+        else:
+            assert False
+
+        # even if objectClass isn't a field in the model, we still need to set it
+        moddict = {
+            'objectClass': default_object_class_db
+        }
 
         # generate moddict values
-        moddict = {
-            'objectClass': self.objectClass
-        }
+        fields = self._meta.fields
         for field in fields:
             name = field.name
-            value = getattr(self, name, None)
-            value = field.to_db(value)
+            value = getattr(self, name)
+            # if dn attribute not given, try to set it, otherwise just convert value
+            if name == dn0k:
+                if isinstance(value, list) and len(value) == 0:
+                    value = [ dn0v ]
+                    setattr(self, name, field.clean(value))
+                elif value is None:
+                    value = [ dn0v ]
+                    setattr(self, name, field.clean(value))
+                else:
+                    value = field.to_db(value)
+            # if objectClass not given, try to set it, otherwise just convert value
+            elif name == 'objectClass':
+                assert isinstance(value, list)
+                if len(value) == 0:
+                    value = default_object_class_db
+                    setattr(self, name, default_object_class)
+                else:
+                    value = field.to_db(value)
+            # otherwise just convert value
+            else:
+                value = field.to_db(value)
+            # db value should always be a list
+            assert isinstance(value, list)
             # if dn attribute given, it must match the dn
             if name == dn0k:
-                assert isinstance(value, list)
-                if len(value) < 1:
-                    value = field.to_db(dn0v)
                 if dn0v.lower() not in set(v.lower() for v in value):
                     raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
             moddict[name] = value
+        return moddict
+
+    def _add(self, using):
+        # default object class if none given
+        default_object_class = getattr(self, "objectClass", [])
+        default_object_class_db = None
+        if len(default_object_class) == 0:
+            default_object_class = None
+            default_object_class_db = list(self._meta.object_classes)
+
+        # generate moddict values
+        moddict = self._get_moddict(default_object_class, default_object_class_db, using)
 
         # turn moddict into a modlist
         modlist = ldap.modlist.addModlist(moddict)
@@ -279,11 +323,6 @@ class LDAPobject(object):
         except ldap.ALREADY_EXISTS:
             raise self.AlreadyExists("Object with dn %r already exists doing add"%(self._dn,))
 
-        # update dn attribute in object
-        field_names = self._meta.get_all_field_names()
-        if dn0k in field_names:
-            setattr(self, dn0k, dn0v)
-
         # save new values
         self._db_values[using] = moddict
 
@@ -293,31 +332,26 @@ class LDAPobject(object):
     def _modify(self, using):
         assert(using in self._db_values)
         fields = self._meta.fields
-        dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
 
         # what database should we be using?
         c = tldap.connections[using]
 
-        # generate moddict values
+        # default object class if none given
+        default_object_class_db = self._db_values[using]['objectClass']
+
+        # even if objectClass isn't a field, we still need to set it
         modold = {
-            'objectClass': self._db_values[using]['objectClass']
+            'objectClass': default_object_class_db
         }
-        moddict = {
-            'objectClass': self._db_values[using]['objectClass']
-        }
+
+        # generate modold values
+        fields = self._meta.fields
         for field in fields:
             name = field.name
-            value = getattr(self, name, None)
-            value = field.to_db(value)
-            # if dn attribute given, it must match the dn
-            if name == dn0k:
-                assert isinstance(value, list)
-                if len(value) < 1:
-                    value = [ dn0v ]
-                if dn0v.lower() not in set(v.lower() for v in value):
-                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
             modold[name] = self._db_values[using].get(name, [])
-            moddict[name] = value
+
+        # generate moddict values
+        moddict = self._get_moddict(None, default_object_class_db, using)
 
         # turn moddict into a modlist
         modlist = ldap.modlist.modifyModlist(modold, moddict)
