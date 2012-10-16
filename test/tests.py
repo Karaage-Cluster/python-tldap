@@ -839,55 +839,55 @@ class UserAPITest(unittest.TestCase):
         self.server = server
 
         self.group = tldap.models.std_group
-        self.person = tldap.models.std_person
+        self.account = tldap.models.std_account
 
     def tearDown(self):
         self.server.stop()
 
     def test_get_users(self):
-        self.failUnlessEqual(len(self.person.objects.all()), 3)
+        self.failUnlessEqual(len(self.account.objects.all()), 3)
 
     def test_get_user(self):
-        u = self.person.objects.get(uid='testuser3')
+        u = self.account.objects.get(uid='testuser3')
         self.failUnlessEqual(u.mail, 't.user3@example.com')
 
     def test_delete_user(self):
-        self.failUnlessEqual(len(self.person.objects.all()), 3)
-        u = self.person.objects.get(uid='testuser2')
+        self.failUnlessEqual(len(self.account.objects.all()), 3)
+        u = self.account.objects.get(uid='testuser2')
         u.delete()
-        self.failUnlessEqual(len(self.person.objects.all()), 2)
+        self.failUnlessEqual(len(self.account.objects.all()), 2)
 
     def test_in_ldap(self):
-        u = self.person.objects.get(uid='testuser1')
-        self.failUnlessRaises(self.person.DoesNotExist, self.person.objects.get, cn='testuser4')
+        u = self.account.objects.get(uid='testuser1')
+        self.failUnlessRaises(self.account.DoesNotExist, self.account.objects.get, cn='testuser4')
 
     def test_update_user(self):
-        u = self.person.objects.get(uid='testuser1')
+        u = self.account.objects.get(uid='testuser1')
         self.failUnlessEqual(u.sn, 'User')
         u.sn = "Bloggs"
         u.save()
-        u = self.person.objects.get(uid='testuser1')
+        u = self.account.objects.get(uid='testuser1')
         self.failUnlessEqual(u.sn, 'Bloggs')
 
     def test_update_user_no_modifications(self):
-        u = self.person.objects.get(uid='testuser1')
+        u = self.account.objects.get(uid='testuser1')
         self.failUnlessEqual(u.sn, 'User')
         u.sn = "User"
         u.save()
-        u = self.person.objects.get(uid='testuser1')
+        u = self.account.objects.get(uid='testuser1')
         self.failUnlessEqual(u.sn, 'User')
 
 #    def test_lock_unlock(self):
-#        u = self.person.objects.get(uid='testuser1')
+#        u = self.account.objects.get(uid='testuser1')
 #        u.unlock()
 #        u.save()
 #
-#        u = self.person.objects.get(uid='testuser1')
+#        u = self.account.objects.get(uid='testuser1')
 #        self.failUnlessEqual(u.is_locked(), False)
 #        u.lock()
 #        u.save()
 #
-#        u = self.person.objects.get(uid='testuser1')
+#        u = self.account.objects.get(uid='testuser1')
 #        self.failUnlessEqual(u.is_locked(), True)
 #
 #        u.unlock()
@@ -895,19 +895,19 @@ class UserAPITest(unittest.TestCase):
 #        self.failUnlessEqual(u.is_locked(), False)
 
     def test_user_search(self):
-        users = self.person.objects.filter(cn__contains='User')
+        users = self.account.objects.filter(cn__contains='User')
         self.failUnlessEqual(len(users), 3)
 
     def test_user_search_one(self):
-        users = self.person.objects.filter(uid__contains='testuser1')
+        users = self.account.objects.filter(uid__contains='testuser1')
         self.failUnlessEqual(len(users), 1)
 
     def test_user_search_empty(self):
-        users = self.person.objects.filter(cn__contains='nothing')
+        users = self.account.objects.filter(cn__contains='nothing')
         self.failUnlessEqual(len(users), 0)
 
     def test_user_search_multi(self):
-        users = self.person.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
+        users = self.account.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
         self.failUnlessEqual(len(users), 3)
 
 class GroupAPITest(unittest.TestCase):
@@ -922,7 +922,7 @@ class GroupAPITest(unittest.TestCase):
         self.server = server
 
         self.group = tldap.models.std_group
-        self.person = tldap.models.std_person
+        self.account = tldap.models.std_account
 
     def tearDown(self):
         self.server.stop()
@@ -969,53 +969,53 @@ class GroupAPITest(unittest.TestCase):
 
     def test_get_members_one(self):
         g = self.group.objects.get(cn="systems")
-        members = g.secondary_people.all()
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 1)
 
     def test_get_members_many(self):
         g = self.group.objects.get(cn="full")
-        members = g.secondary_people.all()
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 3)
 
     def test_remove_group_member(self):
         g = self.group.objects.get(cn="full")
-        u = g.secondary_people.get(uid="testuser2")
-        g.secondary_people.remove(u)
-        members = g.secondary_people.all()
+        u = g.secondary_accounts.get(uid="testuser2")
+        g.secondary_accounts.remove(u)
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 2)
 
     def test_remove_group_member_one(self):
         g = self.group.objects.get(cn="systems")
-        u = g.secondary_people.get(uid="testuser1")
-        g.secondary_people.remove(u)
-        members = g.secondary_people.all()
+        u = g.secondary_accounts.get(uid="testuser1")
+        g.secondary_accounts.remove(u)
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 0)
 
     def test_remove_group_member_empty(self):
         g = self.group.objects.get(cn="empty")
-        g.secondary_people.clear()
-        members = g.secondary_people.all()
+        g.secondary_accounts.clear()
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 0)
 
     def test_add_member(self):
         g = self.group.objects.get(cn="systems")
-        u = self.person.objects.get(uid="testuser2")
-        g.secondary_people.add(u)
-        members = g.secondary_people.all()
+        u = self.account.objects.get(uid="testuser2")
+        g.secondary_accounts.add(u)
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 2)
 
     def test_add_member_empty(self):
         g = self.group.objects.get(cn="empty")
-        u = self.person.objects.get(uid="testuser2")
-        g.secondary_people.add(u)
-        members = g.secondary_people.all()
+        u = self.account.objects.get(uid="testuser2")
+        g.secondary_accounts.add(u)
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 1)
 
     def test_add_member_exists(self):
         g = self.group.objects.get(cn="full")
-        u = self.person.objects.get(uid="testuser2")
-        g.secondary_people.add(u)
-        members = g.secondary_people.all()
+        u = self.account.objects.get(uid="testuser2")
+        g.secondary_accounts.add(u)
+        members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 3)
 
     def test_add_group(self):
