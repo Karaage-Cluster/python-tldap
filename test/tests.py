@@ -58,7 +58,6 @@ server = None
 
 class BackendTest(unittest.TestCase):
     def setUp(self):
-        global server
         server = tldap.test.slapd.Slapd()
         server.set_port(38911)
         server.start()
@@ -360,7 +359,6 @@ import tldap.models
 
 class ModelTest(unittest.TestCase):
     def setUp(self):
-        global server
         server = tldap.test.slapd.Slapd()
         server.set_port(38911)
         server.start()
