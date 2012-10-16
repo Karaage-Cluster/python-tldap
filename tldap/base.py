@@ -124,17 +124,27 @@ class LDAPobject(object):
         self._dn = None
         self._base_dn = None
 
-        field_names = self._meta.get_all_field_names()
+        fields = self._meta.fields
 
-        for k,v in kwargs.iteritems():
-            if k in field_names:
-                setattr(self, k, v)
-            elif k == 'base_dn':
-                setattr(self, '_base_dn', v)
-            elif k == 'dn':
-                setattr(self, '_dn', v)
+        for field in fields:
+            if field.name in kwargs:
+                value = kwargs.pop(field.name)
             else:
-                raise TypeError("'%s' is an invalid keyword argument for this function" % k)
+                value = field.to_python([])
+
+            setattr(self, field.name, value)
+
+
+        if 'base_dn' in kwargs:
+            value = kwargs.pop('base_dn')
+            setattr(self, '_base_dn', value)
+
+        if 'dn' in kwargs:
+            value = kwargs.pop('dn')
+            setattr(self, '_dn', value)
+
+        for key in kwargs:
+            raise TypeError("'%s' is an invalid keyword argument for this function" % key)
 
         if self._dn is not None and self._base_dn is not None:
             raise ValueError("Makes no sense to set both dn and base_dn")
