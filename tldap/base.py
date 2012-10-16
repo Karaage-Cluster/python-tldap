@@ -382,7 +382,7 @@ class LDAPobject(object):
 
         # what to do if transaction is reversed
         old_dn = self._dn
-        old_values = copy.copy(self._db_values[using])
+        old_values = self._db_values[using]
         def onfailure():
             self._dn = old_dn
             self._db_values[using] = old_values
@@ -405,6 +405,8 @@ class LDAPobject(object):
         split_oldrdn = ldap.dn.str2dn(self._dn)
         old_key,old_value,_ = split_dn[0][0]
 
+        # make a copy before modifications
+        self._db_values[using] = copy.copy(self._db_values[using])
 
         # delete old rdn attribute in object
         field = self._meta.get_field_by_name(old_key)
