@@ -248,7 +248,7 @@ class LDAPwrapper(object):
         if not self._transact:
             raise RuntimeError("commit called outside transaction")
 
-        debug("commit", self._oncommit)
+        debug("\ncommit", self._oncommit)
         try:
             # for every action ...
             for oncommit, onrollback, _ in self._oncommit:
@@ -272,7 +272,7 @@ class LDAPwrapper(object):
         if not self._transact:
             raise RuntimeError("rollback called outside transaction")
 
-        debug("rollback:", self._onrollback)
+        debug("\nrollback:", self._onrollback)
         # if something goes wrong here, nothing we can do about it, leave
         # database as is.
         try:
@@ -316,7 +316,7 @@ class LDAPwrapper(object):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
-        debug("add", self, dn, modlist)
+        debug("\nadd", self, dn, modlist)
 
         # if rollback of add required, delete it
         oncommit   = lambda obj: obj.add_s(dn, modlist)
@@ -340,7 +340,7 @@ class LDAPwrapper(object):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
 
-        debug("modify", self, dn, modlist)
+        debug("\nmodify", self, dn, modlist)
 
         # need to work out how to reverse changes in modlist; result in revlist
         revlist = []
@@ -429,7 +429,7 @@ class LDAPwrapper(object):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
 
-        debug("delete", self)
+        debug("\ndelete", self)
 
         # get copy of cache
         result = self._cache_get_for_dn(dn).copy()
@@ -460,7 +460,7 @@ class LDAPwrapper(object):
         """ rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
 
-        debug("rename", self, dn, newrdn)
+        debug("\nrename", self, dn, newrdn)
 
         # split up the parameters
         split_dn = ldap.dn.str2dn(dn)
@@ -510,7 +510,7 @@ class LDAPwrapper(object):
     # read only stuff
 
     def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
-        debug("search", base, scope, filterstr)
+        debug("\nsearch", base, scope, filterstr)
 
         # Note: we do not use the attrlist, instead we always get all
         # attributes, this ensures the cache remains consistent with what is
