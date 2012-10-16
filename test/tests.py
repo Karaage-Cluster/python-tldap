@@ -66,6 +66,7 @@ class BackendTest(unittest.TestCase):
 
         self.server = server
         tldap.connection.reset(forceflushcache=True)
+        tldap.connection.autoflushcache = False
 
     def tearDown(self):
         self.server.stop()
@@ -87,7 +88,6 @@ class BackendTest(unittest.TestCase):
 
     def test_transactions(self):
         c = tldap.connection
-        c.autoflushcache = False
 
         modlist = ldap.modlist.addModlist({
             'givenName': "Tux",
@@ -353,8 +353,6 @@ class BackendTest(unittest.TestCase):
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         assert_cache_dn(self, "uid=tuz, ou=People, dc=python-ldap,dc=org", c)
 
-        c.autoflushcache = True
-
 
 import tldap.models
 
@@ -367,6 +365,7 @@ class ModelTest(unittest.TestCase):
 
         self.server = server
         tldap.connection.reset(forceflushcache=True)
+        tldap.connection.autoflushcache = False
 
     def tearDown(self):
         self.server.stop()
@@ -377,7 +376,6 @@ class ModelTest(unittest.TestCase):
         organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org", ou="People")
 
         c = tldap.connection
-        c.autoflushcache = False
 
         person = tldap.models.std_person
         DoesNotExist = person.DoesNotExist
@@ -704,8 +702,6 @@ class ModelTest(unittest.TestCase):
         self.assertRaises(DoesNotExist, get, uid="tux")
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
-        c.autoflushcache = True
-
         return
 
     def test_query(self):
@@ -854,12 +850,15 @@ class UserAPITest(unittest.TestCase):
         server.ldapadd("\n".join(tldap.test.data.test_ldif)+"\n")
 
         self.server = server
+        tldap.connection.reset(forceflushcache=True)
+        tldap.connection.autoflushcache = False
 
         self.group = tldap.models.std_group
         self.account = tldap.models.std_account
 
     def tearDown(self):
         self.server.stop()
+        tldap.connection.reset(forceflushcache=True)
 
     def test_get_users(self):
         self.failUnlessEqual(len(self.account.objects.all()), 3)
@@ -937,12 +936,15 @@ class GroupAPITest(unittest.TestCase):
         server.ldapadd("\n".join(tldap.test.data.test_ldif)+"\n")
 
         self.server = server
+        tldap.connection.reset(forceflushcache=True)
+        tldap.connection.autoflushcache = False
 
         self.group = tldap.models.std_group
         self.account = tldap.models.std_account
 
     def tearDown(self):
         self.server.stop()
+        tldap.connection.reset(forceflushcache=True)
 
     def test_get_groups(self):
         self.failUnlessEqual(len(self.group.objects.all()), 3)
