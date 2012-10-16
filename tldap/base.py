@@ -339,6 +339,9 @@ class LDAPobject(object):
     _modify.alters_data = True
 
     def rename(self, name, value, using=None):
+        if isinstance(value, unicode):
+            value = value.encode()
+
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
@@ -364,47 +367,40 @@ class LDAPobject(object):
         tmplist.extend(split_dn[1:])
         self._dn = ldap.dn.dn2str(tmplist).lower()
 
-        # get set of field_names
-        fields = self._meta.fields
-
         # get old rdn values
         split_oldrdn = ldap.dn.str2dn(self._dn)
         old_key,old_value,_ = split_dn[0][0]
 
-        for field in fields:
-            # delete old rdn attribute in object
-            if field.name == old_key:
-                v = getattr(self, old_key, [])
-                if v is None:
-                    pass
-                elif isinstance(v, list):
-                    if old_value in v:
-                        v.remove(old_value)
-                    if len(v)==0:
-                        v = None
-                elif old_value == v:
-                    v = None
-                v = field.to_db(v)
-                if v == None:
-                    del self._db_values[using][old_key]
-                else:
-                    self._db_values[using][old_key] = v
-                v = field.clean(v)
-                setattr(self, old_key, v)
 
-            # update new rdn attribute in object
-            if field.name == name:
-                v = getattr(self, name, None)
-                if v is None:
-                    v = value
-                elif isinstance(v, list):
-                    if value not in v:
-                        v.append(value)
-                elif v != value:
-                    v = [ v, value ]
-                v = field.to_db(v)
-                self._db_values[using][name] = v
-                v = field.clean(v)
-                setattr(self, name, v)
+        # delete old rdn attribute in object
+        field = self._meta.get_field_by_name(old_key)
+        v = getattr(self, old_key, [])
+        old_value = field.value_to_python(old_value)
+        if v is None:
+            pass
+        elif isinstance(v, list):
+            v = [ x for x in v if x.lower() != old_value.lower()]
+        elif old_value.lower() == v.lower():
+            v = None
+        if v == None:
+            del self._db_values[using][old_key]
+        else:
+            self._db_values[using][old_key] = field.to_db(v)
+        setattr(self, old_key, v)
+
+        # update new rdn attribute in object
+        field = self._meta.get_field_by_name(name)
+        v = getattr(self, name, None)
+        value = field.value_to_python(value)
+        if v is None:
+            v = value
+        elif isinstance(v, list):
+            if value.lower() not in [ x.lower() for x in v ]:
+                v.append(value)
+        elif v.lower() != value():
+            v = [ v, value ]
+            assert False
+        self._db_values[using][name] = field.to_db(v)
+        setattr(self, name, v)
 
     rename.alters_data = True

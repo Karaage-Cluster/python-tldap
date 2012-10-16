@@ -483,14 +483,13 @@ class LDAPwrapper(object):
         self._cache_rename_dn(dn, newdn)
         cache = self._cache_get_for_dn(newdn)
         old_key,old_value,_ = split_dn[0][0]
-        if old_value in cache[old_key]:
-            cache[old_key].remove(old_value)
+        cache[old_key] = [ x for x in cache[old_key] if x.lower() != old_value.lower()]
         if len(cache[old_key]) == 0:
             del cache[old_key]
         new_key,new_value,_ = split_newrdn[0][0]
         if new_key not in cache:
             cache[new_key] = [ ]
-        if new_value not in cache[new_key]:
+        if new_value.lower() not in [ x.lower() for x in cache[new_key] ]:
             cache[new_key].append(new_value)
 
         return self._process(oncommit, onrollback, onfailure)
