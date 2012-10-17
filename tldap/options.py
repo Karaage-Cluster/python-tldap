@@ -21,6 +21,7 @@ class Options(object):
         self._fields = {}
         self.object_classes = set(getattr(meta, 'object_classes', []))
         self.base_dn = getattr(meta, 'base_dn', None)
+        self.pk = getattr(meta, 'pk', None)
         self.object_name = name
 
     def add_field(self, field):

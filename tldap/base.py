@@ -70,6 +70,9 @@ class LDAPmeta(type):
             if i in field_names:
                 raise tldap.exceptions.FieldError('Local field %s clashes with reserved name from base class %r'%(i, name))
 
+        base_dn = None
+        pk = None
+
         for base in parents:
             if not hasattr(base, '_meta'):
                 # Things without _meta aren't functional models, so they're
@@ -91,8 +94,12 @@ class LDAPmeta(type):
                 new_class._meta.add_field(field)
 
             new_class._meta.object_classes.update(base._meta.object_classes)
-            base_dn = getattr(new_class._meta, 'base_dn', None) or getattr(base._meta, 'base_dn', None)
-            new_class._meta.base_dn = base_dn
+
+            base_dn = getattr(base._meta, 'base_dn') or base_dn
+            pk = getattr(base._meta, 'pk') or pk
+
+        new_class._meta.base_dn = getattr(new_class._meta, 'base_dn') or base_dn
+        new_class._meta.pk = getattr(new_class._meta, 'pk') or pk
 
         return new_class
 
@@ -180,14 +187,13 @@ class LDAPobject(object):
 
     load_db_values.alters_data = True
 
-    def construct_dn(self):
-        raise ValueError("Need a full DN for this object")
-
     def rdn_to_dn(self, name):
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
-            raise ValueError("Cannot use %s in dn as it is None"%name)
+            raise tldap.exceptions.ValidationError("Cannot use %s in dn as it is None"%name)
+        if isinstance(value, list):
+            raise tldap.exceptions.ValidationError("Cannot use %s in dn as it is a list"%name)
         value = field.value_to_db(value)
 
         split_base = ldap.dn.str2dn(self._base_dn)
@@ -206,8 +212,11 @@ class LDAPobject(object):
         that the "save" must be an SQL insert or update (or equivalent for
         non-SQL backends), respectively. Normally, they should not be set.
         """
+        if self._dn is None and self._meta.pk is not None:
+            self._dn = self.rdn_to_dn(self._meta.pk)
+
         if self._dn is None:
-            self._dn = self.construct_dn()
+            raise tldap.exceptions.ValidationError("Need a full DN for this object")
 
         if force_add and force_modify:
             raise ValueError("Cannot force both insert and updating in model saving.")
