@@ -181,11 +181,13 @@ class LDAPobject(object):
     load_db_values.alters_data = True
 
     def construct_dn(self):
-        raise RuntimeError("Need a full DN for this object")
+        raise ValueError("Need a full DN for this object")
 
     def rdn_to_dn(self, name):
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
+        if value is None:
+            raise ValueError("Cannot use %s in dn as it is None"%name)
         value = field.value_to_db(value)
 
         split_base = ldap.dn.str2dn(self._base_dn)
@@ -426,6 +428,7 @@ class LDAPobject(object):
         field = self._meta.get_field_by_name(old_key)
         v = getattr(self, old_key, [])
         old_value = field.value_to_python(old_value)
+        print "------", old_key, old_value, v
         if v is None:
             pass
         elif isinstance(v, list):
@@ -433,6 +436,7 @@ class LDAPobject(object):
                 v.remove(old_value)
         elif old_value == v:
             v = None
+        print "------", old_key, old_value, v
         if v == None:
             del self._db_values[using][old_key]
         else:
@@ -443,6 +447,7 @@ class LDAPobject(object):
         field = self._meta.get_field_by_name(new_key)
         v = getattr(self, new_key, None)
         new_value = field.value_to_python(new_value)
+        print "++++++", new_key, new_value, v
         if v is None:
             v = new_value
         elif isinstance(v, list):
@@ -451,6 +456,7 @@ class LDAPobject(object):
         elif v != new_value:
             # we can't add a value to a string
             assert False
+        print "++++++", new_key, new_value, v
         self._db_values[using][new_key] = field.to_db(v)
         setattr(self, new_key, v)
 
