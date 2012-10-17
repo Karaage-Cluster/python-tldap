@@ -394,7 +394,7 @@ class LDAPobject(object):
         tmplist = []
         tmplist.append(split_new_rdn[0])
         tmplist.extend(split_dn[1:])
-        self._dn = ldap.dn.dn2str(tmplist).lower()
+        self._dn = ldap.dn.dn2str(tmplist)
 
     rename.alters_data = True
 
