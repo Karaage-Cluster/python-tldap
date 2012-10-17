@@ -36,7 +36,10 @@ class Field(object):
         # do we expect a list or just a single value?
         if self._max_instances == 1:
             assert not isinstance(value, list)
-            value = [ self.value_to_db(value) ]
+            if value is None:
+                value = [ ]
+            else:
+                value = [ self.value_to_db(value) ]
         else:
             assert isinstance(value, list)
             value = list(value)
