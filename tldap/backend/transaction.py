@@ -589,7 +589,7 @@ class LDAPwrapper(object):
                 t = _MatchMixin(dn, v)
                 if filterobj is None or t.match(filterobj):
                     debug("---> match")
-                    rdict[dn] = copy.copy(v)
+                    rdict[dn] = copy.deepcopy(v)
                 else:
                     debug("---> nomatch")
             else:
