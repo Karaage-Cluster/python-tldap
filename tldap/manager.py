@@ -371,6 +371,10 @@ class ManyToOneDescriptor(object):
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
 
+        this_value = getattr(instance, self._this_key)
+        if this_value is None:
+            return None
+
         linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls.objects.__class__
         LinkManager = _create_link_manager(superclass, False, False)
