@@ -1042,7 +1042,7 @@ class GroupAPITest(unittest.TestCase):
         self.failUnlessEqual(len(members), 3)
 
     def test_add_group(self):
-        self.group.objects.create(cn='Admin', gidNumber=10004)
+        self.group.objects.create(cn='Admin')
         self.failUnlessEqual(len(self.group.objects.all()), 4)
         g = self.group.objects.get(cn="Admin")
         self.failUnlessEqual(g.gidNumber, 10004)
@@ -1057,7 +1057,7 @@ class GroupAPITest(unittest.TestCase):
         self.failUnlessEqual(g.gidNumber, 10008)
 
     def test_add_group_optional(self):
-        self.group.objects.create(cn='Admin', gidNumber=10004, description='Admin Group')
+        self.group.objects.create(cn='Admin', description='Admin Group')
         self.failUnlessEqual(len(self.group.objects.all()), 4)
         g = self.group.objects.get(cn="Admin")
         self.failUnlessEqual(g.description, 'Admin Group')

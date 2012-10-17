@@ -330,10 +330,24 @@ class std_person(person, organizationalPerson, inetOrgPerson):
         # self.unicodePwd=unicode_password
         self.sambaPwdLastSet=str(int(time.mktime(datetime.datetime.now().timetuple())))
 
+    def save(self, *args, **kwargs):
+        if self.cn is None:
+            self.cn = u"%s %s" % (self.givenName, self.sn)
+        super(std_person, self).save(*args, **kwargs)
+
 class std_account(std_person, posixAccount, shadowAccount):
 
     def __unicode__(self):
         return u"A:%s"%self.cn
+
+    def save(self, *args, **kwargs):
+        if self.uidNumber is None:
+            uid = None
+            for group in std_account.objects.all():
+                if uid is None or group.uidNumber > uid:
+                    uid = group.uidNumber
+            self.uidNumber = uid + 1
+        super(std_account, self).save(*args, **kwargs)
 
 class std_group(posixGroup):
     # accounts
@@ -350,6 +364,15 @@ class std_group(posixGroup):
 
     def __unicode__(self):
         return u"G:%s"%self.cn
+
+    def save(self, *args, **kwargs):
+        if self.gidNumber is None:
+            gid = None
+            for group in std_group.objects.all():
+                if gid is None or group.gidNumber > gid:
+                    gid = group.gidNumber
+            self.gidNumber = gid + 1
+        super(std_group, self).save(*args, **kwargs)
 
 # pwdPolicy objects
 
