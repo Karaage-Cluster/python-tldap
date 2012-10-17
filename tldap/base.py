@@ -429,8 +429,9 @@ class LDAPobject(object):
         if v is None:
             pass
         elif isinstance(v, list):
-            v = [ x for x in v if x.lower() != old_value.lower()]
-        elif old_value.lower() == v.lower():
+            if old_value in v:
+                v.remove(old_value)
+        elif old_value == v:
             v = None
         if v == None:
             del self._db_values[using][old_key]
@@ -445,9 +446,9 @@ class LDAPobject(object):
         if v is None:
             v = new_value
         elif isinstance(v, list):
-            if new_value.lower() not in [ x.lower() for x in v ]:
+            if new_value not in v:
                 v.append(new_value)
-        elif v.lower() != new_value.lower():
+        elif v != new_value:
             # we can't add a value to a string
             assert False
         self._db_values[using][new_key] = field.to_db(v)
