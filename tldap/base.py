@@ -186,9 +186,9 @@ class LDAPobject(object):
         value = field.value_to_db(value)
 
         split_base = ldap.dn.str2dn(self._base_dn)
-        split_newrdn = [[(name, value, 1)]] + split_base
+        split_new_rdn = [[(name, value, 1)]] + split_base
 
-        new_rdn = ldap.dn.dn2str(split_newrdn)
+        new_rdn = ldap.dn.dn2str(split_new_rdn)
 
         return new_rdn
 
@@ -372,12 +372,27 @@ class LDAPobject(object):
 
     _modify.alters_data = True
 
-    def rename(self, name, value, using=None):
+    def rename(self, name, value):
         if isinstance(value, unicode):
             value = value.encode()
 
+        split_new_rdn = [[(name, value, 1)]]
+        new_rdn = ldap.dn.dn2str(split_new_rdn)
+
         # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+        for using in list(self._db_values):
+            self._rename(new_rdn, using)
+
+        # construct new dn
+        split_dn = ldap.dn.str2dn(self._dn)
+        tmplist = []
+        tmplist.append(split_new_rdn[0])
+        tmplist.extend(split_dn[1:])
+        self._dn = ldap.dn.dn2str(tmplist).lower()
+
+    rename.alters_data = True
+
+    def _rename(self, new_rdn, using):
         c = tldap.connections[using]
 
         # what to do if transaction is reversed
@@ -388,22 +403,15 @@ class LDAPobject(object):
             self._db_values[using] = old_values
 
         # do the rename
-        split_newrdn = [[(name, value, 1)]]
-        new_rdn = ldap.dn.dn2str(split_newrdn)
         c.rename(self._dn, new_rdn, onfailure)
 
-        # reconstruct dn
-        split_dn = ldap.dn.str2dn(self._dn)
-
-        # make newrdn fully qualified dn
-        tmplist = []
-        tmplist.append(split_newrdn[0])
-        tmplist.extend(split_dn[1:])
-        self._dn = ldap.dn.dn2str(tmplist).lower()
-
         # get old rdn values
-        split_oldrdn = ldap.dn.str2dn(self._dn)
-        old_key,old_value,_ = split_dn[0][0]
+        split_old_dn = ldap.dn.str2dn(self._dn)
+        old_key,old_value,_ = split_old_dn[0][0]
+
+        # get new rdn values
+        split_new_rdn = ldap.dn.str2dn(new_rdn)
+        new_key,new_value,_ = split_new_rdn[0][0]
 
         # make a copy before modifications
         self._db_values[using] = copy.copy(self._db_values[using])
@@ -425,18 +433,18 @@ class LDAPobject(object):
         setattr(self, old_key, v)
 
         # update new rdn attribute in object
-        field = self._meta.get_field_by_name(name)
-        v = getattr(self, name, None)
-        value = field.value_to_python(value)
+        field = self._meta.get_field_by_name(new_key)
+        v = getattr(self, new_key, None)
+        new_value = field.value_to_python(new_value)
         if v is None:
-            v = value
+            v = new_value
         elif isinstance(v, list):
-            if value.lower() not in [ x.lower() for x in v ]:
-                v.append(value)
-        elif v.lower() != value():
-            v = [ v, value ]
+            if new_value.lower() not in [ x.lower() for x in v ]:
+                v.append(new_value)
+        elif v.lower() != new_value.lower():
+            # we can't add a value to a string
             assert False
-        self._db_values[using][name] = field.to_db(v)
-        setattr(self, name, v)
+        self._db_values[using][new_key] = field.to_db(v)
+        setattr(self, new_key, v)
 
-    rename.alters_data = True
+    _rename.alters_data = True
