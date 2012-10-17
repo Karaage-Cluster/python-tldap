@@ -162,12 +162,12 @@ class LDAPwrapper(object):
     def _cache_normalize_dn(self, dn):
         """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
         is not possible to have two or more cache entries representing the same ldap entry. """
-        return ldap.dn.dn2str(ldap.dn.str2dn(dn)).lower()
+        return ldap.dn.dn2str(ldap.dn.str2dn(dn))
 
     def _cache_get_for_dn(self, dn):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
-        dn = self._cache_normalize_dn(dn)
+        dn = self._cache_normalize_dn(dn).lower()
         if dn not in self._cache:
             # no cached item, retrieve from ldap
             results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE))
@@ -175,7 +175,7 @@ class LDAPwrapper(object):
                 raise ldap.NO_SUCH_OBJECT("No results finding current value")
             if len(results) > 1:
                 raise RuntimeError("Too many results finding current value")
-            self._cache[dn] = results[0][1]
+            self._cache[dn] = results[0]
 
         elif self._cache[dn] is None:
             # don't allow access to deleted items
@@ -188,23 +188,27 @@ class LDAPwrapper(object):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
         dn = self._cache_normalize_dn(dn)
-        if dn in self._cache and self._cache[dn] is not None:
+        ldn = dn.lower()
+        if ldn in self._cache and self._cache[ldn] is not None:
             raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%dn)
-        self._cache[dn] = {}
-        return self._cache[dn]
+        self._cache[ldn] = ( dn, {} )
+        return self._cache[ldn]
 
     def _cache_rename_dn(self, dn, newdn):
         """ The function will rename the DN in the cache. """
-        if newdn in self._cache and self._cache[newdn] is not None:
-            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%newdn)
-        dn = self._cache_normalize_dn(dn)
         newdn = self._cache_normalize_dn(newdn)
-        self._cache[newdn] = self._cache_get_for_dn(dn)
+        lnewdn = newdn.lower()
+        if newdn in self._cache and self._cache[lnewdn] is not None:
+            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%newdn)
+
+        cache = self._cache_get_for_dn(dn)
         self._cache_del_dn(dn)
+
+        self._cache[lnewdn] = (newdn, cache[1])
 
     def _cache_del_dn(self, dn):
         """ This function will mark as deleted the DN created with _cache_get_for_dn and mark it as unsuable. """
-        dn = self._cache_normalize_dn(dn)
+        dn = self._cache_normalize_dn(dn).lower()
         if dn in self._cache:
             self._cache[dn] = None
 
@@ -325,12 +329,12 @@ class LDAPwrapper(object):
         # simulate this action in cache
         cache = self._cache_create_for_dn(dn)
         k,v,_ = ldap.dn.str2dn(dn)[0][0]
-        cache[k] = [v]
+        cache[1][k] = [v]
         for k,v in modlist:
             if isinstance(v, list):
-                cache[k] = v
+                cache[1][k] = v
             else:
-                cache[k] = [v]
+                cache[1][k] = [v]
 
         # process this action
         return self._process(oncommit, onrollback, onfailure)
@@ -346,7 +350,7 @@ class LDAPwrapper(object):
         revlist = []
 
         # get the current cached attributes
-        result = self._cache_get_for_dn(dn)
+        result = self._cache_get_for_dn(dn)[1]
 
         # find the how to reverse modlist (for rollback) and put result in
         # revlist. Also simulate actions on cache.
@@ -432,7 +436,7 @@ class LDAPwrapper(object):
         debug("\ndelete", self)
 
         # get copy of cache
-        result = self._cache_get_for_dn(dn).copy()
+        result = self._cache_get_for_dn(dn)[1].copy()
 
         # remove special values that can't be added
         def delete_attribute(name):
@@ -484,7 +488,7 @@ class LDAPwrapper(object):
         
         debug("--> rename cache", dn, newdn)
         self._cache_rename_dn(dn, newdn)
-        cache = self._cache_get_for_dn(newdn)
+        cache = self._cache_get_for_dn(newdn)[1]
         old_key,old_value,_ = split_dn[0][0]
         cache[old_key] = [ x for x in cache[old_key] if x.lower() != old_value.lower()]
         if len(cache[old_key]) == 0:
@@ -541,7 +545,7 @@ class LDAPwrapper(object):
         rdict = {}
         for v in rarray:
             dn = v[0].lower()
-            rdict[dn] = v[1]
+            rdict[dn] = v
         debug("---> rdict (ldap)", rdict)
         
         # is this dn in the search scope?
@@ -586,7 +590,7 @@ class LDAPwrapper(object):
             # if this entry is not deleted
             if v is not None:
                 # then check if it matches the filter
-                t = _MatchMixin(dn, v)
+                t = _MatchMixin(v[0], v[1])
                 if filterobj is None or t.match(filterobj):
                     debug("---> match")
                     rdict[dn] = copy.deepcopy(v)
@@ -604,7 +608,7 @@ class LDAPwrapper(object):
         # convert results back to list format
         rarray = []
         for dn, v in rdict.iteritems():
-            rarray.append( (dn,v) )
+            rarray.append( (v[0],v[1]) )
 
         # we are finished - return results, eat cake
         debug("---> return", rarray)
