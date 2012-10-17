@@ -189,11 +189,11 @@ class LDAPobject(object):
         value = field.value_to_db(value)
 
         split_base = ldap.dn.str2dn(self._base_dn)
-        split_new_rdn = [[(name, value, 1)]] + split_base
+        split_new_dn = [[(name, value, 1)]] + split_base
 
-        new_rdn = ldap.dn.dn2str(split_new_rdn)
+        new_dn = ldap.dn.dn2str(split_new_dn)
 
-        return new_rdn
+        return new_dn
 
     def save(self, force_add=False, force_modify=False, using=None):
         """
