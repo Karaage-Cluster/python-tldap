@@ -152,13 +152,16 @@ class LDAPobject(object):
         if self._dn is None and self._base_dn is None:
             self._base_dn = self._meta.base_dn
 
-    def _reload_db_values(self, using=None):
+    def load_db_values(self, using=None):
         """
-        Hack in case cached _db_values fall out of sync for any reason. Should not be needed anymore.
+        Kludge to load DB values from other databases. Required for multiple DB use.
         """
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         c = tldap.connections[using]
+
+        if using in self._db_values:
+            return
 
         # what fields should we get?
         field_names = self._meta.get_all_field_names()
@@ -175,7 +178,7 @@ class LDAPobject(object):
 
         self._db_values[using] = db_values[0][1]
 
-    _reload_db_values.alters_data = True
+    load_db_values.alters_data = True
 
     def construct_dn(self):
         raise RuntimeError("Need a full DN for this object")
