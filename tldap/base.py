@@ -372,7 +372,10 @@ class LDAPobject(object):
 
     _modify.alters_data = True
 
-    def rename(self, name, value):
+    def rename(self, **kwargs):
+        assert len(kwargs)==1
+        name,value = kwargs.iteritems().next()
+
         if isinstance(value, unicode):
             value = value.encode()
 

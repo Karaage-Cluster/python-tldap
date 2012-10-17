@@ -543,7 +543,7 @@ class ModelTest(unittest.TestCase):
         # test rename with rollback
         with tldap.transaction.commit_on_success():
             p = get(uid="tux")
-            p.rename('uid', 'tuz')
+            p.rename(uid='tuz')
             p.sn = "Tuz"
             p.save()
             self.assertRaises(DoesNotExist, get, uid="tux")
@@ -558,7 +558,7 @@ class ModelTest(unittest.TestCase):
         # test rename with success
         with tldap.transaction.commit_on_success():
             p = get(uid="tux")
-            p.rename('uid', 'tuz')
+            p.rename(uid='tuz')
             p.sn = "Tuz"
             p.save()
             self.assertRaises(DoesNotExist, get, uid="tux")
@@ -571,7 +571,7 @@ class ModelTest(unittest.TestCase):
         # test rename back with success
         with tldap.transaction.commit_on_success():
             p = get(uid="tuz")
-            p.rename('uid', 'tux')
+            p.rename(uid='tux')
             p.sn = "Gates"
             p.save()
             self.assertEqual(get(uid="tux").sn, "Gates")
@@ -589,7 +589,7 @@ class ModelTest(unittest.TestCase):
         # test rename with success
         with tldap.transaction.commit_on_success():
             p = get(uid="tux")
-            p.rename('cn', 'tux')
+            p.rename(cn='tux')
             self.assertEqual(p.cn, [ "Tux Torvalds", "tux" ])
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         assert_cache_dn(self, "cn=tux, ou=People, dc=python-ldap,dc=org", c)
@@ -611,7 +611,7 @@ class ModelTest(unittest.TestCase):
         # test rename back with success
         with tldap.transaction.commit_on_success():
             p = get(dn="cn=tux, ou=People, dc=python-ldap,dc=org")
-            p.rename('uid', 'tux')
+            p.rename(uid='tux')
             self.assertEqual(p.cn, [ "Tux Torvalds" ])
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         assert_cache_dn(self, "cn=tux, ou=People, dc=python-ldap,dc=org", c)
@@ -633,7 +633,7 @@ class ModelTest(unittest.TestCase):
         # test rename with success
         with tldap.transaction.commit_on_success():
             p = get(uid="tux")
-            p.rename('cn', 'Tux Torvalds')
+            p.rename(cn='Tux Torvalds')
             self.assertEqual(p.cn, [ "Tux Torvalds" ])
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         assert_cache_dn(self, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", c)
@@ -657,7 +657,7 @@ class ModelTest(unittest.TestCase):
             p = get(dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
             p.cn = [ 'sss', 'Tux Torvalds' ]
             p.save()
-            p.rename('uid', 'tux')
+            p.rename(uid='tux')
             self.assertEqual(p.cn, [ "sss" ])
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
         assert_cache_dn(self, "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org", c)
