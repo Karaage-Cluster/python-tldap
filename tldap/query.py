@@ -226,7 +226,7 @@ class QuerySet(object):
                 for field in fields:
                     name = field.name
                     value = i[1].get(name, [])
-                    value = field.clean(value)
+                    value = field.to_python(value)
                     setattr(o, name, value)
 
                 # save raw db values for latter use
