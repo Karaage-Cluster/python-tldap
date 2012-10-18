@@ -139,11 +139,11 @@ class posixAccount(tldap.base.LDAPobject):
 
 class shadowAccount(tldap.base.LDAPobject):
     userPassword = tldap.fields.CharField()
-    shadowLastChange = tldap.fields.CharField()
-    shadowMin = tldap.fields.CharField()
-    shadowMax = tldap.fields.CharField()
+    shadowLastChange = tldap.fields.IntegerField()
+    shadowMin = tldap.fields.IntegerField()
+    shadowMax = tldap.fields.IntegerField()
     shadowWarning = tldap.fields.CharField()
-    shadowInactive = tldap.fields.CharField()
+    shadowInactive = tldap.fields.IntegerField()
     shadowExpire = tldap.fields.CharField()
     shadowFlag = tldap.fields.CharField()
     description = tldap.fields.CharField()
@@ -224,7 +224,7 @@ class sambaGroupMapping(tldap.base.LDAPobject):
     # posixGroup
     gidNumber = tldap.fields.IntegerField(required=True)
     sambaSID = tldap.fields.CharField(required=True)
-    sambaGroupType = tldap.fields.CharField(required=True)
+    sambaGroupType = tldap.fields.IntegerField(required=True)
     displayName = tldap.fields.CharField()
     sambaSIDList = tldap.fields.CharField()
 
@@ -332,6 +332,9 @@ class std_person(person, organizationalPerson, inetOrgPerson):
         if self.cn is None:
             self.cn = u"%s %s" % (self.givenName, self.sn)
         super(std_person, self).save(*args, **kwargs)
+
+    managed_by = tldap.manager.ManyToOneDescriptor('manager', 'tldap.models.std_person', 'dn')
+    manager_of = tldap.manager.OneToManyDescriptor('dn', 'tldap.models.std_person', 'manager')
 
 class std_account(std_person, posixAccount, shadowAccount):
 
