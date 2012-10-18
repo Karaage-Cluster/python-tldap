@@ -179,7 +179,7 @@ class QuerySet(object):
         """
 
         # get object classes to search
-        object_classes = self._cls._meta.object_classes
+        object_classes = self._cls._meta.search_classes or self._cls._meta.object_classes
 
         # add object classes to search array
         query = tldap.Q()
