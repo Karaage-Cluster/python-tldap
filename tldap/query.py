@@ -46,6 +46,10 @@ class QuerySet(object):
         self._iter = None
         self._result_cache = None
 
+    @property
+    def model(self):
+        return self._cls
+
     ########################
     # PYTHON MAGIC METHODS #
     ########################
