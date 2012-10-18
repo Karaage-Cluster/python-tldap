@@ -337,14 +337,14 @@ class ManyToManyDescriptor(object):
             raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
 
         linked_cls = _lookup(self._linked_cls, cls)
-        superclass = linked_cls.objects.__class__
+        superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
         linked_cls = _lookup(self._linked_cls, instance.__class__)
-        superclass = linked_cls.objects.__class__
+        superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
         lm.clear()
@@ -376,7 +376,7 @@ class ManyToOneDescriptor(object):
             return None
 
         linked_cls = _lookup(self._linked_cls, cls)
-        superclass = linked_cls.objects.__class__
+        superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, False, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
         return lm.get()
@@ -384,7 +384,7 @@ class ManyToOneDescriptor(object):
     def __set__(self, instance, value):
         assert not isinstance(value, list)
         linked_cls = _lookup(self._linked_cls, instance.__class__)
-        superclass = linked_cls.objects.__class__
+        superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, False, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
         lm.clear()
@@ -412,14 +412,14 @@ class OneToManyDescriptor(object):
             raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
 
         linked_cls = _lookup(self._linked_cls, cls)
-        superclass = linked_cls.objects.__class__
+        superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, True, False)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
         linked_cls = _lookup(self._linked_cls, instance.__class__)
-        superclass = linked_cls.objects.__class__
+        superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, True, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
         lm.clear()

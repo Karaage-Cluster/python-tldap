@@ -16,7 +16,6 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import tldap
-
 import tldap.options
 import tldap.exceptions
 import tldap.manager
@@ -25,6 +24,7 @@ import ldap.dn
 import ldap.modlist
 
 import copy
+import sys
 
 class LDAPmeta(type):
     def __new__(cls, name, bases, attrs):
@@ -38,9 +38,21 @@ class LDAPmeta(type):
         new_class = super_new(cls, name, bases, {'__module__': module})
 
         attr_meta = attrs.pop('Meta', None)
+        meta = attr_meta
 
-        new_class.add_to_class('_meta', tldap.options.Options(name, attr_meta))
-        new_class.add_to_class('objects', tldap.manager.Manager())
+        if getattr(meta, 'app_label', None) is None:
+            # Figure out the app_label by looking one level up.
+            # For 'django.contrib.sites.models', this would be 'sites'.
+            model_module = sys.modules[new_class.__module__]
+            kwargs = {"app_label": model_module.__name__.split('.')[-2]}
+        else:
+            kwargs = {}
+
+        new_class.add_to_class('_meta', tldap.options.Options(meta, **kwargs))
+
+        manager = tldap.manager.Manager()
+        new_class.add_to_class('objects', manager)
+        new_class.add_to_class('_default_manager', manager)
 
         # Add all attributes to the class.
         ObjectDoesNotExist = tldap.exceptions.ObjectDoesNotExist
@@ -94,6 +106,7 @@ class LDAPmeta(type):
                 new_class._meta.add_field(field)
 
             new_class._meta.object_classes.update(base._meta.object_classes)
+            new_class._meta.search_classes.update(base._meta.search_classes)
 
             base_dn = getattr(base._meta, 'base_dn') or base_dn
             pk = getattr(base._meta, 'pk') or pk
@@ -263,12 +276,11 @@ class LDAPobject(object):
             object_class_field = tldap.fields.CharField(max_instances = None)
 
         # convert python value to db value or vice versa as required.
-        if default_object_class is None:
-            default_object_class = object_class_field.clean(default_object_class_db)
-        elif default_object_class_db is None:
-            default_object_class_db = object_class_field.to_db(default_object_class)
-        else:
-            assert False
+        tmp_default_object_class = set(default_object_class) | set(object_class_field.clean(default_object_class_db))
+        tmp_default_object_class_db = set(object_class_field.to_db(default_object_class)) | set(default_object_class_db)
+
+        default_object_class = list(tmp_default_object_class)
+        default_object_class_db = list(tmp_default_object_class_db)
 
         # even if objectClass isn't a field in the model, we still need to set it
         moddict = {
@@ -313,10 +325,7 @@ class LDAPobject(object):
     def _add(self, using):
         # default object class if none given
         default_object_class = getattr(self, "objectClass", [])
-        default_object_class_db = None
-        if len(default_object_class) == 0:
-            default_object_class = None
-            default_object_class_db = list(self._meta.object_classes)
+        default_object_class_db = list(self._meta.object_classes)
 
         # generate moddict values
         moddict = self._get_moddict(default_object_class, default_object_class_db, using)
@@ -351,7 +360,9 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # default object class if none given
-        default_object_class_db = self._db_values[using]['objectClass']
+        default_object_class_db = set(self._db_values[using]['objectClass'])
+        default_object_class_db.union(self._meta.object_classes)
+        default_object_class_db = list(default_object_class_db)
 
         # even if objectClass isn't a field, we still need to set it
         modold = {
@@ -365,7 +376,7 @@ class LDAPobject(object):
             modold[name] = self._db_values[using].get(name, [])
 
         # generate moddict values
-        moddict = self._get_moddict(None, default_object_class_db, using)
+        moddict = self._get_moddict([], default_object_class_db, using)
 
         # turn moddict into a modlist
         modlist = ldap.modlist.modifyModlist(modold, moddict)
