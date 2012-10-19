@@ -216,13 +216,17 @@ class QuerySet(object):
             query = query & tldap.Q(objectClass=oc)
 
         # try and get a list of dn to search for
-        dn_list = self._get_dn_filter(self._query)
+        if self._query is not None:
+            dn_list = self._get_dn_filter(self._query)
+        else:
+            dn_list = None
+
+        # refine search parameters
         if dn_list is not None:
-            # success, we only search for these dn
+            # we got a dn_list, we only search for these dn
             scope = ldap.SCOPE_BASE
         else:
-            # failed, we have to search for other attributes
-
+            # we have to search for other attributes
             # add filter spec to search array
             if self._query is not None:
                 query = query & self._query
