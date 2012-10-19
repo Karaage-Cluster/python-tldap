@@ -360,8 +360,7 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # default object class if none given
-        default_object_class_db = set(self._db_values[using]['objectClass'])
-        default_object_class_db.union(self._meta.object_classes)
+        default_object_class_db = set(self._db_values[using]['objectClass']) | self._meta.object_classes
         default_object_class_db = list(default_object_class_db)
 
         # even if objectClass isn't a field, we still need to set it
