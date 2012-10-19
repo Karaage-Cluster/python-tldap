@@ -81,6 +81,15 @@ def is_dirty(using=None):
     connection = tldap.connections[using]
     return connection.is_dirty()
 
+def is_managed(using=None):
+    """
+    Checks whether the transaction manager is in manual or in auto state.
+    """
+    if using is None:
+        using = tldap.DEFAULT_LDAP_ALIAS
+    connection = tldap.connections[using]
+    return connection.is_managed()
+
 def commit(using=None):
     """
     Does the commit itself and resets the dirty flag.

@@ -110,6 +110,10 @@ class LDAPwrapper(object):
         """ Are there uncommitted changes? """
         return False
 
+    def is_managed(self):
+        """ Are we inside transaction management? """
+        return False
+
     def enter_transaction_management(self):
         """ Start a transaction. """
         pass

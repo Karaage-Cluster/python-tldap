@@ -224,6 +224,10 @@ class LDAPwrapper(object):
             return True
         return False
 
+    def is_managed(self):
+        """ Are we inside transaction management? """
+        return self._transact
+
     def enter_transaction_management(self):
         """ Start a transaction. """
         if self._transact:
