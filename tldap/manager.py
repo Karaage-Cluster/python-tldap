@@ -160,8 +160,8 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key)
                 assert isinstance(obj, linked_cls)
+                linked_value = getattr(obj, linked_key)
 
                 if foreign_key_is_list:
                     assert isinstance(linked_value, list)
@@ -182,8 +182,8 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key)
                 assert isinstance(obj, linked_cls)
+                linked_value = getattr(obj, linked_key)
 
                 if foreign_key_is_list:
                     assert isinstance(linked_value, list)
@@ -260,8 +260,8 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key)
                 assert isinstance(obj, linked_cls)
+                linked_value = getattr(obj, linked_key)
                 assert not isinstance(linked_value, list)
 
                 if foreign_key_is_list:
@@ -284,8 +284,8 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
-                linked_value = getattr(obj, linked_key)
                 assert isinstance(obj, linked_cls)
+                linked_value = getattr(obj, linked_key)
                 assert not isinstance(linked_value, list)
 
                 if foreign_key_is_list:
