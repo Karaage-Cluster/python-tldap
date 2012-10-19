@@ -744,6 +744,16 @@ class ModelTest(unittest.TestCase):
             person.objects.all()._get_filter(tldap.Q(uid='tux') & ( tldap.Q(uid='tuz') | tldap.Q(uid='meow'))),
             "(&(uid=tux)(|(uid=tuz)(uid=meow)))")
 
+        person.objects.get(dn="uid=tux,ou=People, dc=python-ldap,dc=org")
+        self.assertRaises(person.DoesNotExist, person.objects.get, dn="uid=tuy,ou=People, dc=python-ldap,dc=org")
+        person.objects.get(dn="uid=tuz,ou=People, dc=python-ldap,dc=org")
+
+        r = person.objects.filter(
+            tldap.Q(dn="uid=tux,ou=People, dc=python-ldap,dc=org") |
+            tldap.Q(dn="uid=tuy,ou=People, dc=python-ldap,dc=org") |
+            tldap.Q(dn="uid=tuz,ou=People, dc=python-ldap,dc=org"))
+        self.assertEqual(len(r), 2)
+
         r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         self.assertEqual(len(r), 2)
 

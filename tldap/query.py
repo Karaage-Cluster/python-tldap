@@ -139,7 +139,7 @@ class QuerySet(object):
             assert value != ""
             return ldap.filter.filter_format("(%s=*%s*)",[name, value])
         else:
-            raise RuntimeError("Unknown search operation %s"%operation)
+            raise ValueError("Unknown search operation %s"%operation)
 
     def _get_filter(self, q):
         if q.negated:
@@ -176,6 +176,31 @@ class QuerySet(object):
 
         return "("+ op + "".join(search) + ")"
 
+    def _get_dn_filter(self, q):
+        dn_list = []
+
+        if q.connector == tldap.Q.OR:
+            pass
+        elif q.connector == tldap.Q.AND and len(q.children)==1:
+            pass
+        else:
+            return None
+
+        for child in q.children:
+            if isinstance(child, django.utils.tree.Node):
+                tmp_list = self._get_dn_filter(child)
+                if tmp_list is None:
+                    return None
+                dn_list.extend(tmp_list)
+                tmp_list = None
+            else:
+                name,value = child
+                if name != "dn":
+                    return None
+                dn_list.append(value)
+
+        return dn_list
+
     def iterator(self):
         """
         An iterator over the results from applying this QuerySet to the
@@ -190,17 +215,26 @@ class QuerySet(object):
         for oc in object_classes:
             query = query & tldap.Q(objectClass=oc)
 
-        # add filter spec to search array
-        if self._query is not None:
-            query = query & self._query
+        # try and get a list of dn to search for
+        dn_list = self._get_dn_filter(self._query)
+        if dn_list is not None:
+            # success, we only search for these dn
+            scope = ldap.SCOPE_BASE
+        else:
+            # failed, we have to search for other attributes
 
-        # get dn to search for, if given do a SCOPE_BASE search with this as a base;
-        # otherwise do a SCOPE_SUBTREE with base_dn as base.
-        dn = self._dn
+            # add filter spec to search array
+            if self._query is not None:
+                query = query & self._query
 
-        # set the base_dn as required
-        base_dn = dn or self._base_dn or self._cls._meta.base_dn
-        assert base_dn is not None
+            # do a SUBTREE search
+            scope = ldap.SCOPE_SUBTREE
+
+            # create a "list" of base_dn to search
+            base_dn = self._base_dn or self._cls._meta.base_dn
+            assert base_dn is not None
+            dn_list = [ base_dn ]
+
 
         # set the database we should use as required
         alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
@@ -212,38 +246,37 @@ class QuerySet(object):
         # construct search filter string
         search_filter = self._get_filter(query)
 
-        # work out the search scope
-        scope = ldap.SCOPE_SUBTREE
-        if dn is not None:
-            scope = ldap.SCOPE_BASE
+        # repeat for every dn
+        for base_dn in dn_list:
+            assert base_dn is not None
 
-        try:
-            # get the results
-            for i in tldap.connections[alias].search(base_dn, scope, search_filter, field_names):
-                # create new object
-                o = self._cls()
+            try:
+                # get the results
+                for i in tldap.connections[alias].search(base_dn, scope, search_filter, field_names):
+                    # create new object
+                    o = self._cls()
 
-                # set dn manually
-                setattr(o, '_dn', i[0])
+                    # set dn manually
+                    setattr(o, '_dn', i[0])
 
-                # set the other fields
-                for field in fields:
-                    name = field.name
-                    value = i[1].get(name, [])
-                    value = field.to_python(value)
-                    setattr(o, name, value)
+                    # set the other fields
+                    for field in fields:
+                        name = field.name
+                        value = i[1].get(name, [])
+                        value = field.to_python(value)
+                        setattr(o, name, value)
 
-                # save raw db values for latter use
-                o._db_values[alias] = i[1]
+                    # save raw db values for latter use
+                    o._db_values[alias] = i[1]
 
-                # save database alias for latter use
-                o._alias = alias
+                    # save database alias for latter use
+                    o._alias = alias
 
-                # give caller this result
-                yield o
-        except ldap.NO_SUCH_OBJECT:
-            # return with no results
-            pass
+                    # give caller this result
+                    yield o
+            except ldap.NO_SUCH_OBJECT:
+                # return with no results
+                pass
 
     def get(self, *args, **kwargs):
         """
@@ -312,19 +345,15 @@ class QuerySet(object):
         return self._filter_or_exclude(True, *args, **kwargs)
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
-        dn = kwargs.pop('dn', None)
-
         clone = self._clone()
         if negate:
             q = ~tldap.Q(*args, **kwargs)
-            clone._dn = dn
         else:
             q = tldap.Q(*args, **kwargs)
         if clone._query is None:
             clone._query = q
         else:
             clone._query = clone._query & q
-        clone._dn = dn
         return clone
 
     def using(self, alias):
