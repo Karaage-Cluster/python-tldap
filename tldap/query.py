@@ -179,6 +179,9 @@ class QuerySet(object):
     def _get_dn_filter(self, q):
         dn_list = []
 
+        if q.negated:
+            return None
+
         if q.connector == tldap.Q.OR:
             pass
         elif q.connector == tldap.Q.AND and len(q.children)==1:
