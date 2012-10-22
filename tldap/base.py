@@ -363,9 +363,7 @@ class LDAPobject(object):
         default_object_class_db = set(self._db_values[using]['objectClass']) | self._meta.object_classes
         default_object_class_db = list(default_object_class_db)
 
-        # even if objectClass isn't a field, we still need to set it
         modold = {
-            'objectClass': default_object_class_db
         }
 
         # generate modold values
