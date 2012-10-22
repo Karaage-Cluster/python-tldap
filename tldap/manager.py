@@ -360,7 +360,6 @@ class ManyToManyDescriptor(object):
             lm.clear(commit=False)
             for v in value:
                 lm.add(value, commit=False)
-            instance.save()
 
 class ManyToOneDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
@@ -401,7 +400,6 @@ class ManyToOneDescriptor(object):
         lm.clear(commit=False)
         if value is not None:
             lm.add(value, commit=False)
-        instance.save()
 
 class OneToManyDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
