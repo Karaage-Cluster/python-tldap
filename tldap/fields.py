@@ -118,7 +118,7 @@ class Field(object):
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
         if isinstance(value, unicode):
-            value = value.encode()
+            value = value.encode("utf_8")
         assert value is None or isinstance(value, str)
         return value
 

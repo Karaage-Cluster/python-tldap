@@ -400,8 +400,8 @@ class LDAPobject(object):
         assert len(kwargs)==1
         name,value = kwargs.iteritems().next()
 
-        if isinstance(value, unicode):
-            value = value.encode()
+        field = self._meta.get_field_by_name(name)
+        value = field.value_to_db(value)
 
         split_new_rdn = [[(name, value, 1)]]
         new_rdn = ldap.dn.dn2str(split_new_rdn)
