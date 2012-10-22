@@ -203,7 +203,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
         else:
 
-            def get_or_create(self, **kwargs):
+            def get_or_create(self, commit=True, **kwargs):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -224,11 +224,11 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     self._this_value = this_value
                     setattr(this_instance, this_key, this_value)
 
-                # yuck. but what else can we do?
-                this_instance.save()
+                if commit:
+                    this_instance.save()
                 return r
 
-            def create(self, **kwargs):
+            def create(self, commit=True, **kwargs):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -249,11 +249,11 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     this_value = None
                     setattr(this_instance, this_key, this_value)
 
-                # yuck. but what else can we do?
-                this_instance.save()
+                if commit:
+                    this_instance.save()
                 return r
 
-            def add(self, obj):
+            def add(self, obj, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -275,9 +275,10 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     self._this_value = this_value
                     setattr(this_instance, this_key, this_value)
 
-                this_instance.save()
+                if commit:
+                    this_instance.save()
 
-            def remove(self, obj):
+            def remove(self, obj, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -298,9 +299,10 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     this_value = None
                     setattr(this_instance, this_key, this_value)
 
-                this_instance.save()
+                if commit:
+                    this_instance.save()
 
-            def clear(self):
+            def clear(self, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -312,6 +314,9 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     this_value = None
                 self._this_value = this_value
                 setattr(this_instance, this_key, this_value)
+
+                if commit:
+                    this_instance.save()
 
     return LinkManager
 
@@ -347,9 +352,15 @@ class ManyToManyDescriptor(object):
         superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
-        lm.clear()
-        for v in value:
-            lm.add(value)
+        if self._linked_key:
+            lm.clear()
+            for v in value:
+                lm.add(value)
+        else:
+            lm.clear(commit=False)
+            for v in value:
+                lm.add(value, commit=False)
+            instance.save()
 
 class ManyToOneDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
@@ -387,9 +398,10 @@ class ManyToOneDescriptor(object):
         superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, False, False)
         lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
-        lm.clear()
+        lm.clear(commit=False)
         if value is not None:
-            lm.add(value)
+            lm.add(value, commit=False)
+        instance.save()
 
 class OneToManyDescriptor(object):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
