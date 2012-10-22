@@ -26,11 +26,11 @@ import django.conf
 import time
 import datetime
 
-#    objectClass = tldap.fields.CharField(required=True, max_instances=None)
 
 # Standard LDAP
 
 class organizationalUnit(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     ou = tldap.fields.CharField(required=True)
     userPassword = tldap.fields.CharField()
     searchGuide = tldap.fields.CharField()
@@ -58,6 +58,7 @@ class organizationalUnit(tldap.base.LDAPobject):
         object_classes = { 'organizationalUnit', }
 
 class person(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     sn = tldap.fields.CharField(required=True)
     cn = tldap.fields.CharField(required=True)
     userPassword = tldap.fields.CharField()
@@ -69,6 +70,7 @@ class person(tldap.base.LDAPobject):
         object_classes = { 'person', }
 
 class organizationalPerson(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     title = tldap.fields.CharField()
     x121Address = tldap.fields.CharField()
     registeredAddresss = tldap.fields.CharField()
@@ -92,6 +94,7 @@ class organizationalPerson(tldap.base.LDAPobject):
         object_classes = { 'organizationalPerson', }
 
 class inetOrgPerson(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     audio = tldap.fields.CharField()
     businessCategory = tldap.fields.CharField()
     carLicense = tldap.fields.CharField()
@@ -124,6 +127,7 @@ class inetOrgPerson(tldap.base.LDAPobject):
         object_classes = { 'inetOrgPerson', }
 
 class posixAccount(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     cn = tldap.fields.CharField(required=True)
     uid = tldap.fields.CharField(required=True)
     uidNumber = tldap.fields.IntegerField(required=True)
@@ -138,6 +142,7 @@ class posixAccount(tldap.base.LDAPobject):
         object_classes = { 'posixAccount', }
 
 class shadowAccount(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     userPassword = tldap.fields.CharField()
     shadowLastChange = tldap.fields.IntegerField()
     shadowMin = tldap.fields.IntegerField()
@@ -152,6 +157,7 @@ class shadowAccount(tldap.base.LDAPobject):
         object_classes = { 'shadowAccount', }
 
 class pwdPolicy(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     pwdAttribute = tldap.fields.CharField(required=True)
     pwdAccountLockedTime = tldap.fields.CharField()
     pwdMinAge = tldap.fields.CharField()
@@ -173,6 +179,7 @@ class pwdPolicy(tldap.base.LDAPobject):
         object_classes = { 'pwdPolicy' }
 
 class posixGroup(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     cn = tldap.fields.CharField(required=True)
     gidNumber = tldap.fields.IntegerField(required=True)
     userPassword = tldap.fields.CharField()
@@ -185,11 +192,13 @@ class posixGroup(tldap.base.LDAPobject):
 # Directory Server
 
 class Meow(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     nsAccountLock = tldap.fields.CharField()
 
 # Samba
 
 class sambaSamAccount(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     uid = tldap.fields.CharField(required=True)
     sambaSID = tldap.fields.CharField(required=True)
     cn = tldap.fields.CharField()
@@ -221,7 +230,7 @@ class sambaSamAccount(tldap.base.LDAPobject):
         object_classes = { 'sambaSamAccount', }
 
 class sambaGroupMapping(tldap.base.LDAPobject):
-    # posixGroup
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     gidNumber = tldap.fields.IntegerField(required=True)
     sambaSID = tldap.fields.CharField(required=True)
     sambaGroupType = tldap.fields.IntegerField(required=True)
@@ -232,6 +241,7 @@ class sambaGroupMapping(tldap.base.LDAPobject):
         object_classes = { 'sambaGroupMapping', }
 
 class eduPerson(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     eduPersonAffiliation = tldap.fields.CharField()
     eduPersonNickname = tldap.fields.CharField()
     eduPersonOrgDN = tldap.fields.CharField()
@@ -248,6 +258,7 @@ class eduPerson(tldap.base.LDAPobject):
         object_classes = { 'eduPerson', }
 
 class auEduPerson(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     auEduPersonID = tldap.fields.CharField()
     auEduPersonSalutation = tldap.fields.CharField()
     auEduPersonPreferredGivenName = tldap.fields.CharField()
@@ -272,6 +283,7 @@ class auEduPerson(tldap.base.LDAPobject):
 # Active Directory
 
 class user(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     givenName = tldap.fields.CharField()
     loginShell = tldap.fields.CharField()
     mail = tldap.fields.CharField()
@@ -288,6 +300,7 @@ class user(tldap.base.LDAPobject):
         object_classes = { 'user', }
 
 class group(tldap.base.LDAPobject):
+    objectClass = tldap.fields.CharField(required=True, max_instances=None)
     cn = tldap.fields.CharField()
     gidNumber = tldap.fields.CharField()
     name = tldap.fields.CharField()

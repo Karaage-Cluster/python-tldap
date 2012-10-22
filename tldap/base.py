@@ -276,8 +276,15 @@ class LDAPobject(object):
             object_class_field = tldap.fields.CharField(max_instances = None)
 
         # convert python value to db value or vice versa as required.
-        tmp_default_object_class = set(default_object_class) | set(object_class_field.clean(default_object_class_db))
-        tmp_default_object_class_db = set(object_class_field.to_db(default_object_class)) | set(default_object_class_db)
+        tmp_default_object_class = set()
+        tmp_default_object_class_db = set()
+
+        if len(default_object_class) > 0:
+            tmp_default_object_class = set(default_object_class)
+            tmp_default_object_class_db = set(object_class_field.to_db(default_object_class))
+
+        tmp_default_object_class = tmp_default_object_class | set(object_class_field.clean(default_object_class_db))
+        tmp_default_object_class_db = tmp_default_object_class_db | set(default_object_class_db)
 
         default_object_class = list(tmp_default_object_class)
         default_object_class_db = list(tmp_default_object_class_db)
@@ -305,11 +312,8 @@ class LDAPobject(object):
             # if objectClass not given, try to set it, otherwise just convert value
             elif name == 'objectClass':
                 assert isinstance(value, list)
-                if len(value) == 0:
-                    value = default_object_class_db
-                    setattr(self, name, default_object_class)
-                else:
-                    value = field.to_db(value)
+                value = default_object_class_db
+                setattr(self, name, default_object_class)
             # otherwise just convert value
             else:
                 value = field.to_db(value)
@@ -323,8 +327,13 @@ class LDAPobject(object):
         return moddict
 
     def _add(self, using):
-        # default object class if none given
-        default_object_class = getattr(self, "objectClass", [])
+        # objectClass = attribute + class meta setup
+        try:
+            self._meta.get_field_by_name("objectClass")
+        except KeyError:
+            default_object_class = []
+        else:
+            default_object_class = getattr(self, "objectClass", [])
         default_object_class_db = list(self._meta.object_classes)
 
         # generate moddict values
@@ -359,9 +368,14 @@ class LDAPobject(object):
         # what database should we be using?
         c = tldap.connections[using]
 
-        # default object class if none given
-        default_object_class_db = set(self._db_values[using]['objectClass']) | self._meta.object_classes
-        default_object_class_db = list(default_object_class_db)
+        # objectClass = attribute + class meta setup
+        try:
+            self._meta.get_field_by_name("objectClass")
+        except KeyError:
+            default_object_class = []
+        else:
+            default_object_class = getattr(self, "objectClass", [])
+        default_object_class_db = list(self._meta.object_classes)
 
         modold = {
         }
@@ -373,10 +387,13 @@ class LDAPobject(object):
             modold[name] = self._db_values[using].get(name, [])
 
         # generate moddict values
-        moddict = self._get_moddict([], default_object_class_db, using)
+        moddict = self._get_moddict(default_object_class, default_object_class_db, using)
 
         # turn moddict into a modlist
         modlist = ldap.modlist.modifyModlist(modold, moddict)
+        print modold
+        print moddict
+        print modlist
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
