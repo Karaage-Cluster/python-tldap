@@ -391,9 +391,6 @@ class LDAPobject(object):
 
         # turn moddict into a modlist
         modlist = ldap.modlist.modifyModlist(modold, moddict)
-        print modold
-        print moddict
-        print modlist
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
@@ -462,7 +459,6 @@ class LDAPobject(object):
         field = self._meta.get_field_by_name(old_key)
         v = getattr(self, old_key, [])
         old_value = field.value_to_python(old_value)
-        print "------", old_key, old_value, v
         if v is None:
             pass
         elif isinstance(v, list):
@@ -470,7 +466,6 @@ class LDAPobject(object):
                 v.remove(old_value)
         elif old_value == v:
             v = None
-        print "------", old_key, old_value, v
         if v == None:
             del self._db_values[using][old_key]
         else:
@@ -481,7 +476,6 @@ class LDAPobject(object):
         field = self._meta.get_field_by_name(new_key)
         v = getattr(self, new_key, None)
         new_value = field.value_to_python(new_value)
-        print "++++++", new_key, new_value, v
         if v is None:
             v = new_value
         elif isinstance(v, list):
@@ -490,7 +484,6 @@ class LDAPobject(object):
         elif v != new_value:
             # we can't add a value to a string
             assert False
-        print "++++++", new_key, new_value, v
         self._db_values[using][new_key] = field.to_db(v)
         setattr(self, new_key, v)
 
