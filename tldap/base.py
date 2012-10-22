@@ -19,12 +19,15 @@ import tldap
 import tldap.options
 import tldap.exceptions
 import tldap.manager
+import tldap.fields
 
 import ldap.dn
 import ldap.modlist
 
 import copy
 import sys
+
+default_object_class_field = tldap.fields.CharField(required=True, max_instances=None)
 
 class LDAPmeta(type):
     def __new__(cls, name, bases, attrs):
@@ -49,6 +52,7 @@ class LDAPmeta(type):
             kwargs = {}
 
         new_class.add_to_class('_meta', tldap.options.Options(meta, **kwargs))
+        new_class.add_to_class('objectClass', default_object_class_field)
 
         manager = tldap.manager.Manager()
         new_class.add_to_class('objects', manager)
@@ -93,6 +97,10 @@ class LDAPmeta(type):
 
             parent_fields = base._meta.fields
             for field in parent_fields:
+                if field.name == "objectClass":
+                    # objectClass will always clash with parent classes, as we added it
+                    # allow it as an exception
+                    continue
                 if field.name in field_names:
                     raise tldap.exceptions.FieldError('Local field %r in class %r clashes '
                                      'with field of similar name from base class %r' %
@@ -269,11 +277,8 @@ class LDAPobject(object):
     def _get_moddict(self, default_object_class, default_object_class_db, using):
         dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
 
-        # get field for objectClass or a default if there is none.
-        try:
-            object_class_field = self._meta.get_field_by_name("objectClass")
-        except KeyError:
-            object_class_field = tldap.fields.CharField(max_instances = None)
+        # get field for objectClass
+        object_class_field = self._meta.get_field_by_name("objectClass")
 
         # convert python value to db value or vice versa as required.
         tmp_default_object_class = set()
@@ -289,9 +294,8 @@ class LDAPobject(object):
         default_object_class = list(tmp_default_object_class)
         default_object_class_db = list(tmp_default_object_class_db)
 
-        # even if objectClass isn't a field in the model, we still need to set it
+        # start with an empty dictionary
         moddict = {
-            'objectClass': default_object_class_db
         }
 
         # generate moddict values
@@ -328,12 +332,7 @@ class LDAPobject(object):
 
     def _add(self, using):
         # objectClass = attribute + class meta setup
-        try:
-            self._meta.get_field_by_name("objectClass")
-        except KeyError:
-            default_object_class = []
-        else:
-            default_object_class = getattr(self, "objectClass", [])
+        default_object_class = getattr(self, "objectClass", [])
         default_object_class_db = list(self._meta.object_classes)
 
         # generate moddict values
@@ -369,14 +368,10 @@ class LDAPobject(object):
         c = tldap.connections[using]
 
         # objectClass = attribute + class meta setup
-        try:
-            self._meta.get_field_by_name("objectClass")
-        except KeyError:
-            default_object_class = []
-        else:
-            default_object_class = getattr(self, "objectClass", [])
+        default_object_class = getattr(self, "objectClass", [])
         default_object_class_db = list(self._meta.object_classes)
 
+        # dictionary of old values
         modold = {
         }
 

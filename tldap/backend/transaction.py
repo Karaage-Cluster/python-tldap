@@ -43,7 +43,7 @@ import sys
 
 # hardcoded settings for this module
 
-debugging = True
+debugging = False
 delayed_connect = True
 
 # debugging
