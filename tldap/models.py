@@ -151,7 +151,7 @@ class shadowAccount(tldap.base.LDAPobject):
         object_classes = { 'shadowAccount', }
 
 class pwdPolicy(tldap.base.LDAPobject):
-    pwdAttribute = tldap.fields.CharField(required=False)
+    pwdAttribute = tldap.fields.CharField(required=True)
     pwdAccountLockedTime = tldap.fields.CharField()
     pwdMinAge = tldap.fields.CharField()
     pwdMaxAge = tldap.fields.CharField()
@@ -180,6 +180,12 @@ class posixGroup(tldap.base.LDAPobject):
 
     class Meta:
         object_classes = { 'posixGroup', }
+
+# SSH
+
+class ldapPublicKey(tldap.base.LDAPobject):
+    sshPublicKey = tldap.fields.CharField()
+    uid = tldap.fields.CharField()
 
 # Directory Server
 
