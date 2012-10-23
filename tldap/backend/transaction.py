@@ -170,7 +170,7 @@ class LDAPwrapper(object):
         dn = self._cache_normalize_dn(dn).lower()
         if dn not in self._cache:
             # no cached item, retrieve from ldap
-            results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE))
+            results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE, '(objectclass=*)', ['*','+']))
             if len(results) < 1:
                 raise ldap.NO_SUCH_OBJECT("No results finding current value")
             if len(results) > 1:
@@ -528,7 +528,7 @@ class LDAPwrapper(object):
 
         # do the real ldap search
         try:
-            rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, filterstr))
+            rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, filterstr, ['*','+']))
         except ldap.NO_SUCH_OBJECT:
             # if base doesn't exist in LDAP, it really should exist in cache
             self._cache_get_for_dn(base)
