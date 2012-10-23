@@ -141,7 +141,7 @@ class shadowAccount(tldap.base.LDAPobject):
     shadowLastChange = tldap.fields.IntegerField()
     shadowMin = tldap.fields.IntegerField()
     shadowMax = tldap.fields.IntegerField()
-    shadowWarning = tldap.fields.CharField()
+    shadowWarning = tldap.fields.IntegerField()
     shadowInactive = tldap.fields.IntegerField()
     shadowExpire = tldap.fields.CharField()
     shadowFlag = tldap.fields.CharField()
