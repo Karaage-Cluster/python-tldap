@@ -37,12 +37,16 @@ class LDAPmeta(type):
             # If this isn't a subclass of LDAPobject, don't do anything special.
             return super_new(cls, name, bases, attrs)
 
+        # create new class
         module = attrs.pop('__module__')
         new_class = super_new(cls, name, bases, {'__module__': module})
 
+        # get the attributes to add
         attr_meta = attrs.pop('Meta', None)
         meta = attr_meta
+        base_meta = getattr(new_class, '_meta', None)
 
+        # get the app_label for this model
         if getattr(meta, 'app_label', None) is None:
             # Figure out the app_label by looking one level up.
             # For 'django.contrib.sites.models', this would be 'sites'.
@@ -51,14 +55,23 @@ class LDAPmeta(type):
         else:
             kwargs = {}
 
+        # add the _meta and objectClass to new class
         new_class.add_to_class('_meta', tldap.options.Options(meta, **kwargs))
         new_class.add_to_class('objectClass', default_object_class_field)
 
+        # inherit certain attributes from parent
+        if base_meta is not None:
+            if new_class._meta.base_dn is None:
+                new_class._meta.base_dn = base_meta.base_dn
+            if new_class._meta.pk is None:
+                new_class._meta.pk = base_meta.pk
+
+        # create the default manager
         manager = tldap.manager.Manager()
         new_class.add_to_class('objects', manager)
         new_class.add_to_class('_default_manager', manager)
 
-        # Add all attributes to the class.
+        # add exceptions to the class
         ObjectDoesNotExist = tldap.exceptions.ObjectDoesNotExist
         new_class.add_to_class('DoesNotExist', subclass_exception(
                 'tldap.exceptions.DoesNotExist',
@@ -75,28 +88,31 @@ class LDAPmeta(type):
                 tuple(x.MultipleObjectsReturned for x in parents if hasattr(x, '_meta')) or (ObjectAlreadyExists,),
                 module))
 
+        # add rest of attributes to class
         for obj_name, obj in attrs.items():
             new_class.add_to_class(obj_name, obj)
 
+        # list of field names
         new_fields = new_class._meta.fields
         field_names = new_class._meta.get_all_field_names()
-        parent_field_names = dict()
 
+        # check for clashes with reserved names
         for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn" ]:
             if i in field_names:
                 raise tldap.exceptions.FieldError('Local field %s clashes with reserved name from base class %r'%(i, name))
 
-        base_dn = None
-        pk = None
-
+        # for every parent ...
+        parent_field_names = dict()
         for base in parents:
             if not hasattr(base, '_meta'):
                 # Things without _meta aren't functional models, so they're
                 # uninteresting parents.
                 continue
 
+            # for every field in every parent ...
             parent_fields = base._meta.fields
             for field in parent_fields:
+                # check if this field from this parent clashes
                 if field.name == "objectClass":
                     # objectClass will always clash with parent classes, as we added it
                     # allow it as an exception
@@ -110,17 +126,13 @@ class LDAPmeta(type):
                         raise tldap.exceptions.FieldError('In class %r field %r from parent clashes '
                                      'with field of similar name from base class %r and is different type' %
                                         (name, field.name, base.__name__))
-                parent_field_names[field.name] = field
-                new_class._meta.add_field(field)
+                else:
+                    parent_field_names[field.name] = field
+                    new_class._meta.add_field(field)
 
+            # these meta values are all parents combined
             new_class._meta.object_classes.update(base._meta.object_classes)
             new_class._meta.search_classes.update(base._meta.search_classes)
-
-            base_dn = getattr(base._meta, 'base_dn') or base_dn
-            pk = getattr(base._meta, 'pk') or pk
-
-        new_class._meta.base_dn = getattr(new_class._meta, 'base_dn') or base_dn
-        new_class._meta.pk = getattr(new_class._meta, 'pk') or pk
 
         return new_class
 
