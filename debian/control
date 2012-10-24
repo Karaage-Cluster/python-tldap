@@ -1,11 +1,11 @@
-Source: python-tldap
+Source: django-tldap
 Section: python
 Priority: optional
 Maintainer: Brian May <bam@debian.org>
 Build-Depends: debhelper (>=7.0.0), python (>= 2.4), python-support (>= 0.6), cdbs (>= 0.4.49)
 Standards-Version: 3.9.3
 
-Package: python-tldap
+Package: django-tldap
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python-django (>= 1.2.1), python-ldaptor
 Description: Fake LDAP Transacations
