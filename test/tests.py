@@ -377,7 +377,7 @@ class ModelTest(unittest.TestCase):
 
         c = tldap.connection
 
-        person = tldap.test.models.std_person
+        person = tldap.test.models.person
         DoesNotExist = person.DoesNotExist
         AlreadyExists = person.AlreadyExists
         get = person.objects.get
@@ -711,8 +711,8 @@ class ModelTest(unittest.TestCase):
         organizationalUnit = tldap.models.organizationalUnit
         organizationalUnit.objects.create(dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
-        person = tldap.test.models.std_person
-        group = tldap.test.models.std_group
+        person = tldap.test.models.person
+        group = tldap.test.models.group
 
         kwargs = {
             'givenName': "Tux",
@@ -863,8 +863,8 @@ class UserAPITest(unittest.TestCase):
         tldap.connection.reset(forceflushcache=True)
         tldap.connection.autoflushcache = False
 
-        self.group = tldap.test.models.std_group
-        self.account = tldap.test.models.std_account
+        self.group = tldap.test.models.group
+        self.account = tldap.test.models.account
 
     def tearDown(self):
         self.server.stop()
@@ -953,8 +953,8 @@ class GroupAPITest(unittest.TestCase):
         tldap.connection.reset(forceflushcache=True)
         tldap.connection.autoflushcache = False
 
-        self.group = tldap.test.models.std_group
-        self.account = tldap.test.models.std_account
+        self.group = tldap.test.models.group
+        self.account = tldap.test.models.account
 
     def tearDown(self):
         self.server.stop()
