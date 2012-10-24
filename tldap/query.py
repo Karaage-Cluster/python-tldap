@@ -157,6 +157,8 @@ class QuerySet(object):
                 search.append(self._get_filter(child))
             else:
                 name,value = child
+                if name == "pk":
+                    name = self._cls._meta.pk
                 try:
                     field = self._cls._meta.get_field_by_name(name)
                 except KeyError:
