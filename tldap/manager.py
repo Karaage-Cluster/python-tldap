@@ -46,6 +46,9 @@ class Manager(object):
         """
         return tldap.query.QuerySet(self._cls, self._alias)
 
+    def none(self):
+        return self.get_empty_query_set()
+
     def all(self):
         return self.get_query_set()
 
