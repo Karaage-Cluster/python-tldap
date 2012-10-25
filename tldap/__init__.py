@@ -27,15 +27,15 @@ connection = None
 # For backwards compatibility - Port any old database settings over to
 # the new values.
 if not hasattr(django.conf.settings, 'LDAP'):
-    settings.LDAP = {}
+    django.conf.settings.LDAP = {}
 
 # ok to use django settings
 if not django.conf.settings.LDAP:
     django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS] = {
         'ENGINE': 'tldap.backend.transaction',
-        'URI': settings.LDAP_URL,
-        'USER': settings.LDAP_ADMIN_USER,
-        'PASSWORD': settings.LDAP_ADMIN_PASSWORD,
+        'URI': django.conf.settings.LDAP_URL,
+        'USER': django.conf.settings.LDAP_ADMIN_USER,
+        'PASSWORD': django.conf.settings.LDAP_ADMIN_PASSWORD,
         'USE_TLS' : False,
         'TLS_CA' : None,
     }
