@@ -52,6 +52,19 @@ def _configure_django():
     if DEFAULT_LDAP_ALIAS not in settings.LDAP:
         raise RuntimeError("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
     connections = tldap.utils.ConnectionHandler(settings.LDAP)
-    connection = connections[DEFAULT_LDAP_ALIAS]
+
+    class DefaultConnectionProxy(object):
+      """
+      Proxy for accessing the default DatabaseWrapper object's attributes. If you
+      need to access the DatabaseWrapper object itself, use
+      connections[DEFAULT_DB_ALIAS] instead.
+      """
+      def __getattr__(self, item):
+          return getattr(connections[DEFAULT_DB_ALIAS], item)
+
+      def __setattr__(self, name, value):
+          return setattr(connections[DEFAULT_DB_ALIAS], name, value)
+
+    connection = DefaultConnectionProxy()
 
 _configure_django()
