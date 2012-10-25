@@ -15,56 +15,50 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-import tldap.utils
 from tldap.query_utils import Q
+import tldap.utils
 from tldap.utils import DEFAULT_LDAP_ALIAS
+
+import django.conf
 
 connections = None
 connection = None
 
-def _configure_django():
-    # Try to use django settings
-    from django.conf import settings
+# For backwards compatibility - Port any old database settings over to
+# the new values.
+if not hasattr(django.conf.settings, 'LDAP'):
+    settings.LDAP = {}
 
-    # For backwards compatibility - Port any old database settings over to
-    # the new values.
-    if not hasattr(settings, 'LDAP'):
-        settings.LDAP = {}
+# ok to use django settings
+if not django.conf.settings.LDAP:
+    django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS] = {
+        'ENGINE': 'tldap.backend.transaction',
+        'URI': settings.LDAP_URL,
+        'USER': settings.LDAP_ADMIN_USER,
+        'PASSWORD': settings.LDAP_ADMIN_PASSWORD,
+        'USE_TLS' : False,
+        'TLS_CA' : None,
+    }
+    if hasattr(django.conf.settings, 'LDAP_USE_TLS'):
+        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = django.conf.settings.LDAP_USE_TLS
+    if django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"]:
+        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = django.conf.settings.LDAP_TLS_CA
 
-    # ok to use django settings
-    if not settings.LDAP:
-        settings.LDAP[DEFAULT_LDAP_ALIAS] = {
-            'ENGINE': 'tldap.backend.transaction',
-            'URI': settings.LDAP_URL,
-            'USER': settings.LDAP_ADMIN_USER,
-            'PASSWORD': settings.LDAP_ADMIN_PASSWORD,
-            'USE_TLS' : False,
-            'TLS_CA' : None,
-        }
-        if hasattr(settings, 'LDAP_USE_TLS'):
-            settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = settings.LDAP_USE_TLS
-        if settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"]:
-            settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = settings.LDAP_TLS_CA
+if DEFAULT_LDAP_ALIAS not in django.conf.settings.LDAP:
+    raise RuntimeError("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
 
-    global connections
-    global connection
+connections = tldap.utils.ConnectionHandler(django.conf.settings.LDAP)
 
-    if DEFAULT_LDAP_ALIAS not in settings.LDAP:
-        raise RuntimeError("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
-    connections = tldap.utils.ConnectionHandler(settings.LDAP)
+class DefaultConnectionProxy(object):
+  """
+  Proxy for accessing the default DatabaseWrapper object's attributes. If you
+  need to access the DatabaseWrapper object itself, use
+  connections[DEFAULT_DB_ALIAS] instead.
+  """
+  def __getattr__(self, item):
+      return getattr(connections[DEFAULT_DB_ALIAS], item)
 
-    class DefaultConnectionProxy(object):
-      """
-      Proxy for accessing the default DatabaseWrapper object's attributes. If you
-      need to access the DatabaseWrapper object itself, use
-      connections[DEFAULT_DB_ALIAS] instead.
-      """
-      def __getattr__(self, item):
-          return getattr(connections[DEFAULT_DB_ALIAS], item)
+  def __setattr__(self, name, value):
+      return setattr(connections[DEFAULT_DB_ALIAS], name, value)
 
-      def __setattr__(self, name, value):
-          return setattr(connections[DEFAULT_DB_ALIAS], name, value)
-
-    connection = DefaultConnectionProxy()
-
-_configure_django()
+connection = DefaultConnectionProxy()
