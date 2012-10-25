@@ -531,7 +531,9 @@ class LDAPwrapper(object):
             rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, filterstr, ['*','+']))
         except ldap.NO_SUCH_OBJECT:
             # if base doesn't exist in LDAP, it really should exist in cache
+            debug("---> got NO_SUCH_OBJECT")
             self._cache_get_for_dn(base)
+            debug("---> ... but ok because base is cached")
             rarray = []
         debug("---> rarray", rarray)
 
