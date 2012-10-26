@@ -64,14 +64,14 @@ class Manager(object):
     def filter(self, *args, **kwargs):
         return self.get_query_set().filter(*args, **kwargs)
 
-
     def using(self, *args, **kwargs):
         return self.get_query_set().using(*args, **kwargs)
-
 
     def base_dn(self, *args, **kwargs):
         return self.get_query_set().base_dn(*args, **kwargs)
 
+    def convert(self, *args, **kwargs):
+        return self.get_query_set().convert(*args, **kwargs)
 
 class ManagerDescriptor(object):
     # This class ensures managers aren't accessible via model instances.

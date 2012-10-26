@@ -38,6 +38,7 @@ class QuerySet(object):
     def __init__(self, cls, alias):
         assert cls is not None
 
+        self._from_cls = None
         self._cls = cls
         self._dn = None
         self._alias = alias
@@ -213,7 +214,10 @@ class QuerySet(object):
         """
 
         # get object classes to search
-        object_classes = self._cls._meta.search_classes or self._cls._meta.object_classes
+        if self._from_cls is None:
+            object_classes = self._cls._meta.search_classes or self._cls._meta.object_classes
+        else:
+            object_classes = self._from_cls._meta.search_classes
 
         # add object classes to search array
         query = tldap.Q()
@@ -378,6 +382,11 @@ class QuerySet(object):
         qs._base_dn = base_dn
         return qs
 
+    def convert(self, cls):
+        qs = self._clone()
+        qs._from_cls = cls
+        return qs
+
     ###################################
     # PUBLIC INTROSPECTION ATTRIBUTES #
     ###################################
@@ -390,6 +399,7 @@ class QuerySet(object):
         qs = QuerySet(self._cls, self._alias)
         qs._query = copy.deepcopy(self._query)
         qs._base_dn = self._base_dn
+        qs._from_cls = self._from_cls
         return qs
 
     def _fill_cache(self, num=None):
