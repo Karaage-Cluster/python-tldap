@@ -177,12 +177,12 @@ class QuerySet(object):
             else:
                 name,value = child
 
-                if name == "pk":
-                    name = self._cls._meta.pk
-
                 name, _, operation = name.rpartition("__")
                 if name == "":
                     name, operation = operation, None
+
+                if name == "pk":
+                    name = self._cls._meta.pk
 
                 try:
                     field = self._cls._meta.get_field_by_name(name)
