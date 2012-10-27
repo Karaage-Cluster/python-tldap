@@ -940,6 +940,28 @@ class UserAPITest(unittest.TestCase):
         users = self.account.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
         self.failUnlessEqual(len(users), 3)
 
+    def test_get_groups_empty(self):
+        u = self.account.objects.get(uid="testuser2")
+        u.secondary_groups.clear()
+        groups = u.secondary_groups.all()
+        self.failUnlessEqual(len(groups), 0)
+        groups = self.group.objects.filter(secondary_accounts=u)
+        self.failUnlessEqual(len(groups), 0)
+
+    def test_get_groups_one(self):
+        u = self.account.objects.get(uid="testuser2")
+        groups = u.secondary_groups.all()
+        self.failUnlessEqual(len(groups), 1)
+        groups = self.group.objects.filter(secondary_accounts=u)
+        self.failUnlessEqual(len(groups), 1)
+
+    def test_get_groups_many(self):
+        u = self.account.objects.get(uid="testuser1")
+        groups = u.secondary_groups.all()
+        self.failUnlessEqual(len(groups), 2)
+        groups = self.group.objects.filter(secondary_accounts=u)
+        self.failUnlessEqual(len(groups), 2)
+
 class GroupAPITest(unittest.TestCase):
     def setUp(self):
         server = tldap.test.slapd.Slapd()
@@ -999,15 +1021,21 @@ class GroupAPITest(unittest.TestCase):
         g = self.group.objects.get(cn="empty")
         members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 0)
+        members = self.account.objects.filter(secondary_groups=g)
+        self.failUnlessEqual(len(members), 0)
 
     def test_get_members_one(self):
         g = self.group.objects.get(cn="systems")
         members = g.secondary_accounts.all()
         self.failUnlessEqual(len(members), 1)
+        members = self.account.objects.filter(secondary_groups=g)
+        self.failUnlessEqual(len(members), 1)
 
     def test_get_members_many(self):
         g = self.group.objects.get(cn="full")
         members = g.secondary_accounts.all()
+        self.failUnlessEqual(len(members), 3)
+        members = self.account.objects.filter(secondary_groups=g)
         self.failUnlessEqual(len(members), 3)
 
     def test_remove_group_member(self):
