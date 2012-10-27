@@ -202,7 +202,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
             def clear(self):
                 for obj in self.get_query_set():
-                    self.delete(obj)
+                    self.remove(obj)
 
         else:
 
