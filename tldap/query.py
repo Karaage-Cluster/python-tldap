@@ -395,8 +395,10 @@ class QuerySet(object):
     # PRIVATE METHODS #
     ###################
 
-    def _clone(self):
-        qs = QuerySet(self._cls, self._alias)
+    def _clone(self, klass=None):
+        if klass is None:
+            klass = self.__class__
+        qs = klass(self._cls, self._alias)
         qs._query = copy.deepcopy(self._query)
         qs._base_dn = self._base_dn
         qs._from_cls = self._from_cls
@@ -442,8 +444,8 @@ class EmptyQuerySet(QuerySet):
     def delete(self):
         pass
 
-    def _clone(self, klass=None, setup=False, **kwargs):
-        c = super(EmptyQuerySet, self)._clone(klass, setup=setup, **kwargs)
+    def _clone(self, klass=None, **kwargs):
+        c = super(EmptyQuerySet, self)._clone(klass, **kwargs)
         c._result_cache = []
         return c
 
