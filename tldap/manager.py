@@ -113,9 +113,11 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             if not isinstance(this_value, list):
                 this_value = [ this_value ]
 
+            linked_key = self._linked_key
+
             query = self.get_empty_query_set()
             for v in this_value:
-                kwargs = { self._linked_key: v }
+                kwargs = { linked_key: v }
                 query = query | super(LinkManager,self).get_query_set().filter(**kwargs)
             return query
 
