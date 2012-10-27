@@ -419,19 +419,44 @@ class LDAPobject(object):
 
     _modify.alters_data = True
 
-    def rename(self, **kwargs):
+    def rename(self, using=None, **kwargs):
+        """
+        Rename this entry. Use like object.rename(uid="new") or
+        object.rename(cn="new"). Can pass a list in using, as all
+        connections must be renamed at once.
+        """
+
+        # extract key and value from kwargs
         assert len(kwargs)==1
         name,value = kwargs.iteritems().next()
 
+        # get the new field and turn value into db value
         field = self._meta.get_field_by_name(name)
         value = field.value_to_db(value)
 
+        # work out the new rdn of the object
         split_new_rdn = [[(name, value, 1)]]
         new_rdn = ldap.dn.dn2str(split_new_rdn)
 
+        # replace cache, any connections not
+        # renamed get discarded.
+        old_cache = self._db_values
+        self._db_values = { }
+
+        # set using if not already set
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+
+        # turn using into a list if it isn't
+        if not isinstance(using, list):
+            using = [ using ]
+
         # what database should we be using?
-        for using in list(self._db_values):
-            self._rename(new_rdn, using)
+        for u in using:
+            self._db_values[u] = old_cache[u]
+            self._rename(new_rdn, u)
+
+        # old cache no longer needed
+        old_cache = None
 
         # construct new dn
         split_dn = ldap.dn.str2dn(self._dn)
@@ -443,59 +468,73 @@ class LDAPobject(object):
     rename.alters_data = True
 
     def _rename(self, new_rdn, using):
+        """
+        Low level rename to new_rdn for the using connection.  Works with and
+        without cached information for the connection. Doesn't update the
+        dn unless operation is reversed during a commit.
+        """
         c = tldap.connections[using]
 
         # what to do if transaction is reversed
-        old_dn = self._dn
-        old_values = self._db_values[using]
-        def onfailure():
-            self._dn = old_dn
-            self._db_values[using] = old_values
+        if using in self._db_values:
+            # we need to reset cached data and the dn
+            old_dn = self._dn
+            old_values = self._db_values[using]
+            def onfailure():
+                self._dn = old_dn
+                self._db_values[using] = old_values
+        else:
+            # no cached data, reset the dn however
+            old_dn = self._dn
+            def onfailure():
+                self._dn = old_dn
 
         # do the rename
         c.rename(self._dn, new_rdn, onfailure)
 
-        # get old rdn values
-        split_old_dn = ldap.dn.str2dn(self._dn)
-        old_key,old_value,_ = split_old_dn[0][0]
+        # do we have cached data to update?
+        if using in self._db_values:
+            # get old rdn values
+            split_old_dn = ldap.dn.str2dn(self._dn)
+            old_key,old_value,_ = split_old_dn[0][0]
 
-        # get new rdn values
-        split_new_rdn = ldap.dn.str2dn(new_rdn)
-        new_key,new_value,_ = split_new_rdn[0][0]
+            # get new rdn values
+            split_new_rdn = ldap.dn.str2dn(new_rdn)
+            new_key,new_value,_ = split_new_rdn[0][0]
 
-        # make a copy before modifications
-        self._db_values[using] = copy.copy(self._db_values[using])
+            # make a copy before modifications
+            self._db_values[using] = copy.copy(self._db_values[using])
 
-        # delete old rdn attribute in object
-        field = self._meta.get_field_by_name(old_key)
-        v = getattr(self, old_key, [])
-        old_value = field.value_to_python(old_value)
-        if v is None:
-            pass
-        elif isinstance(v, list):
-            if old_value in v:
-                v.remove(old_value)
-        elif old_value == v:
-            v = None
-        if v == None:
-            del self._db_values[using][old_key]
-        else:
-            self._db_values[using][old_key] = field.to_db(v)
-        setattr(self, old_key, v)
+            # delete old rdn attribute in object
+            field = self._meta.get_field_by_name(old_key)
+            v = getattr(self, old_key, [])
+            old_value = field.value_to_python(old_value)
+            if v is None:
+                pass
+            elif isinstance(v, list):
+                if old_value in v:
+                    v.remove(old_value)
+            elif old_value == v:
+                v = None
+            if v == None:
+                del self._db_values[using][old_key]
+            else:
+                self._db_values[using][old_key] = field.to_db(v)
+            setattr(self, old_key, v)
 
-        # update new rdn attribute in object
-        field = self._meta.get_field_by_name(new_key)
-        v = getattr(self, new_key, None)
-        new_value = field.value_to_python(new_value)
-        if v is None:
-            v = new_value
-        elif isinstance(v, list):
-            if new_value not in v:
-                v.append(new_value)
-        elif v != new_value:
-            # we can't add a value to a string
-            assert False
-        self._db_values[using][new_key] = field.to_db(v)
-        setattr(self, new_key, v)
+            # update new rdn attribute in object
+            field = self._meta.get_field_by_name(new_key)
+            v = getattr(self, new_key, None)
+            new_value = field.value_to_python(new_value)
+            if v is None:
+                v = new_value
+            elif isinstance(v, list):
+                if new_value not in v:
+                    v.append(new_value)
+            elif v != new_value:
+                # we can't add a value to a string
+                assert False
+            self._db_values[using][new_key] = field.to_db(v)
+            setattr(self, new_key, v)
 
     _rename.alters_data = True
