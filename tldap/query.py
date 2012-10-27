@@ -138,6 +138,28 @@ class QuerySet(object):
         else:
             raise ValueError("Unknown search operation %s"%operation)
 
+    def _get_filter_item_no_field(self, name, operation, value):
+        # get raw value from class
+        cls_value = self._cls.__dict__.get(name, None)
+
+        # fail for cases we don't understand
+        if cls_value is None:
+            raise ValueError("Cannot do a search on %s as we do not know about it" % name)
+
+        # fail for cases we don't understand
+        import tldap.manager
+        if not isinstance(cls_value, tldap.manager.LinkDescriptor):
+            raise ValueError("Cannot do a search on %s as we do not know the type" % name)
+
+        # ask the LinkDescriptor for a q tree
+        q = cls_value.get_q_for_linked_instance(value, operation)
+        if q is None:
+            # gross hack - no results so we need a filter string that gives 0 results
+            return self._get_filter_item('insanity', None, "an apple a day keeps the doctor away")
+
+        # translate the query tree into a filter string
+        return self._get_filter(q)
+
     def _get_filter(self, q):
         if q.negated:
             op = "!"
@@ -164,19 +186,20 @@ class QuerySet(object):
                 try:
                     field = self._cls._meta.get_field_by_name(name)
                 except KeyError:
-                    field = tldap.fields.CharField()
-                if isinstance(value, list) and len(value)==1:
-                    value = value[0]
-                    assert isinstance(value, str)
-                if isinstance(value, list):
-                    s = []
-                    for v in value:
-                        v = field.value_to_db(v)
-                        s.append(self._get_filter_item(name, operation, v))
-                    search.append("(&".join(search) + ")")
+                    search.append(self._get_filter_item_no_field(name, operation, value))
                 else:
-                    value = field.value_to_db(value)
-                    search.append(self._get_filter_item(name, operation, value))
+                    if isinstance(value, list) and len(value)==1:
+                        value = value[0]
+                        assert isinstance(value, str)
+                    if isinstance(value, list):
+                        s = []
+                        for v in value:
+                            v = field.value_to_db(v)
+                            s.append(self._get_filter_item(name, operation, v))
+                        search.append("(&".join(search) + ")")
+                    else:
+                        value = field.value_to_db(value)
+                        search.append(self._get_filter_item(name, operation, value))
 
         return "("+ op + "".join(search) + ")"
 
