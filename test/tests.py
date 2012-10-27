@@ -730,10 +730,10 @@ class ModelTest(unittest.TestCase):
 
         self.assertEqual(
             person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
-            "(&(uid=t\\5cux))")
+            "(uid=t\\5cux)")
         self.assertEqual(
             person.objects.all()._get_filter(~tldap.Q(uid='tux')),
-            "(&(!(uid=tux)))")
+            "(!(uid=tux))")
         self.assertEqual(
             person.objects.all()._get_filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz')),
             "(|(uid=tux)(uid=tuz))")

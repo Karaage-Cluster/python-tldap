@@ -130,6 +130,9 @@ class QuerySet(object):
     ####################################
 
     def _get_filter_item(self, name, operation, value):
+        """
+        A field could be found for this term, try to get filter string for it.
+        """
         if operation is None:
             return ldap.filter.filter_format("(%s=%s)",[name, value])
         elif operation == "contains":
@@ -139,6 +142,9 @@ class QuerySet(object):
             raise ValueError("Unknown search operation %s"%operation)
 
     def _get_filter_item_no_field(self, name, operation, value):
+        """
+        No field could be found for this term, try to find filter string for it.
+        """
         # get raw value from class
         cls_value = self._cls.__dict__.get(name, None)
 
@@ -154,14 +160,19 @@ class QuerySet(object):
         # ask the LinkDescriptor for a q tree
         q = cls_value.get_q_for_linked_instance(value, operation)
         if q is None:
-            # gross hack - no results so we need a filter string that gives 0 results
-            return self._get_filter_item('insanity', None, "an apple a day keeps the doctor away")
+            # if result is None, then no results can be found
+            return None
 
         # translate the query tree into a filter string
         return self._get_filter(q)
 
     def _get_filter(self, q):
-        if q.negated:
+        """
+        Translate the Q tree into a filter string to search for, or None
+        if no results possible.
+        """
+        # check the details are valid
+        if q.negated and len(q.children)==1:
             op = "!"
         elif q.connector == tldap.Q.AND:
             op = "&"
@@ -170,47 +181,95 @@ class QuerySet(object):
         else:
             raise ValueError("Invalid value of op found")
 
+        # scan through every child
         search = []
         for child in q.children:
+            # if this child is a node, then descend into it
             if isinstance(child, django.utils.tree.Node):
                 search.append(self._get_filter(child))
             else:
+                # otherwise get the values in this node
                 name,value = child
 
+                # split the name if possible
                 name, _, operation = name.rpartition("__")
                 if name == "":
                     name, operation = operation, None
 
+                # replace pk with the real attribute
                 if name == "pk":
                     name = self._cls._meta.pk
 
+                # try to find field associated with name
                 try:
                     field = self._cls._meta.get_field_by_name(name)
                 except KeyError:
+                    # no field found, try to lookup linked models
                     search.append(self._get_filter_item_no_field(name, operation, value))
                 else:
+                    # field was found
+                    # try to turn list into single value
                     if isinstance(value, list) and len(value)==1:
                         value = value[0]
                         assert isinstance(value, str)
+
+                    # process as list
                     if isinstance(value, list):
                         s = []
                         for v in value:
                             v = field.value_to_db(v)
                             s.append(self._get_filter_item(name, operation, v))
                         search.append("(&".join(search) + ")")
+
+                    # or process just the single value
                     else:
                         value = field.value_to_db(value)
                         search.append(self._get_filter_item(name, operation, value))
 
-        return "("+ op + "".join(search) + ")"
+        # go through results
+        new_search = []
+        for term in search:
+            # if result is not None, keep it
+            if term is not None:
+                new_search.append(term)
+
+            # a result of None means 0 results
+            elif q.negated:
+                # not 0 results is all results
+                return "(objectClass=*)"
+            elif q.connector == tldap.Q.AND:
+                # 0 results and anything is still 0 results
+                return None
+            elif q.connector == tldap.Q.OR:
+                # 0 results or anything is just anything
+                pass
+        search = new_search
+
+        # output the results
+        if len(search)==0:
+            # no search terms, all terms were None
+            return None
+        elif len(search)==1 and not q.negated:
+            # just one non-negative term, return it
+            return search[0]
+        else:
+            # multiple terms
+            return "("+ op + "".join(search) + ")"
 
 
     def _get_dn_filter(self, q):
+        """
+        Get list of DN to search for from q, or None if this is not possible.
+        Searches for dn are rather restricted at the moment.
+        """
         dn_list = []
 
+
+        # can't handle negated dn searches
         if q.negated:
             return None
 
+        # can only handle OR, or AND with one term, nothing else makes sense
         if q.connector == tldap.Q.OR:
             pass
         elif q.connector == tldap.Q.AND and len(q.children)==1:
@@ -218,19 +277,24 @@ class QuerySet(object):
         else:
             return None
 
+        # for every child
         for child in q.children:
+            # descend if it is a node
             if isinstance(child, django.utils.tree.Node):
                 tmp_list = self._get_dn_filter(child)
                 if tmp_list is None:
                     return None
                 dn_list.extend(tmp_list)
                 tmp_list = None
+
+            # otherwise add this dn value
             else:
                 name,value = child
                 if name != "dn":
                     return None
                 dn_list.append(value)
 
+        # return list of dn to search for
         return dn_list
 
     def iterator(self):
@@ -284,6 +348,8 @@ class QuerySet(object):
 
         # construct search filter string
         search_filter = self._get_filter(query)
+        if search_filter is None:
+            return
 
         # repeat for every dn
         for base_dn in dn_list:
