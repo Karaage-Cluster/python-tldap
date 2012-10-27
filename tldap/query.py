@@ -129,11 +129,7 @@ class QuerySet(object):
     # METHODS THAT DO DATABASE QUERIES #
     ####################################
 
-    def _get_filter_item(self, name, value):
-        name, _, operation = name.rpartition("__")
-        if name == "":
-            name, operation = operation, None
-
+    def _get_filter_item(self, name, operation, value):
         if operation is None:
             return ldap.filter.filter_format("(%s=%s)",[name, value])
         elif operation == "contains":
@@ -160,6 +156,11 @@ class QuerySet(object):
                 name,value = child
                 if name == "pk":
                     name = self._cls._meta.pk
+
+                name, _, operation = name.rpartition("__")
+                if name == "":
+                    name, operation = operation, None
+
                 try:
                     field = self._cls._meta.get_field_by_name(name)
                 except KeyError:
@@ -171,11 +172,11 @@ class QuerySet(object):
                     s = []
                     for v in value:
                         v = field.value_to_db(v)
-                        s.append(self._get_filter_item(name, v))
+                        s.append(self._get_filter_item(name, operation, v))
                     search.append("(&".join(search) + ")")
                 else:
                     value = field.value_to_db(value)
-                    search.append(self._get_filter_item(name, value))
+                    search.append(self._get_filter_item(name, operation, value))
 
         return "("+ op + "".join(search) + ")"
 
