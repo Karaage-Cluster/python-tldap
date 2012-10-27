@@ -176,6 +176,7 @@ class QuerySet(object):
                 search.append(self._get_filter(child))
             else:
                 name,value = child
+
                 if name == "pk":
                     name = self._cls._meta.pk
 
@@ -202,6 +203,7 @@ class QuerySet(object):
                         search.append(self._get_filter_item(name, operation, value))
 
         return "("+ op + "".join(search) + ")"
+
 
     def _get_dn_filter(self, q):
         dn_list = []
