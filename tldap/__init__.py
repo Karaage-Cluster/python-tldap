@@ -53,12 +53,12 @@ class DefaultConnectionProxy(object):
   """
   Proxy for accessing the default DatabaseWrapper object's attributes. If you
   need to access the DatabaseWrapper object itself, use
-  connections[DEFAULT_DB_ALIAS] instead.
+  connections[DEFAULT_LDAP_ALIAS] instead.
   """
   def __getattr__(self, item):
-      return getattr(connections[DEFAULT_DB_ALIAS], item)
+      return getattr(connections[DEFAULT_LDAP_ALIAS], item)
 
   def __setattr__(self, name, value):
-      return setattr(connections[DEFAULT_DB_ALIAS], name, value)
+      return setattr(connections[DEFAULT_LDAP_ALIAS], name, value)
 
 connection = DefaultConnectionProxy()
