@@ -325,12 +325,55 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
     return LinkManager
 
-class ManyToManyDescriptor(object):
+class LinkDescriptor(object):
+    def __init__(self, this_key, linked_cls, linked_key, linked_has_foreign_key, foreign_key_is_list, related_name=None):
+        self._this_key = this_key
+        self._linked_cls = linked_cls
+        self._linked_key = linked_key
+        self._linked_has_foreign_key = linked_has_foreign_key
+        self._foreign_key_is_list = foreign_key_is_list
+        self._related_name = related_name
+
+    def get_manager(self, instance):
+        linked_cls = _lookup(self._linked_cls, instance.__class__)
+        superclass = linked_cls._default_manager.__class__
+        LinkManager = _create_link_manager(superclass,
+                linked_has_foreign_key=self._linked_has_foreign_key,
+                foreign_key_is_list=self._foreign_key_is_list)
+        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+
+    def get_q_for_linked_instance(self, obj, operation):
+        if operation is not None:
+            raise ValueError("Unknown search operation %s"%operation)
+
+        this_key = self._this_key
+
+        linked_cls = self._linked_cls
+        linked_key = self._linked_key
+        assert isinstance(obj, linked_cls)
+        linked_value = getattr(obj, linked_key)
+        if not isinstance(linked_value, list):
+            linked_value = [ linked_value ]
+
+        if len(linked_value) == 0:
+            return None
+
+        v = linked_value.pop()
+        kwargs = { this_key: v }
+        q = tldap.Q(**kwargs)
+        for v in linked_value:
+            kwargs = { this_key: v }
+            q = q | tldap.Q(**kwargs)
+        return q
+
+
+class ManyToManyDescriptor(LinkDescriptor):
     def __init__(self, this_key, linked_cls, linked_key, linked_has_foreign_key, related_name=None):
         self._this_key = this_key
         self._linked_cls = linked_cls
         self._linked_key = linked_key
         self._linked_has_foreign_key = linked_has_foreign_key
+        self._foreign_key_is_list = True
         self._related_name = related_name
 
     def contribute_to_class(self, cls, name):
@@ -345,18 +388,11 @@ class ManyToManyDescriptor(object):
     def __get__(self, instance, cls=None):
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
-
-        linked_cls = _lookup(self._linked_cls, cls)
-        superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
-        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        return self.get_manager(instance)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
-        linked_cls = _lookup(self._linked_cls, instance.__class__)
-        superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass, self._linked_has_foreign_key, True)
-        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm = self.get_manager(instance)
         if self._linked_key:
             lm.clear()
             for v in value:
@@ -366,11 +402,13 @@ class ManyToManyDescriptor(object):
             for v in value:
                 lm.add(value, commit=False)
 
-class ManyToOneDescriptor(object):
+class ManyToOneDescriptor(LinkDescriptor):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
         self._this_key = this_key
         self._linked_cls = linked_cls
         self._linked_key = linked_key
+        self._linked_has_foreign_key = False
+        self._foreign_key_is_list = False
         self._related_name = related_name
 
     def contribute_to_class(self, cls, name):
@@ -390,27 +428,23 @@ class ManyToOneDescriptor(object):
         if this_value is None:
             return None
 
-        linked_cls = _lookup(self._linked_cls, cls)
-        superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass, False, False)
-        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm = self.get_manager(instance)
         return lm.get()
 
     def __set__(self, instance, value):
         assert not isinstance(value, list)
-        linked_cls = _lookup(self._linked_cls, instance.__class__)
-        superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass, False, False)
-        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm = self.get_manager(instance)
         lm.clear(commit=False)
         if value is not None:
             lm.add(value, commit=False)
 
-class OneToManyDescriptor(object):
+class OneToManyDescriptor(LinkDescriptor):
     def __init__(self, this_key, linked_cls, linked_key, related_name=None):
         self._this_key = this_key
         self._linked_cls = linked_cls
         self._linked_key = linked_key
+        self._linked_has_foreign_key = True
+        self._foreign_key_is_list = False
         self._related_name = related_name
 
     def contribute_to_class(self, cls, name):
@@ -429,14 +463,11 @@ class OneToManyDescriptor(object):
         linked_cls = _lookup(self._linked_cls, cls)
         superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass, True, False)
-        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        return self.get_manager(instance)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
-        linked_cls = _lookup(self._linked_cls, instance.__class__)
-        superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass, True, False)
-        lm = LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        lm = self.get_manager(instance)
         lm.clear()
         for v in value:
             lm.add(value)
