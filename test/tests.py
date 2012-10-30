@@ -808,7 +808,7 @@ class ModelTest(unittest.TestCase):
         r = g1.primary_accounts.all()
         self.assertEqual(len(r), 1)
 
-        group = r[0].primary_group
+        group = r[0].primary_group.get()
 
         group.primary_accounts.add(u)
         self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.remove, u)

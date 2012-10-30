@@ -110,6 +110,9 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             this_instance = self._this_instance
             this_key = self._this_key
             this_value = getattr(this_instance, this_key)
+            if this_value is None:
+                this_value = [ ]
+
             if not isinstance(this_value, list):
                 this_value = [ this_value ]
 
@@ -323,6 +326,17 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 if commit:
                     this_instance.save()
 
+            if not foreign_key_is_list:
+                def get_obj(self, *args, **kwargs):
+                    """ Unlike get returns None if there is no value. """
+                    this_instance = self._this_instance
+                    this_key = self._this_key
+                    this_value = getattr(this_instance, this_key)
+                    if this_value is None:
+                        return None
+
+                    return self.get(*args, **kwargs)
+
     return LinkManager
 
 class LinkDescriptor(object):
@@ -366,6 +380,11 @@ class LinkDescriptor(object):
             q = q | tldap.Q(**kwargs)
         return q
 
+    def __get__(self, instance, cls=None):
+        if instance is None:
+            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
+        return self.get_manager(instance)
+
 
 class ManyToManyDescriptor(LinkDescriptor):
     def __init__(self, this_key, linked_cls, linked_key, linked_has_foreign_key, related_name=None):
@@ -384,11 +403,6 @@ class ManyToManyDescriptor(LinkDescriptor):
                 raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
                     (cls.__name__, name, self._related_name, self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
-
-    def __get__(self, instance, cls=None):
-        if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
-        return self.get_manager(instance)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
@@ -420,17 +434,6 @@ class ManyToOneDescriptor(LinkDescriptor):
                     (cls.__name__, name, self._related_name, self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
 
-    def __get__(self, instance, cls=None):
-        if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
-
-        this_value = getattr(instance, self._this_key)
-        if this_value is None:
-            return None
-
-        lm = self.get_manager(instance)
-        return lm.get()
-
     def __set__(self, instance, value):
         assert not isinstance(value, list)
         lm = self.get_manager(instance)
@@ -455,11 +458,6 @@ class OneToManyDescriptor(LinkDescriptor):
                 raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
                     (cls.__name__, name, self._related_name, self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
-
-    def __get__(self, instance, cls=None):
-        if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
-        return self.get_manager(instance)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
