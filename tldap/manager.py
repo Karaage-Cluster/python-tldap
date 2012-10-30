@@ -459,10 +459,6 @@ class OneToManyDescriptor(LinkDescriptor):
     def __get__(self, instance, cls=None):
         if instance is None:
             raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
-
-        linked_cls = _lookup(self._linked_cls, cls)
-        superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass, True, False)
         return self.get_manager(instance)
 
     def __set__(self, instance, value):
