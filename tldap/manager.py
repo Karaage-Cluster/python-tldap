@@ -327,15 +327,27 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     this_instance.save()
 
             if not foreign_key_is_list:
-                def get_obj(self, *args, **kwargs):
-                    """ Unlike get returns None if there is no value. """
+                def is_set(self):
+                    """
+                    Does this manager point to a value, or is it None?
+                    """
+                    this_instance = self._this_instance
+                    this_key = self._this_key
+                    this_value = getattr(this_instance, this_key)
+                    return this_value is not None
+
+                def get_obj(self):
+                    """
+                    Retrieve this value. Unlike get returns None if there is no value,
+                    instead of raisng an exception.
+                    """
                     this_instance = self._this_instance
                     this_key = self._this_key
                     this_value = getattr(this_instance, this_key)
                     if this_value is None:
                         return None
 
-                    return self.get(*args, **kwargs)
+                    return self.get()
 
     return LinkManager
 
