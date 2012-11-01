@@ -26,7 +26,8 @@ class TransactionMiddleware(object):
     """
     def process_request(self, request):
         """Enters transaction management"""
-        tldap.transaction.enter_transaction_management()
+        if not tldap.transaction.is_managed():
+            tldap.transaction.enter_transaction_management()
 
     def process_exception(self, request, exception):
         """Rolls back the database and leaves transaction management"""
