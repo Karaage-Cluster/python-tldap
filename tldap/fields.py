@@ -117,8 +117,27 @@ class Field(object):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        if isinstance(value, unicode):
-            value = value.encode("utf_8")
+        raise RuntimeError("Not implemented")
+
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        raise RuntimeError("Not implemented")
+
+    def value_validate(self, value):
+        """
+        Validates value and throws ValidationError. Subclasses should override
+        this to provide validation logic.
+        """
+        raise RuntimeError("Not implemented")
+
+
+class BinaryField(Field):
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
         assert value is None or isinstance(value, str)
         return value
 
@@ -137,12 +156,35 @@ class Field(object):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if value is not None and not (isinstance(value, str) or isinstance(value, unicode)):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
 
 
 class CharField(Field):
-    pass
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+        if isinstance(value, unicode):
+            value = value.encode("utf_8")
+        return value
+
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+        return value.decode("utf_8")
+
+    def value_validate(self, value):
+        """
+        Validates value and throws ValidationError. Subclasses should override
+        this to provide validation logic.
+        """
+        if value is not None and not (isinstance(value, str) or isinstance(value, unicode)):
+            raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
+
 
 class IntegerField(Field):
     def value_to_python(self, value):
