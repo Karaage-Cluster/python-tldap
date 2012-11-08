@@ -158,6 +158,16 @@ class LDAPobject(object):
     def pk(self):
         return getattr(self, self._meta.pk)
 
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+        if self.pk != other.pk:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not (self == other)
+
     def get_fields(self):
         for i in self._meta.get_all_field_names():
             yield i, getattr(self, i)
