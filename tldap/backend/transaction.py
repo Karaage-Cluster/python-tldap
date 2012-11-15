@@ -620,23 +620,3 @@ class LDAPwrapper(object):
         # we are finished - return results, eat cake
         debug("---> return", rarray)
         return rarray
-
-    #######################
-    # Compatability Hacks #
-    #######################
-
-    def add_s(self, *args, **kwargs):
-        return self.add(*args, **kwargs)
-
-    def modify_s(self, *args, **kwargs):
-        return self.modify(*args, **kwargs)
-
-    def delete_s(self, *args, **kwargs):
-        return self.delete(*args, **kwargs)
-
-    def rename_s(self, *args, **kwargs):
-        return self.rename(*args, **kwargs)
-
-    def search_s(self, *args, **kwargs):
-        return self.search(*args, **kwargs)
-

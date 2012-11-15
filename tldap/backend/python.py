@@ -148,23 +148,3 @@ class LDAPwrapper(object):
 
     def search(self, base, scope, *args, **kwargs):
         return self._do_with_retry(lambda obj: obj.search_s(base, scope, *args, **kwargs))
-
-    #######################
-    # Compatability Hacks #
-    #######################
-
-    def add_s(self, *args, **kwargs):
-        return self.add(*args, **kwargs)
-
-    def modify_s(self, *args, **kwargs):
-        return self.modify(*args, **kwargs)
-
-    def delete_s(self, *args, **kwargs):
-        return self.delete(*args, **kwargs)
-
-    def rename_s(self, *args, **kwargs):
-        return self.rename(*args, **kwargs)
-
-    def search_s(self, *args, **kwargs):
-        return self.search(*args, **kwargs)
-
