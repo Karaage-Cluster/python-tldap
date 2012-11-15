@@ -25,7 +25,7 @@ import tldap.fields
 
 class organizationalUnit(tldap.base.LDAPobject):
     ou = tldap.fields.CharField(required=True)
-    userPassword = tldap.fields.CharField()
+    userPassword = tldap.fields.BinaryField()
     searchGuide = tldap.fields.CharField()
     seeAlso = tldap.fields.CharField()
     businessCategory = tldap.fields.CharField()
@@ -53,7 +53,7 @@ class organizationalUnit(tldap.base.LDAPobject):
 class person(tldap.base.LDAPobject):
     sn = tldap.fields.CharField(required=True)
     cn = tldap.fields.CharField(required=True)
-    userPassword = tldap.fields.CharField()
+    userPassword = tldap.fields.BinaryField()
     telephoneNumber = tldap.fields.CharField()
     seeAlso = tldap.fields.CharField()
     description = tldap.fields.CharField()
@@ -122,7 +122,7 @@ class posixAccount(tldap.base.LDAPobject):
     uidNumber = tldap.fields.IntegerField(required=True)
     gidNumber = tldap.fields.IntegerField(required=True)
     homeDirectory = tldap.fields.CharField(required=True)
-    userPassword = tldap.fields.CharField()
+    userPassword = tldap.fields.BinaryField()
     loginShell = tldap.fields.CharField()
     gecos = tldap.fields.CharField()
     description = tldap.fields.CharField()
@@ -131,7 +131,7 @@ class posixAccount(tldap.base.LDAPobject):
         object_classes = { 'posixAccount', }
 
 class shadowAccount(tldap.base.LDAPobject):
-    userPassword = tldap.fields.CharField()
+    userPassword = tldap.fields.BinaryField()
     shadowLastChange = tldap.fields.IntegerField()
     shadowMin = tldap.fields.IntegerField()
     shadowMax = tldap.fields.IntegerField()
@@ -168,7 +168,7 @@ class pwdPolicy(tldap.base.LDAPobject):
 class posixGroup(tldap.base.LDAPobject):
     cn = tldap.fields.CharField(required=True)
     gidNumber = tldap.fields.IntegerField(required=True)
-    userPassword = tldap.fields.CharField()
+    userPassword = tldap.fields.BinaryField()
     memberUid = tldap.fields.CharField(max_instances=None)
     description = tldap.fields.CharField()
 
