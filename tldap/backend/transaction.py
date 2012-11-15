@@ -474,7 +474,7 @@ class LDAPwrapper(object):
         split_dn = ldap.dn.str2dn(dn)
         split_newrdn = ldap.dn.str2dn(newrdn)
         assert(len(split_newrdn)==1)
-        
+
         # make dn unqualified
         rdn = ldap.dn.dn2str(split_dn[0:1])
 
@@ -483,13 +483,13 @@ class LDAPwrapper(object):
         tmplist.append(split_newrdn[0])
         tmplist.extend(split_dn[1:])
         newdn = ldap.dn.dn2str(tmplist)
-                
+
         debug("--> rollback", self, newdn, rdn)
 
         # on commit carry out action; on rollback reverse rename
         oncommit   = lambda obj: obj.rename_s(dn, newrdn)
         onrollback = lambda obj: obj.rename_s(newdn, rdn)
-        
+
         debug("--> rename cache", dn, newdn)
         self._cache_rename_dn(dn, newdn)
         cache = self._cache_get_for_dn(newdn)[1]
@@ -519,6 +519,7 @@ class LDAPwrapper(object):
     # read only stuff
 
     def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
+        "" Search for entries in LDAP database. """
         debug("\nsearch", base, scope, filterstr)
 
         # Note: we do not use the attrlist, instead we always get all
@@ -547,14 +548,14 @@ class LDAPwrapper(object):
         else:
             filterobj = None
         debug("---> filterobj", type(filterobj))
-        
+
         # convert results to dictionary
         rdict = {}
         for v in rarray:
             dn = v[0].lower()
             rdict[dn] = v
         debug("---> rdict (ldap)", rdict)
-        
+
         # is this dn in the search scope?
         split_base = ldap.dn.str2dn(base.lower())
         base = ldap.dn.dn2str(split_base)
@@ -609,7 +610,7 @@ class LDAPwrapper(object):
                 debug("---> deleted")
                 if dn in rdict:
                     debug("---> deleting")
-                    del rdict[dn] 
+                    del rdict[dn]
         debug("---> rdict (cache)", rdict)
 
         # convert results back to list format
