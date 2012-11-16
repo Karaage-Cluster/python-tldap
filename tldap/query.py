@@ -46,6 +46,7 @@ class QuerySet(object):
         self._base_dn = None
         self._iter = None
         self._result_cache = None
+        self._limits = None
 
     @property
     def model(self):
@@ -101,7 +102,46 @@ class QuerySet(object):
         """
         Retrieves an item or slice from the set of results.
         """
-        return list(self)[k]
+        if not isinstance(k, (slice, int, long)):
+            raise TypeError
+        if not isinstance(k, slice) and (k < 0):
+            raise IndexError("Negative indexing is not supported.")
+        if isinstance(k, slice) and (k.start is not None and k.start < 0):
+            raise IndexError("Negative indexing is not supported.")
+        if isinstance(k, slice) and (k.stop is not None and k.stop < 0):
+            raise IndexError("Negative indexing is not supported.")
+
+        if self._result_cache is not None:
+            if self._iter is not None:
+                # The result cache has only been partially populated, so we may
+                # need to fill it out a bit more.
+                if isinstance(k, slice):
+                    if k.stop is not None:
+                        # Some people insist on passing in strings here.
+                        bound = int(k.stop)
+                    else:
+                        bound = None
+                else:
+                    bound = k + 1
+                if len(self._result_cache) < bound:
+                    self._fill_cache(bound - len(self._result_cache))
+            return self._result_cache[k]
+
+        if isinstance(k, slice):
+            qs = self._clone()
+            if k.start is not None:
+                start = int(k.start)
+            else:
+                start = None
+            if k.stop is not None:
+                stop = int(k.stop)
+            else:
+                stop = None
+            qs._limits = start,stop
+            return k.step and list(qs)[::k.step] or qs
+        qs = self._clone()
+        qs._limits = k, k+1
+        return list(qs)[0]
 
     def __and__(self, other):
         assert isinstance(other, QuerySet)
@@ -356,6 +396,13 @@ class QuerySet(object):
         if search_filter is None:
             return
 
+        if self._limits is not None:
+            start, stop = self._limits
+            limit = stop
+        else:
+            start = 0
+            limit = None
+
         # repeat for every dn
         fields = self._cls._meta.fields
         for base_dn in dn_list:
@@ -363,7 +410,11 @@ class QuerySet(object):
 
             try:
                 # get the results
-                for i in tldap.connections[alias].search(base_dn, scope, search_filter, field_names):
+                for i in tldap.connections[alias].search(base_dn, scope, search_filter, field_names, limit=limit):
+                    if start > 0:
+                        start = start - 1
+                        continue
+
                     # create new object
                     o = self._cls()
 

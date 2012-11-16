@@ -565,11 +565,12 @@ class LDAPwrapper(object):
 
         # search cache
         rset = set()
+        items_left = limit
         for dn, v in self._cache.iteritems():
-            if limit is not None and limit == 0:
+            if items_left is not None and items_left == 0:
                 return
 
-            debug("---> checking", dn, v)
+            debug("---> checking", dn, v, limit)
 
             # check dn is in search scope
             if not check_scope(dn):
@@ -587,8 +588,8 @@ class LDAPwrapper(object):
                     rset.add(dn)
                     debug("---> yielding", v)
                     yield copy.deepcopy(v)
-                    if limit is not None:
-                        limit = limit - 1
+                    if items_left is not None:
+                        items_left = items_left - 1
                 else:
                     debug("---> nomatch")
             else:
@@ -602,6 +603,7 @@ class LDAPwrapper(object):
         if isinstance(attrlist, set):
             attrlist = list(attrlist)
         def first_results(obj):
+            debug("---> searching ldap", limit)
             msgid = obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
             return (msgid,) + self._obj.result3(msgid, 0)
 
@@ -614,18 +616,32 @@ class LDAPwrapper(object):
             self._cache_get_for_dn(base)
             debug("---> ... but ok because base is cached")
             return
+        except ldap.SIZELIMIT_EXCEEDED:
+            debug("---> got SIZELIMIT_EXCEEDED")
+            return
 
         # process the results
         while result_type and result_list:
             # Loop over list of search results
             for result_item in result_list:
+                if items_left is not None and items_left == 0:
+                    self._obj.abandon(msgid)
+                    return
                 dn, attributes = result_item
                 # did we already retrieve this from cache?
                 debug("---> got ldap result", dn)
                 if dn.lower() not in rset:
                     debug("---> yielding", result_item)
                     yield result_item
-            result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+                    if items_left is not None:
+                        items_left = items_left - 1
+                else:
+                    debug("---> skipping", dn)
+            try:
+                result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+            except ldap.SIZELIMIT_EXCEEDED:
+                debug("---> got SIZELIMIT_EXCEEDED")
+                return
 
         # we are finished - return results, eat cake
         return

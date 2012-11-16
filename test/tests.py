@@ -923,6 +923,18 @@ class UserAPITest(unittest.TestCase):
 #        u.save()
 #        self.failUnlessEqual(u.is_locked(), False)
 
+    def test_user_slice(self):
+        self.account.objects.get(uid='testuser1').save()
+        users = self.account.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
+        self.failUnlessEqual(users[0].uid, "testuser1")
+        self.failUnlessEqual(users[1].uid, "testuser2")
+        self.failUnlessEqual(users[2].uid, "testuser3")
+        self.failUnlessRaises(IndexError, users.__getitem__, 3)
+        a = iter(users[1:4])
+        self.failUnlessEqual(a.next().uid, "testuser2")
+        self.failUnlessEqual(a.next().uid, "testuser3")
+        self.failUnlessRaises(StopIteration, a.next)
+
     def test_user_search(self):
         u = self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='User')
