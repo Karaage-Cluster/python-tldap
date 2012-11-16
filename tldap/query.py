@@ -297,12 +297,7 @@ class QuerySet(object):
         # return list of dn to search for
         return dn_list
 
-    def iterator(self):
-        """
-        An iterator over the results from applying this QuerySet to the
-        database.
-        """
-
+    def _get_search_params(self):
         # get object classes to search
         if self._from_cls is None:
             object_classes = self._cls._meta.search_classes or self._cls._meta.object_classes
@@ -339,19 +334,30 @@ class QuerySet(object):
             dn_list = [ base_dn ]
 
 
-        # set the database we should use as required
-        alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
-
         # get list of field names we support
-        fields = self._cls._meta.fields
         field_names = self._cls._meta.get_all_field_names()
 
         # construct search filter string
         search_filter = self._get_filter(query)
+
+        return dn_list, scope, search_filter, field_names
+
+    def iterator(self):
+        """
+        An iterator over the results from applying this QuerySet to the
+        database.
+        """
+
+        # set the database we should use as required
+        alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
+
+        # get search parameters
+        dn_list, scope, search_filter, field_names = self._get_search_params()
         if search_filter is None:
             return
 
         # repeat for every dn
+        fields = self._cls._meta.fields
         for base_dn in dn_list:
             assert base_dn is not None
 
@@ -397,6 +403,41 @@ class QuerySet(object):
                     % self._cls._meta.object_name)
         raise self._cls.MultipleObjectsReturned("get() returned more than one %s -- it returned %s! Lookup parameters were %s"
                 % (self._cls._meta.object_name, num, kwargs))
+
+    def count(self):
+        """
+        Performs a SELECT COUNT() and returns the number of records as an
+        integer.
+
+        If the QuerySet is already fully cached this simply returns the length
+        of the cached results set to avoid multiple SELECT COUNT(*) calls.
+        """
+        if self._result_cache is not None and not self._iter:
+            return len(self._result_cache)
+
+        # set the database we should use as required
+        alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
+
+        # get search parameters
+        dn_list, scope, search_filter, field_names = self._get_search_params()
+        if search_filter is None:
+            return
+
+        # repeat for every dn
+        count = 0
+        for base_dn in dn_list:
+            assert base_dn is not None
+
+            try:
+                # get the results
+                for i in tldap.connections[alias].search(base_dn, scope, search_filter, [ 'z' ]):
+                    count = count + 1
+            except ldap.NO_SUCH_OBJECT:
+                # return with no results
+                pass
+
+        return count
+
 
     def create(self, **kwargs):
         """

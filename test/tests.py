@@ -755,25 +755,25 @@ class ModelTest(unittest.TestCase):
             tldap.Q(dn="uid=tux,ou=People, dc=python-ldap,dc=org") |
             tldap.Q(dn="uid=tuy,ou=People, dc=python-ldap,dc=org") |
             tldap.Q(dn="uid=tuz,ou=People, dc=python-ldap,dc=org"))
-        self.assertEqual(len(list(r)), 2)
+        self.assertEqual(len(r), 2)
 
         r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        self.assertEqual(len(list(r)), 2)
+        self.assertEqual(r.count(), 2)
 
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
 
         r = g1.secondary_people.all()
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(r), 1)
 
         r = g2.secondary_people.all()
-        self.assertEqual(len(list(r)), 2)
+        self.assertEqual(len(r), 2)
 
         r = p1.secondary_groups.all()
-        self.assertEqual(len(list(r)), 2)
+        self.assertEqual(len(r), 2)
 
         r = p2.secondary_groups.all()
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(r), 1)
 
         p1.secondary_groups.create(cn="drwho", gidNumber=12)
 
@@ -795,21 +795,21 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
 
         r = g1.secondary_people.all()
-        self.assertEqual(len(list(r)), 3)
+        self.assertEqual(len(r), 3)
 
         r = g2.secondary_people.all()
-        self.assertEqual(len(list(r)), 2)
+        self.assertEqual(len(r), 2)
 
         r = p1.secondary_groups.all()
-        self.assertEqual(len(list(r)), 4)
+        self.assertEqual(len(r), 4)
 
         r = p2.secondary_groups.all()
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(r), 1)
 
         u = g1.primary_accounts.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
 
         r = g1.primary_accounts.all()
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(r), 1)
 
         group = r[0].primary_group.get()
 
@@ -817,32 +817,32 @@ class ModelTest(unittest.TestCase):
         self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.remove, u)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(list(r)), 3)
+        self.assertEqual(len(r), 3)
 
         group.secondary_people.clear()
 
         r = group.secondary_people.all()
-        self.assertEqual(len(list(r)), 0)
+        self.assertEqual(len(r), 0)
 
         group.secondary_people.add(p1)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(r), 1)
 
         group.secondary_people.remove(p1)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(list(r)), 0)
+        self.assertEqual(len(r), 0)
 
         u.secondary_groups.add(group)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(r), 1)
 
         u.secondary_groups.remove(group)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(list(r)), 0)
+        self.assertEqual(len(r), 0)
 
         u.primary_group = g2
         u.save()
@@ -926,22 +926,30 @@ class UserAPITest(unittest.TestCase):
     def test_user_search(self):
         u = self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='User')
+        self.failUnlessEqual(users.count(), 3)
         self.failUnlessEqual(len(users), 3)
+        self.failUnlessEqual(users.count(), 3)
 
     def test_user_search_one(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(uid__contains='testuser1')
+        self.failUnlessEqual(users.count(), 1)
         self.failUnlessEqual(len(users), 1)
+        self.failUnlessEqual(users.count(), 1)
 
     def test_user_search_empty(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='nothing')
+        self.failUnlessEqual(users.count(), 0)
         self.failUnlessEqual(len(users), 0)
+        self.failUnlessEqual(users.count(), 0)
 
     def test_user_search_multi(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
+        self.failUnlessEqual(users.count(), 3)
         self.failUnlessEqual(len(users), 3)
+        self.failUnlessEqual(users.count(), 3)
 
     def test_get_groups_empty(self):
         u = self.account.objects.get(uid="testuser2")
