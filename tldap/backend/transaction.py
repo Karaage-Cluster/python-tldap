@@ -43,7 +43,7 @@ import sys
 
 # hardcoded settings for this module
 
-debugging = False
+debugging = True
 delayed_connect = True
 
 # debugging
@@ -58,7 +58,7 @@ def raise_testfailure(place):
 
 # private
 
-class _MatchMixin(ldaptor.entryhelpers.MatchMixin):
+class Filter(ldaptor.entryhelpers.MatchMixin):
     def __init__(self, dn, attributes):
         self._dn = dn
         self._attributes = attributes
@@ -518,27 +518,12 @@ class LDAPwrapper(object):
 
     # read only stuff
 
-    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
-        "" Search for entries in LDAP database. """
-        debug("\nsearch", base, scope, filterstr)
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, limit=None):
+        """ Search for entries in LDAP database. """
 
-        # Note: we do not use the attrlist, instead we always get all
-        # attributes, this ensures the cache remains consistent with what is
-        # stored on the server.  Might have to change this latter if it is a
-        # problem (e.g. accessing hidden attributes).
+        debug("\nsearch", base, scope, filterstr, attrlist, limit)
 
-        # do the real ldap search
-        try:
-            rarray = self._do_with_retry(lambda obj: obj.search_s(base, scope, filterstr, ['*','+']))
-        except ldap.NO_SUCH_OBJECT:
-            # if base doesn't exist in LDAP, it really should exist in cache
-            debug("---> got NO_SUCH_OBJECT")
-            self._cache_get_for_dn(base)
-            debug("---> ... but ok because base is cached")
-            rarray = []
-        debug("---> rarray", rarray)
-
-        # now parse the filter string
+        # parse the filter string
         debug("---> filterstr", filterstr)
         if filterstr is not None:
             if filterstr[0] != "(":
@@ -548,13 +533,6 @@ class LDAPwrapper(object):
         else:
             filterobj = None
         debug("---> filterobj", type(filterobj))
-
-        # convert results to dictionary
-        rdict = {}
-        for v in rarray:
-            dn = v[0].lower()
-            rdict[dn] = v
-        debug("---> rdict (ldap)", rdict)
 
         # is this dn in the search scope?
         split_base = ldap.dn.str2dn(base.lower())
@@ -585,8 +563,12 @@ class LDAPwrapper(object):
 
             return False
 
-        # also search cache
+        # search cache
+        rset = set()
         for dn, v in self._cache.iteritems():
+            if limit is not None and limit == 0:
+                return
+
             debug("---> checking", dn, v)
 
             # check dn is in search scope
@@ -597,27 +579,63 @@ class LDAPwrapper(object):
 
             # if this entry is not deleted
             if v is not None:
+                item_dn, item_attributes = v
                 # then check if it matches the filter
-                t = _MatchMixin(v[0], v[1])
+                t = Filter(item_dn, item_attributes)
                 if filterobj is None or t.match(filterobj):
                     debug("---> match")
-                    rdict[dn] = copy.deepcopy(v)
+                    rset.add(dn)
+                    debug("---> yielding", v)
+                    yield copy.deepcopy(v)
+                    if limit is not None:
+                        limit = limit - 1
                 else:
                     debug("---> nomatch")
             else:
                 # otherwise, entry deleted in cache, delete from
                 # results
                 debug("---> deleted")
-                if dn in rdict:
-                    debug("---> deleting")
-                    del rdict[dn]
-        debug("---> rdict (cache)", rdict)
+                rset.add(dn)
 
-        # convert results back to list format
-        rarray = []
-        for dn, v in rdict.iteritems():
-            rarray.append( (v[0],v[1]) )
+        # connect to ldap server
+        if self._obj is None:
+            # never connected; try to connect and then run fn
+            debug("initial connection")
+            self._reconnect()
+
+        # do the real ldap search
+        if isinstance(attrlist, set):
+            attrlist = list(attrlist)
+        msgid = self._obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+
+        # get the 1st result
+        try:
+            try:
+                result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+            except ldap.SERVER_DOWN:
+                # if it fails, reconnect then retry
+                debug("SERVER_DOWN, reconnecting")
+                self._reconnect()
+                msgid = self._obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+                result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+        except ldap.NO_SUCH_OBJECT:
+            # if base doesn't exist in LDAP, it really should exist in cache
+            debug("---> got NO_SUCH_OBJECT")
+            self._cache_get_for_dn(base)
+            debug("---> ... but ok because base is cached")
+            return
+
+        # get the next results
+        while result_type and result_list:
+            # Loop over list of search results
+            for result_item in result_list:
+                dn, attributes = result_item
+                # did we already retrieve this from cache?
+                debug("---> got ldap result", dn)
+                if dn.lower() not in rset:
+                    debug("---> yielding", result_item)
+                    yield result_item
+            result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
 
         # we are finished - return results, eat cake
-        debug("---> return", rarray)
-        return rarray
+        return

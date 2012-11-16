@@ -19,7 +19,7 @@ import ldap
 
 # hardcoded settings for this module
 
-debugging = False
+debugging = True
 delayed_connect = True
 
 # debugging
@@ -155,6 +155,36 @@ class LDAPwrapper(object):
 
     # read only stuff
 
-    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None):
-        "" Search for entries in LDAP database. """
-        return self._do_with_retry(lambda obj: obj.search_s(base, scope, filterstr, attrlist))
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, skip=0, limit=None):
+        """ Search for entries in LDAP database. """
+
+        # connect to ldap server
+        if self._obj is None:
+            # never connected; try to connect and then run fn
+            debug("initial connection")
+            self._reconnect()
+
+        # do the real ldap search
+        if isinstance(attrlist, set):
+            attrlist = list(attrlist)
+        msgid = self._obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+
+        # get the 1st result
+        try:
+            result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+        except ldap.SERVER_DOWN:
+            # if it fails, reconnect then retry
+            debug("SERVER_DOWN, reconnecting")
+            self._reconnect()
+            msgid = self._obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+            result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+
+        # get the next results
+        while result_type and result_list:
+            # Loop over list of search results
+            for result_item in result_list:
+                yield result_item
+            result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+
+        # we are finished - return results, eat cake
+        return

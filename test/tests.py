@@ -81,7 +81,7 @@ class BackendTest(unittest.TestCase):
         raises MultipleResultsException if more than one 
         entry exists for given search string
         """
-        result_data = c.search(base, ldap.SCOPE_BASE)
+        result_data = list(c.search(base, ldap.SCOPE_BASE))
         no_results = len(result_data)
         if no_results < 1:
             raise ldap.NO_SUCH_OBJECT()
@@ -167,36 +167,39 @@ class BackendTest(unittest.TestCase):
         # test search scopes
         c.add("ou=Groups, dc=python-ldap,dc=org", [ ("objectClass", ["top","organizationalunit"]) ])
         r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
         r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(list(r)), 0)
         r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(list(r)), 0)
         r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_BASE, "uid=tux")
-        self.assertEqual(len(r), 0)
-        self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        self.assertEqual(len(list(r)), 0)
+        r = c.search("dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, list, r)
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
         r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
         r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(list(r)), 0)
         r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(r), 0)
-        self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        self.assertEqual(len(list(r)), 0)
+        r = c.search("dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, list, r)
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
         r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
         r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
         r = c.search("ou=Groups, dc=python-ldap,dc=org", ldap.SCOPE_SUBTREE, "uid=tux")
-        self.assertEqual(len(r), 0)
-        self.assertRaises(ldap.NO_SUCH_OBJECT, c.search, "dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        self.assertEqual(len(list(r)), 0)
+        r = c.search("dc=python,dc=org", ldap.SCOPE_BASE, "uid=tux")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, list, r)
         assert_cache_dn(self, "uid=tux, ou=People, dc=python-ldap,dc=org", c)
 
         # test replacing attribute with rollback
@@ -752,25 +755,25 @@ class ModelTest(unittest.TestCase):
             tldap.Q(dn="uid=tux,ou=People, dc=python-ldap,dc=org") |
             tldap.Q(dn="uid=tuy,ou=People, dc=python-ldap,dc=org") |
             tldap.Q(dn="uid=tuz,ou=People, dc=python-ldap,dc=org"))
-        self.assertEqual(len(r), 2)
+        self.assertEqual(len(list(r)), 2)
 
         r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        self.assertEqual(len(r), 2)
+        self.assertEqual(len(list(r)), 2)
 
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
 
         r = g1.secondary_people.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         r = g2.secondary_people.all()
-        self.assertEqual(len(r), 2)
+        self.assertEqual(len(list(r)), 2)
 
         r = p1.secondary_groups.all()
-        self.assertEqual(len(r), 2)
+        self.assertEqual(len(list(r)), 2)
 
         r = p2.secondary_groups.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         p1.secondary_groups.create(cn="drwho", gidNumber=12)
 
@@ -792,21 +795,21 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(g1.memberUid, [ 'tux', 'dalek', 'dalek_leader' ])
 
         r = g1.secondary_people.all()
-        self.assertEqual(len(r), 3)
+        self.assertEqual(len(list(r)), 3)
 
         r = g2.secondary_people.all()
-        self.assertEqual(len(r), 2)
+        self.assertEqual(len(list(r)), 2)
 
         r = p1.secondary_groups.all()
-        self.assertEqual(len(r), 4)
+        self.assertEqual(len(list(r)), 4)
 
         r = p2.secondary_groups.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         u = g1.primary_accounts.create(uid="cyberman", sn="Deleted", cn="You will be Deleted!", uidNumber=100, homeDirectory="/tmp")
 
         r = g1.primary_accounts.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         group = r[0].primary_group.get()
 
@@ -814,38 +817,38 @@ class ModelTest(unittest.TestCase):
         self.assertRaises(tldap.exceptions.ValidationError, group.primary_accounts.remove, u)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(r), 3)
+        self.assertEqual(len(list(r)), 3)
 
         group.secondary_people.clear()
 
         r = group.secondary_people.all()
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(list(r)), 0)
 
         group.secondary_people.add(p1)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         group.secondary_people.remove(p1)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(list(r)), 0)
 
         u.secondary_groups.add(group)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         u.secondary_groups.remove(group)
 
         r = group.secondary_people.all()
-        self.assertEqual(len(r), 0)
+        self.assertEqual(len(list(r)), 0)
 
         u.primary_group = g2
         u.save()
 
         r = g2.primary_accounts.all()
-        self.assertEqual(len(r), 1)
+        self.assertEqual(len(list(r)), 1)
 
         u.primary_group = None
         self.assertRaises(tldap.exceptions.ValidationError, u.save)
