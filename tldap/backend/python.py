@@ -136,26 +136,32 @@ class LDAPwrapper(object):
 
     def add(self, dn, modlist, onfailure=None):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled. """
+
         return self._do_with_retry(lambda obj: obj.add_s(dn, modlist))
 
 
     def modify(self, dn, modlist, onfailure=None):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
+
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
     def delete(self, dn, onfailure=None):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled. """
+
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
     def rename(self, dn, newrdn, onfailure=None):
         """ rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
+
         return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn))
 
     # read only stuff
 
-    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, skip=0, limit=None):
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, limit=None):
         """ Search for entries in LDAP database. """
 
         # first results
