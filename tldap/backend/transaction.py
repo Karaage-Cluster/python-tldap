@@ -80,7 +80,6 @@ class LDAPwrapper(object):
         self.settings_dict = settings_dict
         self._transact = False
         self._obj = None
-        self.search_in_progress = False
 
         self._cache = None
         self._oncommit = None
@@ -326,7 +325,6 @@ class LDAPwrapper(object):
         result if transactions enabled. """
 
         debug("\nadd", self, dn, modlist)
-        assert not self.search_in_progress
 
         # if rollback of add required, delete it
         oncommit   = lambda obj: obj.add_s(dn, modlist)
@@ -351,7 +349,6 @@ class LDAPwrapper(object):
         result if transactions enabled. """
 
         debug("\nmodify", self, dn, modlist)
-        assert not self.search_in_progress
 
         # need to work out how to reverse changes in modlist; result in revlist
         revlist = []
@@ -441,7 +438,6 @@ class LDAPwrapper(object):
         result if transactions enabled. """
 
         debug("\ndelete", self)
-        assert not self.search_in_progress
 
         # get copy of cache
         result = self._cache_get_for_dn(dn)[1].copy()
@@ -473,7 +469,6 @@ class LDAPwrapper(object):
         result if transactions enabled. """
 
         debug("\nrename", self, dn, newrdn)
-        assert not self.search_in_progress
 
         # split up the parameters
         split_dn = ldap.dn.str2dn(dn)
@@ -522,20 +517,6 @@ class LDAPwrapper(object):
         return self._process(oncommit, onrollback, None)
 
     # read only stuff
-
-    def search(*args, **kwargs):
-        """ Search for entries in LDAP database. """
-        assert not self.search_in_progress
-
-        # nested searches are not allowed
-        self.search_in_progress = True
-        try:
-            self._search(*args, **kwargs)
-        except:
-            self.search_in_progress = False
-            raise
-        self.search_in_progress = False
-        return
 
     def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, limit=None):
         """ Search for entries in LDAP database. """

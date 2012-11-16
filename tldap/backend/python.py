@@ -36,7 +36,6 @@ class LDAPwrapper(object):
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict
         self._obj = None
-        self.search_in_progress = False
 
         if not delayed_connect:
             self._reconnect()
@@ -137,49 +136,27 @@ class LDAPwrapper(object):
 
     def add(self, dn, modlist, onfailure=None):
         """ Add a DN to the LDAP database; See ldap module. Doesn't return a
-
-        assert not self.search_in_progress
         return self._do_with_retry(lambda obj: obj.add_s(dn, modlist))
 
 
     def modify(self, dn, modlist, onfailure=None):
         """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled. """
-        assert not self.search_in_progress
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
     def delete(self, dn, onfailure=None):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
-
-        assert not self.search_in_progress
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
     def rename(self, dn, newrdn, onfailure=None):
         """ rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
-
-        assert not self.search_in_progress
         return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn))
 
     # read only stuff
 
-    def search(*args, **kwargs):
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, skip=0, limit=None):
         """ Search for entries in LDAP database. """
-        assert not self.search_in_progress
-
-        # nested searches are not allowed
-        self.search_in_progress = True
-        try:
-            self._search(*args, **kwargs)
-        except:
-            self.search_in_progress = False
-            raise
-        self.search_in_progress = False
-        return
-
-    def _search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, skip=0, limit=None):
-        """ Search for entries in LDAP database. """
-
 
         # first results
         if isinstance(attrlist, set):
