@@ -616,27 +616,17 @@ class LDAPwrapper(object):
                 debug("---> deleted")
                 rset.add(dn)
 
-        # connect to ldap server
-        if self._obj is None:
-            # never connected; try to connect and then run fn
-            debug("initial connection")
-            self._reconnect()
 
-        # do the real ldap search
+        # first results
         if isinstance(attrlist, set):
             attrlist = list(attrlist)
-        msgid = self._obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+        def first_results(obj):
+            msgid = obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+            return (msgid,) + self._obj.result3(msgid, 0)
 
         # get the 1st result
         try:
-            try:
-                result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
-            except ldap.SERVER_DOWN:
-                # if it fails, reconnect then retry
-                debug("SERVER_DOWN, reconnecting")
-                self._reconnect()
-                msgid = self._obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
-                result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+            msgid,result_type,result_list,result_msgid,result_serverctrls = self._do_with_retry(first_results)
         except ldap.NO_SUCH_OBJECT:
             # if base doesn't exist in LDAP, it really should exist in cache
             debug("---> got NO_SUCH_OBJECT")
@@ -644,7 +634,7 @@ class LDAPwrapper(object):
             debug("---> ... but ok because base is cached")
             return
 
-        # get the next results
+        # process the results
         while result_type and result_list:
             # Loop over list of search results
             for result_item in result_list:
