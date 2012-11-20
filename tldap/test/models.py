@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-import tldap.models
+import tldap.schemas.rfc as rfc
 import tldap.manager
 
 import time
@@ -25,7 +25,7 @@ import django.conf
 
 # standard objects
 
-class person(tldap.models.person, tldap.models.organizationalPerson, tldap.models.inetOrgPerson):
+class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
 
     class Meta:
         base_dn = django.conf.settings.LDAP_USER_BASE
@@ -44,7 +44,7 @@ class person(tldap.models.person, tldap.models.organizationalPerson, tldap.model
     manager_of = tldap.manager.OneToManyDescriptor('dn', 'tldap.test.models.person', 'manager')
 
 
-class account(person, tldap.models.posixAccount, tldap.models.shadowAccount):
+class account(person, rfc.posixAccount, rfc.shadowAccount):
 
     def __unicode__(self):
         return u"A:%s"%self.cn
@@ -59,7 +59,7 @@ class account(person, tldap.models.posixAccount, tldap.models.shadowAccount):
         super(account, self).save(*args, **kwargs)
 
 
-class group(tldap.models.posixGroup):
+class group(rfc.posixGroup):
     primary_accounts = tldap.manager.OneToManyDescriptor('gidNumber', account, 'gidNumber', "primary_group")
     secondary_people = tldap.manager.ManyToManyDescriptor('memberUid', person, 'uid', False, "secondary_groups")
     secondary_accounts = tldap.manager.ManyToManyDescriptor('memberUid', account, 'uid', False, "secondary_groups")

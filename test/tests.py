@@ -26,6 +26,7 @@ django.core.management.setup_environ(test.settings)
 import unittest
 
 import tldap
+import tldap.schemas.rfc
 import tldap.test.data
 import tldap.test.slapd
 import tldap.transaction
@@ -375,7 +376,7 @@ class ModelTest(unittest.TestCase):
         tldap.connection.reset(forceflushcache=True)
 
     def test_transactions(self):
-        organizationalUnit = tldap.models.organizationalUnit
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org")
 
         c = tldap.connection
@@ -708,10 +709,10 @@ class ModelTest(unittest.TestCase):
         return
 
     def test_query(self):
-        organizationalUnit = tldap.models.organizationalUnit
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(dn="ou=People, dc=python-ldap,dc=org", ou="People")
 
-        organizationalUnit = tldap.models.organizationalUnit
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
         person = tldap.test.models.person
