@@ -160,7 +160,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                     kwargs[linked_key] = this_value
                 return super(LinkManager,self).create(**kwargs)
 
-            def add(self, obj):
+            def add(self, obj, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -182,7 +182,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 obj.save()
 
-            def remove(self, obj):
+            def remove(self, obj, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
                 this_value = getattr(this_instance, this_key)
@@ -205,7 +205,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
                 obj.save()
 
-            def clear(self):
+            def clear(self, commit=True):
                 for obj in self.get_query_set():
                     self.remove(obj)
 
