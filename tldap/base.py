@@ -20,9 +20,9 @@ import tldap.options
 import tldap.exceptions
 import tldap.manager
 import tldap.fields
+import tldap.modlist
 
 import ldap.dn
-import ldap.modlist
 
 import copy
 import sys
@@ -364,7 +364,7 @@ class LDAPobject(object):
         moddict = self._get_moddict(default_object_class, default_object_class_db, using)
 
         # turn moddict into a modlist
-        modlist = ldap.modlist.addModlist(moddict)
+        modlist = tldap.modlist.addModlist(moddict)
 
         # what database should we be using?
         c = tldap.connections[using]
@@ -410,7 +410,7 @@ class LDAPobject(object):
         moddict = self._get_moddict(default_object_class, default_object_class_db, using)
 
         # turn moddict into a modlist
-        modlist = ldap.modlist.modifyModlist(modold, moddict)
+        modlist = tldap.modlist.modifyModlist(modold, moddict)
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
