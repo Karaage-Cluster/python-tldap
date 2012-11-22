@@ -16,6 +16,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import tldap.exceptions
+import struct
 
 class Field(object):
     def __init__(self, max_instances=1, required=False):
@@ -221,3 +222,61 @@ class IntegerField(Field):
             return str(int(value))
         except (TypeError, ValueError):
             raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+
+class SidField(Field):
+
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        l = len(value) - 8
+        if l%4 != 0:
+            raise tldap.exceptions.ValidationError("Invalid sid")
+
+        l = l / 4
+
+        array = struct.unpack('>bbHI' + 'I'*l, value)
+
+        if array[1] != l:
+            raise tldap.exceptions.ValidationError("Invalid sid")
+
+        if array[2] != 0:
+            raise tldap.exceptions.ValidationError("Invalid sid")
+
+        array = array[0:1] + array[3:]
+        return "-".join([str(i) for i in array])
+
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+
+        array = value.split("-")
+        l = len(array) - 2
+
+        assert l >= 0
+
+        array = array[0:1] + [l, 0] + array[1:]
+        array = [ int(i) for i in array ]
+
+        return struct.pack('>bbHI' + 'I'*l, *array)
+
+    def value_validate(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if value is None:
+            return value
+
+        array = value.split("-")
+        l = len(array) - 2
+
+        if l < 0:
+            raise tldap.exceptions.ValidationError("Invalid sid")
+
+        try:
+            [ int(i) for i in array ]
+        except TypeError:
+            raise tldap.exceptions.ValidationError("Invalid sid")
