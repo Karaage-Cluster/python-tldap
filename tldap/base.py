@@ -118,10 +118,9 @@ class LDAPmeta(type):
                     # allow it as an exception
                     continue
                 if field.name in field_names:
-                    raise tldap.exceptions.FieldError('Local field %r in class %r clashes '
-                                     'with field of similar name from base class %r' %
-                                        (field.name, name, base.__name__))
-                if field.name in parent_field_names:
+                    # this field already defined in the current class, skip it
+                    pass
+                elif field.name in parent_field_names:
                     if type(field) != type(parent_field_names[field.name]):
                         raise tldap.exceptions.FieldError('In class %r field %r from parent clashes '
                                      'with field of similar name from base class %r and is different type' %
