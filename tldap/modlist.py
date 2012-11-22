@@ -109,5 +109,4 @@ def modifyModlist(
         continue
       attrtype = attrtype_lower_map[a]
       modlist.append((ldap.MOD_DELETE,attrtype,None))
-  print modlist
   return modlist # modifyModlist()
