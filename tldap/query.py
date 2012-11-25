@@ -181,31 +181,6 @@ class QuerySet(object):
         else:
             raise ValueError("Unknown search operation %s"%operation)
 
-    def _get_filter_item_no_field(self, name, operation, value):
-        """
-        No field could be found for this term, try to find filter string for it.
-        """
-        # get raw value from class
-        cls_value = self._cls.__dict__.get(name, None)
-
-        # fail for cases we don't understand
-        if cls_value is None:
-            raise ValueError("Cannot do a search on %s as we do not know about it" % name)
-
-        # fail for cases we don't understand
-        import tldap.manager
-        if not isinstance(cls_value, tldap.manager.LinkDescriptor):
-            raise ValueError("Cannot do a search on %s as we do not know the type" % name)
-
-        # ask the LinkDescriptor for a q tree
-        q = cls_value.get_q_for_linked_instance(value, operation)
-        if q is None:
-            # if result is None, then no results can be found
-            return None
-
-        # translate the query tree into a filter string
-        return self._get_filter(q)
-
     def _get_filter(self, q):
         """
         Translate the Q tree into a filter string to search for, or None
@@ -225,7 +200,9 @@ class QuerySet(object):
         search = []
         for child in q.children:
             # if this child is a node, then descend into it
-            if isinstance(child, django.utils.tree.Node):
+            if child is None:
+                search.append(None)
+            elif isinstance(child, django.utils.tree.Node):
                 search.append(self._get_filter(child))
             else:
                 # otherwise get the values in this node
@@ -245,7 +222,7 @@ class QuerySet(object):
                     field = self._cls._meta.get_field_by_name(name)
                 except KeyError:
                     # no field found, try to lookup linked models
-                    search.append(self._get_filter_item_no_field(name, operation, value))
+                    raise ValueError("Cannot do a search on %s as we cannot find the field" % name)
                 else:
                     # field was found
                     # try to turn list into single value
@@ -297,6 +274,62 @@ class QuerySet(object):
             return "("+ op + "".join(search) + ")"
 
 
+    def _expand_filter(self, q):
+        """
+        Expands exandable q items, i.e. for relations between objects.
+        """
+        # scan through every child
+        for i in range(len(q.children)):
+            child = q.children[i]
+
+            # if this child is a node, then descend into it
+            if isinstance(child, django.utils.tree.Node):
+                self._expand_filter(child)
+                continue
+
+            # otherwise get the values in this node
+            name,value = child
+
+            # split the name if possible
+            name, _, operation = name.rpartition("__")
+            if name == "":
+                name, operation = operation, None
+
+            # replace pk with the real attribute
+            if name == "pk":
+                name = self._cls._meta.pk
+
+            # dn searches are a special case
+            if name == "dn":
+                continue
+
+            # try to find field associated with name
+            try:
+                field = self._cls._meta.get_field_by_name(name)
+                continue
+            except KeyError:
+                # no field found, try to lookup linked models
+                pass
+
+            # get raw value from class
+            cls_value = self._cls.__dict__.get(name, None)
+
+            # fail for cases we don't understand
+            if cls_value is None:
+                raise ValueError("Cannot do a search on %s as we do not know about it" % name)
+
+            # fail for cases we don't understand
+            import tldap.manager
+            if not isinstance(cls_value, tldap.manager.LinkDescriptor):
+                raise ValueError("Cannot do a search on %s as we do not know the type" % name)
+
+            # ask the LinkDescriptor for a q tree
+            child = cls_value.get_q_for_linked_instance(value, operation)
+
+            # if child is None, then no results can be found
+            # we need to handle this later.
+            q.children[i] = child
+
     def _get_dn_filter(self, q):
         """
         Get list of DN to search for from q, or None if this is not possible.
@@ -319,8 +352,11 @@ class QuerySet(object):
 
         # for every child
         for child in q.children:
+            if child is None:
+                continue
+
             # descend if it is a node
-            if isinstance(child, django.utils.tree.Node):
+            elif isinstance(child, django.utils.tree.Node):
                 tmp_list = self._get_dn_filter(child)
                 if tmp_list is None:
                     return None
@@ -351,6 +387,7 @@ class QuerySet(object):
 
         # try and get a list of dn to search for
         if self._query is not None:
+            self._expand_filter(self._query)
             dn_list = self._get_dn_filter(self._query)
         else:
             dn_list = None

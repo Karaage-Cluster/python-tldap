@@ -854,6 +854,29 @@ class ModelTest(unittest.TestCase):
         u.primary_group = None
         self.assertRaises(tldap.exceptions.ValidationError, u.save)
 
+        u1 = person.objects.get(dn="uid=tux,ou=People, dc=python-ldap,dc=org")
+        u2 = person.objects.get(dn="uid=tuz,ou=People, dc=python-ldap,dc=org")
+
+        u2.managed_by = u1
+        u2.save()
+        self.assertEqual(u2.managed_by.get_obj(), u1)
+        r = u1.manager_of.all()
+        self.assertEqual(len(list(r)), 1)
+        r = person.objects.filter(managed_by=u1)
+        self.assertEqual(len(list(r)), 1)
+        r = person.objects.filter(manager_of=u2)
+        self.assertEqual(len(list(r)), 1)
+
+        u1.manager_of.remove(u2)
+        self.assertEqual(u2.managed_by.get_obj(), None)
+        r = u1.manager_of.all()
+        self.assertEqual(len(list(r)), 0)
+
+        u1.manager_of.add(u2)
+        self.assertEqual(u2.managed_by.get_obj(), u1)
+        r = u1.manager_of.all()
+        self.assertEqual(len(list(r)), 1)
+
 class UserAPITest(unittest.TestCase):
     def setUp(self):
         server = tldap.test.slapd.Slapd()
