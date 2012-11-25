@@ -84,14 +84,14 @@ class ManagerDescriptor(object):
             raise AttributeError("Manager isn't accessible via %s instances" % cls.__name__)
         return self._manager
 
-def _lookup(cls, in_cls):
+def _lookup(cls):
     if isinstance(cls, str):
         module_name, _, name = cls.rpartition(".")
         module = django.utils.importlib.import_module(module_name)
         try:
             cls = getattr(module, name)
         except AttributeError:
-            raise AttributeError("%s reference cannot be found in %s class" % (cls, in_cls.__name__))
+            raise AttributeError("%s reference cannot be found" % cls)
     return(cls)
 
 def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
@@ -361,7 +361,7 @@ class LinkDescriptor(object):
         self._related_name = related_name
 
     def get_manager(self, instance):
-        linked_cls = _lookup(self._linked_cls, instance.__class__)
+        linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
         LinkManager = _create_link_manager(superclass,
                 linked_has_foreign_key=self._linked_has_foreign_key,
@@ -374,7 +374,7 @@ class LinkDescriptor(object):
 
         this_key = self._this_key
 
-        linked_cls = self._linked_cls
+        linked_cls = _lookup(self._linked_cls)
         linked_key = self._linked_key
         assert isinstance(obj, linked_cls)
         linked_value = getattr(obj, linked_key)
