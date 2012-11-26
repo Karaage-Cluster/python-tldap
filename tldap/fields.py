@@ -187,6 +187,33 @@ class CharField(Field):
             raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
 
 
+class UnicodeField(Field):
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+        print value
+        value = value.encode("utf_16le")
+        print value
+        return value
+
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+        return value.decode("utf_16")
+
+    def value_validate(self, value):
+        """
+        Validates value and throws ValidationError. Subclasses should override
+        this to provide validation logic.
+        """
+        if value is not None and not (isinstance(value, str) or isinstance(value, unicode)):
+            raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
+
+
 class IntegerField(Field):
     def value_to_python(self, value):
         """

@@ -97,7 +97,7 @@ class LDAPmeta(type):
         field_names = new_class._meta.get_all_field_names()
 
         # check for clashes with reserved names
-        for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn" ]:
+        for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn", "force_replace" ]:
             if i in field_names:
                 raise tldap.exceptions.FieldError('Local field %s clashes with reserved name from base class %r'%(i, name))
 
@@ -176,6 +176,7 @@ class LDAPobject(object):
         self._alias = None
         self._dn = None
         self._base_dn = None
+        self.force_replace = set()
 
         fields = self._meta.fields
 
@@ -409,8 +410,22 @@ class LDAPobject(object):
         # generate moddict values
         moddict = self._get_moddict(default_object_class, default_object_class_db, using)
 
+        # remove items in force_replace
+        force_value = {}
+        for field in self.force_replace:
+            if modold[field] != moddict[field]:
+                force_value[field] = moddict[field]
+            del modold[field]
+            del moddict[field]
+        self.force_replace = set()
+
         # turn moddict into a modlist
         modlist = tldap.modlist.modifyModlist(modold, moddict)
+
+        # add items in force_replace
+        for field, value in force_value.iteritems():
+            modlist.append((ldap.MOD_DELETE, field, None))
+            modlist.append((ldap.MOD_ADD, field, value))
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]

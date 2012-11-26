@@ -46,7 +46,7 @@ class user(tldap.base.LDAPobject):
     sn = tldap.fields.CharField()
     telephoneNumber = tldap.fields.CharField()
     title = tldap.fields.CharField()
-    unicodePwd = tldap.fields.CharField()
+    unicodePwd = tldap.fields.UnicodeField()
     unixHomeDirectory = tldap.fields.CharField()
     userAccountControl = tldap.fields.IntegerField()
 
