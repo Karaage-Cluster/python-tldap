@@ -69,10 +69,15 @@ def modifyModlist(
         for v in new_value:
           if not old_value_dict.has_key(v):
             add_values.append(v)
-      if len(delete_values) > 0:
-        modlist.append((ldap.MOD_DELETE,attrtype,delete_values))
-      if len(add_values) > 0:
-        modlist.append((ldap.MOD_ADD,attrtype,add_values))
+      if len(new_value) == 1:
+        if len(delete_values) > 0 or len(add_values) > 0:
+          modlist.append((ldap.MOD_DELETE,attrtype,None))
+          modlist.append((ldap.MOD_ADD,attrtype,new_value))
+      else:
+        if len(delete_values) > 0:
+          modlist.append((ldap.MOD_DELETE,attrtype,delete_values))
+        if len(add_values) > 0:
+          modlist.append((ldap.MOD_ADD,attrtype,add_values))
     elif old_value and not new_value:
       # Completely delete an existing attribute
       modlist.append((ldap.MOD_DELETE,attrtype,None))
