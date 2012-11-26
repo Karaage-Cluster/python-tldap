@@ -116,6 +116,9 @@ class LDAPmeta(type):
                 if field.name in field_names:
                     # this field already defined in the current class, skip it
                     pass
+                elif field.name in attrs:
+                    # an attribute in this class has replaced the field
+                    pass
                 elif field.name in parent_field_names:
                     if type(field) != type(parent_field_names[field.name]):
                         raise tldap.exceptions.FieldError('In class %r field %r from parent clashes '
