@@ -470,6 +470,17 @@ class OneToManyDescriptor(LinkDescriptor):
             lm.add(value)
 
 
+class AliasDescriptor(object):
+    def __init__(self, linked_key):
+        self._linked_key = linked_key
+
+    def __get__(self, instance, cls=None):
+        return getattr(instance, self._linked_key)
+
+    def __set__(self, instance, value):
+        setattr(instance, self._linked_key, value)
+
+
 class AdGroupLinkDescriptor(LinkDescriptor):
     def __init__(self, linked_cls, related_name=None):
         self._this_key = 'dn'
