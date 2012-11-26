@@ -113,10 +113,6 @@ class LDAPmeta(type):
             parent_fields = base._meta.fields
             for field in parent_fields:
                 # check if this field from this parent clashes
-                if field.name == "objectClass":
-                    # objectClass will always clash with parent classes, as we added it
-                    # allow it as an exception
-                    continue
                 if field.name in field_names:
                     # this field already defined in the current class, skip it
                     pass
