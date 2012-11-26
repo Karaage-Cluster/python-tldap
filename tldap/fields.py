@@ -190,9 +190,7 @@ class CharField(Field):
 class UnicodeField(Field):
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        print value
         value = value.encode("utf_16le")
-        print value
         return value
 
     def value_to_python(self, value):
