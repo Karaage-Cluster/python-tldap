@@ -14,31 +14,7 @@ from ldap import __version__
 
 import string,ldap
 
-
-def list_dict(l):
-  """
-  return a dictionary with all items of l being the keys of the dictionary
-  """
-  d = {}
-  for i in l:
-    d[i]=None
-  return d
-
-
-def addModlist(entry,ignore_attr_types=None):
-  """Build modify list for call of method LDAPObject.add()"""
-  ignore_attr_types = list_dict(map(string.lower,(ignore_attr_types or [])))
-  modlist = []
-  for attrtype in entry.keys():
-    if ignore_attr_types.has_key(string.lower(attrtype)):
-      # This attribute type is ignored
-      continue
-    # Eliminate empty attr value strings in list
-    attrvaluelist = filter(lambda x:x!=None,entry[attrtype])
-    if attrvaluelist:
-      modlist.append((attrtype,entry[attrtype]))
-  return modlist # addModlist()
-
+from ldap.modlist import *
 
 def modifyModlist(
   old_entry,new_entry,ignore_attr_types=None,ignore_oldexistent=0
