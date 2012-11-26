@@ -33,7 +33,6 @@ because each one will keep track of changes seperately - if this is an issue
 the caching functionality could be split into a seperate class."""
 
 import ldap
-import ldap.modlist
 import ldap.dn
 import ldaptor
 import ldaptor.entryhelpers
