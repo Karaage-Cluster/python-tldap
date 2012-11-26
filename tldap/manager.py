@@ -468,3 +468,91 @@ class OneToManyDescriptor(LinkDescriptor):
         lm.clear()
         for v in value:
             lm.add(value)
+
+
+class AdGroupLinkDescriptor(LinkDescriptor):
+    def __init__(self, linked_cls, related_name=None):
+        self._this_key = 'dn'
+        self._linked_cls = linked_cls
+        self._linked_key = 'member'
+        self._linked_has_foreign_key = True
+        self._foreign_key_is_list = True
+        self._related_name = related_name
+
+    def get_reverse(self, cls):
+        return AdUserLinkDescriptor(cls)
+
+    def get_q_for_linked_instance(self, obj, operation):
+        # We have to do the search using this_key of memberOf, not dn,
+        # as this makes it more efficient. Also dn searches are restricted.
+        if operation is not None:
+            raise ValueError("Unknown search operation %s"%operation)
+
+        this_key = "memberOf"
+
+        linked_cls = _lookup(self._linked_cls)
+        linked_key = "dn"
+        assert isinstance(obj, linked_cls)
+        linked_value = getattr(obj, linked_key)
+        if not isinstance(linked_value, list):
+            linked_value = [ linked_value ]
+
+        if len(linked_value) == 0:
+            return None
+
+        v = linked_value.pop()
+        kwargs = { this_key: v }
+        q = tldap.Q(**kwargs)
+        for v in linked_value:
+            kwargs = { this_key: v }
+            q = q | tldap.Q(**kwargs)
+        return q
+
+
+def _create_ad_account_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
+    assert not linked_has_foreign_key
+    assert foreign_key_is_list
+    superclass = _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list)
+
+    class AdAccountLinkManager(superclass):
+
+        def get_query_set(self):
+            this_instance = self._this_instance
+            this_key = "dn"
+            this_value = getattr(this_instance, this_key)
+            if this_value is None:
+                this_value = [ ]
+
+            if not isinstance(this_value, list):
+                this_value = [ this_value ]
+
+            linked_key = "memberOf"
+
+            query = self.get_empty_query_set()
+            for v in this_value:
+                kwargs = { linked_key: v }
+                query = query | super(superclass, self).get_query_set().filter(**kwargs)
+            return query
+
+    return AdAccountLinkManager
+
+
+class AdAccountLinkDescriptor(LinkDescriptor):
+    def __init__(self, linked_cls, related_name=None):
+        self._this_key = 'member'
+        self._linked_cls = linked_cls
+        self._linked_key = 'dn'
+        self._linked_has_foreign_key = False
+        self._foreign_key_is_list = True
+        self._related_name = related_name
+
+    def get_reverse(self, cls):
+        return AdGroupLinkDescriptor(cls)
+
+    def get_manager(self, instance):
+        linked_cls = _lookup(self._linked_cls)
+        superclass = linked_cls._default_manager.__class__
+        LinkManager = _create_ad_account_link_manager(superclass,
+                linked_has_foreign_key=self._linked_has_foreign_key,
+                foreign_key_is_list=self._foreign_key_is_list)
+        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
