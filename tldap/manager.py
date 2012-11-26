@@ -360,6 +360,15 @@ class LinkDescriptor(object):
         self._foreign_key_is_list = foreign_key_is_list
         self._related_name = related_name
 
+    def contribute_to_class(self, cls, name):
+        setattr(cls, name, self)
+        if self._related_name is not None:
+            reverse = self.get_reverse(cls)
+            if self._related_name in self._linked_cls.__dict__:
+                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
+                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
+            setattr(self._linked_cls, self._related_name, reverse)
+
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
@@ -407,14 +416,8 @@ class ManyToManyDescriptor(LinkDescriptor):
         self._foreign_key_is_list = True
         self._related_name = related_name
 
-    def contribute_to_class(self, cls, name):
-        setattr(cls, name, self)
-        if self._related_name is not None:
-            reverse = ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_has_foreign_key)
-            if self._related_name in self._linked_cls.__dict__:
-                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
-                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
-            setattr(self._linked_cls, self._related_name, reverse)
+    def get_reverse(self, cls):
+        return ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_has_foreign_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
@@ -437,14 +440,8 @@ class ManyToOneDescriptor(LinkDescriptor):
         self._foreign_key_is_list = False
         self._related_name = related_name
 
-    def contribute_to_class(self, cls, name):
-        setattr(cls, name, self)
-        if self._related_name is not None:
-            reverse = OneToManyDescriptor(self._linked_key, cls, self._this_key)
-            if self._related_name in self._linked_cls.__dict__:
-                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
-                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
-            setattr(self._linked_cls, self._related_name, reverse)
+    def get_reverse(self, cls):
+        return OneToManyDescriptor(self._linked_key, cls, self._this_key)
 
     def __set__(self, instance, value):
         assert not isinstance(value, list)
@@ -462,14 +459,8 @@ class OneToManyDescriptor(LinkDescriptor):
         self._foreign_key_is_list = False
         self._related_name = related_name
 
-    def contribute_to_class(self, cls, name):
-        setattr(cls, name, self)
-        if self._related_name is not None:
-            reverse = ManyToOneDescriptor(self._linked_key, cls, self._this_key)
-            if self._related_name in self._linked_cls.__dict__:
-                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
-                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
-            setattr(self._linked_cls, self._related_name, reverse)
+    def get_reverse(self, cls):
+        return ManyToOneDescriptor(self._linked_key, cls, self._this_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
