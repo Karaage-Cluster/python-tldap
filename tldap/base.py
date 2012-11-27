@@ -170,9 +170,9 @@ class LDAPobject(object):
         for i in self._meta.get_all_field_names():
             yield i, getattr(self, i)
 
-    def __init__(self, **kwargs):
+    def __init__(self, using=None, **kwargs):
         self._db_values = {}
-        self._alias = None
+        self._alias = using
         self._dn = None
         self._base_dn = None
         self.force_replace = set()
