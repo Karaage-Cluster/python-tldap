@@ -122,7 +122,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             for v in this_value:
                 kwargs = { linked_key: v }
                 query = query | super(LinkManager,self).get_query_set().filter(**kwargs)
-            return query
+            return query.using(this_instance._alias)
 
         if linked_has_foreign_key:
 
@@ -543,7 +543,7 @@ def _create_ad_account_link_manager(superclass, linked_has_foreign_key, foreign_
             for v in this_value:
                 kwargs = { linked_key: v }
                 query = query | super(superclass, self).get_query_set().filter(**kwargs)
-            return query
+            return query.using(this_instance._alias)
 
     return AdAccountLinkManager
 
