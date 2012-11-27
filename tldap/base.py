@@ -433,10 +433,11 @@ class LDAPobject(object):
             self._db_values[using] = old_values
 
         # do it
-        try:
-            c.modify(self._dn, modlist, onfailure)
-        except ldap.NO_SUCH_OBJECT:
-            raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
+        if len(modlist) > 0:
+            try:
+                c.modify(self._dn, modlist, onfailure)
+            except ldap.NO_SUCH_OBJECT:
+                raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
 
         # save new values
         self._db_values[using] = moddict
