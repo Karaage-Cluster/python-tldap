@@ -374,6 +374,10 @@ class QuerySet(object):
         return dn_list
 
     def _get_search_params(self):
+        # set the database we should use as required
+        alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
+        connection = tldap.connections[alias]
+
         # get object classes to search
         if self._from_cls is None:
             object_classes = self._cls._meta.search_classes or self._cls._meta.object_classes
@@ -407,6 +411,9 @@ class QuerySet(object):
 
             # create a "list" of base_dn to search
             base_dn = self._base_dn or self._cls._meta.base_dn
+            if base_dn is None:
+                base_dn = connection.settings_dict[self._cls._meta.base_dn_setting]
+
             assert base_dn is not None
             dn_list = [ base_dn ]
 
@@ -417,7 +424,7 @@ class QuerySet(object):
         # construct search filter string
         search_filter = self._get_filter(query)
 
-        return dn_list, scope, search_filter, field_names
+        return alias, connection, dn_list, scope, search_filter, field_names
 
     def iterator(self):
         """
@@ -425,11 +432,8 @@ class QuerySet(object):
         database.
         """
 
-        # set the database we should use as required
-        alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
-
         # get search parameters
-        dn_list, scope, search_filter, field_names = self._get_search_params()
+        alias, connection, dn_list, scope, search_filter, field_names = self._get_search_params()
         if search_filter is None:
             return
 
@@ -447,7 +451,7 @@ class QuerySet(object):
 
             try:
                 # get the results
-                for i in tldap.connections[alias].search(base_dn, scope, search_filter, field_names, limit=limit):
+                for i in connection.search(base_dn, scope, search_filter, field_names, limit=limit):
                     if start > 0:
                         start = start - 1
                         continue
@@ -503,11 +507,8 @@ class QuerySet(object):
         if self._result_cache is not None and not self._iter:
             return len(self._result_cache)
 
-        # set the database we should use as required
-        alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
-
         # get search parameters
-        dn_list, scope, search_filter, field_names = self._get_search_params()
+        alias, connection, dn_list, scope, search_filter, field_names = self._get_search_params()
         if search_filter is None:
             return
 
@@ -518,7 +519,7 @@ class QuerySet(object):
 
             try:
                 # get the results
-                for i in tldap.connections[alias].search(base_dn, scope, search_filter, [ 'z' ]):
+                for i in connection.search(base_dn, scope, search_filter, [ 'z' ]):
                     count = count + 1
             except ldap.NO_SUCH_OBJECT:
                 # return with no results

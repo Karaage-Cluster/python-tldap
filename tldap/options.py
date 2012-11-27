@@ -21,7 +21,7 @@ import django.utils.translation
 get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1', class_name).lower().strip()
 
 DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
-                 'object_classes', 'search_classes', 'base_dn', 'pk')
+                 'object_classes', 'search_classes', 'base_dn', 'base_dn_setting', 'pk')
 
 class Options(object):
     def __init__(self, meta, app_label=None):
@@ -33,6 +33,7 @@ class Options(object):
         self.object_classes = set()
         self.search_classes = set()
         self.base_dn = None
+        self.base_dn_setting = None
         self.pk = None
 
     def contribute_to_class(self, cls, name):
