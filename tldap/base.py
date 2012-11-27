@@ -425,6 +425,7 @@ class LDAPobject(object):
         for field, value in force_value.iteritems():
             modlist.append((ldap.MOD_DELETE, field, None))
             modlist.append((ldap.MOD_ADD, field, value))
+            moddict[field] = value
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
