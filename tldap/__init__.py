@@ -38,6 +38,8 @@ if not django.conf.settings.LDAP:
         'PASSWORD': django.conf.settings.LDAP_ADMIN_PASSWORD,
         'USE_TLS' : False,
         'TLS_CA' : None,
+        'LDAP_ACCOUNT_BASE': django.conf.settings.LDAP_USER_BASE,
+        'LDAP_GROUP_BASE': django.conf.settings.LDAP_GROUP_BASE,
     }
     if hasattr(django.conf.settings, 'LDAP_USE_TLS'):
         django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = django.conf.settings.LDAP_USE_TLS
