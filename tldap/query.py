@@ -252,7 +252,6 @@ class QuerySet(object):
 
 
     def _expand_query(self, q):
-        print "in:", q
         dst = tldap.Q(q.children)
         """
         Expands exandable q items, i.e. for relations between objects.
@@ -333,15 +332,12 @@ class QuerySet(object):
         # output the results
         if len(q.children)==0:
             # no search terms, all terms were None
-            print "out", None
             return None
         elif len(q.children)==1 and isinstance(q.children[0], django.utils.tree.Node) and not q.negated:
             # just one non-negative term, return it
-            print "out", q.children[0]
             return q.children[0]
         else:
             # multiple terms
-            print "out", q
             return q
 
 
