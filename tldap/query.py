@@ -397,20 +397,20 @@ class QuerySet(object):
 
         if self._query is not None:
             # expand query
-            query = self._expand_query(self._query)
+            requested_query = self._expand_query(self._query)
 
             # try and get a list of dn to search for
-            if query is not None:
-                dn_list = self._get_dn_filter(query)
+            if requested_query is not None:
+                dn_list = self._get_dn_filter(requested_query)
             else:
                 dn_list = None
 
         else:
             # no query supplied
-            query = tldap.Q()
             dn_list = None
 
         # add object classes to search array
+        query = tldap.Q()
         for oc in object_classes:
             query = query & tldap.Q(objectClass=oc)
 
@@ -421,6 +421,10 @@ class QuerySet(object):
         else:
             # do a SUBTREE search
             scope = ldap.SCOPE_SUBTREE
+
+            # add requested query
+            if self._query is not None:
+                query = query & requested_query
 
             # create a "list" of base_dn to search
             base_dn = self._base_dn or self._cls._meta.base_dn
