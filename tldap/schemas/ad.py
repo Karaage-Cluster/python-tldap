@@ -51,7 +51,7 @@ class user(tldap.base.LDAPobject):
     userAccountControl = tldap.fields.IntegerField()
 
     class Meta:
-        object_classes = { 'user', }
+        object_classes = set([ 'user' ])
 
 class group(tldap.base.LDAPobject):
     cn = tldap.fields.CharField()
@@ -62,5 +62,5 @@ class group(tldap.base.LDAPobject):
     sAMAccountName = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'group', }
+        object_classes = set([ 'group' ])
 

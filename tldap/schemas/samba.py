@@ -48,7 +48,7 @@ class organizationalUnit(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'organizationalUnit', }
+        object_classes = set([ 'organizationalUnit' ])
 
 class person(tldap.base.LDAPobject):
     sn = tldap.fields.CharField(required=True)
@@ -59,7 +59,7 @@ class person(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'person', }
+        object_classes = set([ 'person' ])
 
 class organizationalPerson(tldap.base.LDAPobject):
     title = tldap.fields.CharField()
@@ -82,7 +82,7 @@ class organizationalPerson(tldap.base.LDAPobject):
     l = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'organizationalPerson', }
+        object_classes = set([ 'organizationalPerson' ])
 
 class inetOrgPerson(tldap.base.LDAPobject):
     audio = tldap.fields.CharField()
@@ -114,7 +114,7 @@ class inetOrgPerson(tldap.base.LDAPobject):
     userPKCS12 = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'inetOrgPerson', }
+        object_classes = set([ 'inetOrgPerson' ])
 
 class posixAccount(tldap.base.LDAPobject):
     cn = tldap.fields.CharField(required=True)
@@ -128,7 +128,7 @@ class posixAccount(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'posixAccount', }
+        object_classes = set([ 'posixAccount' ])
 
 class shadowAccount(tldap.base.LDAPobject):
     userPassword = tldap.fields.BinaryField()
@@ -142,7 +142,7 @@ class shadowAccount(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'shadowAccount', }
+        object_classes = set([ 'shadowAccount' ])
 
 class pwdPolicy(tldap.base.LDAPobject):
     pwdAttribute = tldap.fields.CharField(required=True)
@@ -173,7 +173,7 @@ class posixGroup(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'posixGroup', }
+        object_classes = set([ 'posixGroup' ])
 
 # SSH
 
@@ -217,7 +217,7 @@ class sambaSamAccount(tldap.base.LDAPobject):
     sambaLogonHours = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'sambaSamAccount', }
+        object_classes = set([ 'sambaSamAccount' ])
 
 class sambaGroupMapping(tldap.base.LDAPobject):
     gidNumber = tldap.fields.IntegerField(required=True)
@@ -227,7 +227,7 @@ class sambaGroupMapping(tldap.base.LDAPobject):
     sambaSIDList = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'sambaGroupMapping', }
+        object_classes = set([ 'sambaGroupMapping' ])
 
 class eduPerson(tldap.base.LDAPobject):
     eduPersonAffiliation = tldap.fields.CharField()
@@ -243,7 +243,7 @@ class eduPerson(tldap.base.LDAPobject):
     eduPersonAssurance = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'eduPerson', }
+        object_classes = set([ 'eduPerson' ])
 
 class auEduPerson(tldap.base.LDAPobject):
     auEduPersonID = tldap.fields.CharField()
@@ -265,7 +265,7 @@ class auEduPerson(tldap.base.LDAPobject):
     auEduPersonSharedToken = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'auEduPerson', }
+        object_classes = set([ 'auEduPerson' ])
 
 # Active Directory
 
@@ -285,7 +285,7 @@ class user(tldap.base.LDAPobject):
     userAccountControl = tldap.fields.IntegerField()
 
     class Meta:
-        object_classes = { 'user', }
+        object_classes = set([ 'user' ])
 
 class group(tldap.base.LDAPobject):
     cn = tldap.fields.CharField()
@@ -296,5 +296,5 @@ class group(tldap.base.LDAPobject):
     sAMAccountName = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'group', }
+        object_classes = set([ 'group' ])
 

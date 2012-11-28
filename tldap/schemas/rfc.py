@@ -48,7 +48,7 @@ class organizationalUnit(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'organizationalUnit', }
+        object_classes = set([ 'organizationalUnit' ])
 
 class person(tldap.base.LDAPobject):
     sn = tldap.fields.CharField(required=True)
@@ -59,7 +59,7 @@ class person(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'person', }
+        object_classes = set([ 'person' ])
 
 class organizationalPerson(tldap.base.LDAPobject):
     title = tldap.fields.CharField()
@@ -82,7 +82,7 @@ class organizationalPerson(tldap.base.LDAPobject):
     l = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'organizationalPerson', }
+        object_classes = set([ 'organizationalPerson' ])
 
 class inetOrgPerson(tldap.base.LDAPobject):
     audio = tldap.fields.CharField()
@@ -114,7 +114,7 @@ class inetOrgPerson(tldap.base.LDAPobject):
     userPKCS12 = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'inetOrgPerson', }
+        object_classes = set([ 'inetOrgPerson' ])
 
 class posixAccount(tldap.base.LDAPobject):
     cn = tldap.fields.CharField(required=True)
@@ -128,7 +128,7 @@ class posixAccount(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'posixAccount', }
+        object_classes = set([ 'posixAccount' ])
 
 class shadowAccount(tldap.base.LDAPobject):
     userPassword = tldap.fields.BinaryField()
@@ -142,7 +142,7 @@ class shadowAccount(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'shadowAccount', }
+        object_classes = set([ 'shadowAccount' ])
 
 class pwdPolicy(tldap.base.LDAPobject):
     pwdAttribute = tldap.fields.CharField(required=True)
@@ -173,4 +173,4 @@ class posixGroup(tldap.base.LDAPobject):
     description = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'posixGroup', }
+        object_classes = set([ 'posixGroup' ])
