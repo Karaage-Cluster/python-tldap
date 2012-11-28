@@ -163,7 +163,7 @@ class pwdPolicy(tldap.base.LDAPobject):
     pwdSafeModify = tldap.fields.CharField()
 
     class Meta:
-        object_classes = { 'pwdPolicy' }
+        object_classes = set([ 'pwdPolicy' ])
 
 class posixGroup(tldap.base.LDAPobject):
     cn = tldap.fields.CharField(required=True)
