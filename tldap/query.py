@@ -26,6 +26,7 @@ import ldap
 import ldap.filter
 
 import tldap
+import tldap.manager
 
 import copy
 
@@ -200,9 +201,7 @@ class QuerySet(object):
         search = []
         for child in q.children:
             # if this child is a node, then descend into it
-            if child is None:
-                search.append(None)
-            elif isinstance(child, django.utils.tree.Node):
+            if isinstance(child, django.utils.tree.Node):
                 search.append(self._get_filter(child))
             else:
                 # otherwise get the values in this node
@@ -243,30 +242,8 @@ class QuerySet(object):
                         value = field.value_to_db(value)
                         search.append(self._get_filter_item(name, operation, value))
 
-        # go through results
-        new_search = []
-        for term in search:
-            # if result is not None, keep it
-            if term is not None:
-                new_search.append(term)
-
-            # a result of None means 0 results
-            elif q.negated:
-                # not 0 results is all results
-                return "(objectClass=*)"
-            elif q.connector == tldap.Q.AND:
-                # 0 results and anything is still 0 results
-                return None
-            elif q.connector == tldap.Q.OR:
-                # 0 results or anything is just anything
-                pass
-        search = new_search
-
         # output the results
-        if len(search)==0:
-            # no search terms, all terms were None
-            return None
-        elif len(search)==1 and not q.negated:
+        if len(search)==1 and not q.negated:
             # just one non-negative term, return it
             return search[0]
         else:
@@ -274,7 +251,9 @@ class QuerySet(object):
             return "("+ op + "".join(search) + ")"
 
 
-    def _expand_filter(self, q):
+    def _expand_query(self, q):
+        print "in:", q
+        dst = tldap.Q(q.children)
         """
         Expands exandable q items, i.e. for relations between objects.
         """
@@ -284,11 +263,14 @@ class QuerySet(object):
 
             # if this child is a node, then descend into it
             if isinstance(child, django.utils.tree.Node):
-                self._expand_filter(child)
+                q.children[i] = self._expand_query(child)
                 continue
 
             # otherwise get the values in this node
-            name,value = child
+            name, value = child
+
+            # make a copy
+            q.children[i] = name, value
 
             # split the name if possible
             name, _, operation = name.rpartition("__")
@@ -319,7 +301,6 @@ class QuerySet(object):
                 raise ValueError("Cannot do a search on %s as we do not know about it" % name)
 
             # fail for cases we don't understand
-            import tldap.manager
             if not isinstance(cls_value, tldap.manager.LinkDescriptor):
                 raise ValueError("Cannot do a search on %s as we do not know the type" % name)
 
@@ -329,6 +310,40 @@ class QuerySet(object):
             # if child is None, then no results can be found
             # we need to handle this later.
             q.children[i] = child
+
+        # go through results
+        new_children = []
+        for term in q.children:
+            # if result is not None, keep it
+            if term is not None:
+                new_children.append(term)
+
+            # a result of None means 0 results
+            elif q.negated:
+                # not 0 results is all results
+                return tldap.Q(objectClass='*')
+            elif q.connector == tldap.Q.AND:
+                # 0 results and anything is still 0 results
+                return None
+            elif q.connector == tldap.Q.OR:
+                # 0 results or anything is just anything
+                pass
+        q.children = new_children
+
+        # output the results
+        if len(q.children)==0:
+            # no search terms, all terms were None
+            print "out", None
+            return None
+        elif len(q.children)==1 and isinstance(q.children[0], django.utils.tree.Node) and not q.negated:
+            # just one non-negative term, return it
+            print "out", q.children[0]
+            return q.children[0]
+        else:
+            # multiple terms
+            print "out", q
+            return q
+
 
     def _get_dn_filter(self, q):
         """
@@ -384,28 +399,30 @@ class QuerySet(object):
         else:
             object_classes = self._from_cls._meta.search_classes
 
+        if self._query is not None:
+            # expand query
+            query = self._expand_query(self._query)
+
+            # try and get a list of dn to search for
+            if query is not None:
+                dn_list = self._get_dn_filter(query)
+            else:
+                dn_list = None
+
+        else:
+            # no query supplied
+            query = tldap.Q()
+            dn_list = None
+
         # add object classes to search array
-        query = tldap.Q()
         for oc in object_classes:
             query = query & tldap.Q(objectClass=oc)
-
-        # try and get a list of dn to search for
-        if self._query is not None:
-            self._expand_filter(self._query)
-            dn_list = self._get_dn_filter(self._query)
-        else:
-            dn_list = None
 
         # refine search parameters
         if dn_list is not None:
             # we got a dn_list, we only search for these dn
             scope = ldap.SCOPE_BASE
         else:
-            # we have to search for other attributes
-            # add filter spec to search array
-            if self._query is not None:
-                query = query & self._query
-
             # do a SUBTREE search
             scope = ldap.SCOPE_SUBTREE
 
@@ -422,7 +439,10 @@ class QuerySet(object):
         field_names = self._cls._meta.get_all_field_names()
 
         # construct search filter string
-        search_filter = self._get_filter(query)
+        if query is not None:
+            search_filter = self._get_filter(query)
+        else:
+            search_filter = None
 
         return alias, connection, dn_list, scope, search_filter, field_names
 
