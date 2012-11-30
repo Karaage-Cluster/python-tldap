@@ -254,6 +254,7 @@ class QuerySet(object):
     def _expand_query(self, q):
         dst = tldap.Q()
         dst.connector = q.connector
+        dst.negated = q.negated
 
         """
         Expands exandable q items, i.e. for relations between objects.
@@ -333,9 +334,6 @@ class QuerySet(object):
         if len(dst.children)==0:
             # no search terms, all terms were None
             return None
-        elif len(dst.children)==1 and isinstance(dst.children[0], django.utils.tree.Node) and not dst.negated:
-            # just one non-negative term, return it
-            return dst.children[0]
         else:
             # multiple terms
             return dst
