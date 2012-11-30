@@ -40,8 +40,8 @@ class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
             self.cn = u"%s %s" % (self.givenName, self.sn)
         super(person, self).save(*args, **kwargs)
 
-    managed_by = tldap.manager.ManyToOneDescriptor('manager', 'tldap.test.models.person', 'dn')
-    manager_of = tldap.manager.OneToManyDescriptor('dn', 'tldap.test.models.person', 'manager')
+    managed_by = tldap.manager.ManyToOneDescriptor('manager', 'tldap.test.schemas.person', 'dn')
+    manager_of = tldap.manager.OneToManyDescriptor('dn', 'tldap.test.schemas.person', 'manager')
 
 
 class account(person, rfc.posixAccount, rfc.shadowAccount):
