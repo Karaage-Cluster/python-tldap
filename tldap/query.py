@@ -252,24 +252,22 @@ class QuerySet(object):
 
 
     def _expand_query(self, q):
-        dst = tldap.Q(q.children)
+        dst = tldap.Q()
+        dst.connector = q.connector
+
         """
         Expands exandable q items, i.e. for relations between objects.
         """
         # scan through every child
-        for i in range(len(q.children)):
-            child = q.children[i]
+        for child in q.children:
 
             # if this child is a node, then descend into it
             if isinstance(child, django.utils.tree.Node):
-                q.children[i] = self._expand_query(child)
+                dst.children.append(self._expand_query(child))
                 continue
 
             # otherwise get the values in this node
             name, value = child
-
-            # make a copy
-            q.children[i] = name, value
 
             # split the name if possible
             name, _, operation = name.rpartition("__")
@@ -282,11 +280,13 @@ class QuerySet(object):
 
             # dn searches are a special case
             if name == "dn":
+                dst.children.append(child)
                 continue
 
             # try to find field associated with name
             try:
                 field = self._cls._meta.get_field_by_name(name)
+                dst.children.append(child)
                 continue
             except KeyError:
                 # no field found, try to lookup linked models
@@ -308,11 +308,11 @@ class QuerySet(object):
 
             # if child is None, then no results can be found
             # we need to handle this later.
-            q.children[i] = child
+            dst.children.append(child)
 
         # go through results
         new_children = []
-        for term in q.children:
+        for term in dst.children:
             # if result is not None, keep it
             if term is not None:
                 new_children.append(term)
@@ -327,18 +327,18 @@ class QuerySet(object):
             elif q.connector == tldap.Q.OR:
                 # 0 results or anything is just anything
                 pass
-        q.children = new_children
+        dst.children = new_children
 
         # output the results
-        if len(q.children)==0:
+        if len(dst.children)==0:
             # no search terms, all terms were None
             return None
-        elif len(q.children)==1 and isinstance(q.children[0], django.utils.tree.Node) and not q.negated:
+        elif len(dst.children)==1 and isinstance(dst.children[0], django.utils.tree.Node) and not dst.negated:
             # just one non-negative term, return it
-            return q.children[0]
+            return dst.children[0]
         else:
             # multiple terms
-            return q
+            return dst
 
 
     def _get_dn_filter(self, q):
