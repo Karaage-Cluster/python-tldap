@@ -424,7 +424,10 @@ class QuerySet(object):
 
             # add requested query
             if self._query is not None:
-                query = query & requested_query
+                if requested_query is not None:
+                    query = query & requested_query
+                else:
+                    query = None
 
             # create a "list" of base_dn to search
             base_dn = self._base_dn or self._cls._meta.base_dn
