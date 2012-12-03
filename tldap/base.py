@@ -233,7 +233,7 @@ class LDAPobject(object):
 
     load_db_values.alters_data = True
 
-    def rdn_to_dn(self, name):
+    def rdn_to_dn(self, name, using=None):
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
@@ -242,7 +242,13 @@ class LDAPobject(object):
             raise tldap.exceptions.ValidationError("Cannot use %s in dn as it is a list"%name)
         value = field.value_to_db(value)
 
-        split_base = ldap.dn.str2dn(self._base_dn)
+        base_dn = self._base_dn or self._meta.base_dn
+        if base_dn is None:
+            using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+            c = tldap.connections[using]
+            base_dn = c.settings_dict[self._meta.base_dn_setting]
+
+        split_base = ldap.dn.str2dn(base_dn)
         split_new_dn = [[(name, value, 1)]] + split_base
 
         new_dn = ldap.dn.dn2str(split_new_dn)
@@ -259,7 +265,7 @@ class LDAPobject(object):
         non-SQL backends), respectively. Normally, they should not be set.
         """
         if self._dn is None and self._meta.pk is not None:
-            self._dn = self.rdn_to_dn(self._meta.pk)
+            self._dn = self.rdn_to_dn(self._meta.pk, using)
 
         if self._dn is None:
             raise tldap.exceptions.ValidationError("Need a full DN for this object")
