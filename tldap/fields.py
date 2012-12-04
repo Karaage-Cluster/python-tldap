@@ -262,15 +262,15 @@ class SidField(Field):
 
         l = l / 4
 
-        array = struct.unpack('>bbHI' + 'I'*l, value)
+        array = struct.unpack('<bbbbbbbb' + 'I'*l, value)
 
         if array[1] != l:
             raise tldap.exceptions.ValidationError("Invalid sid")
 
-        if array[2] != 0:
+        if array[2:7] != (0, 0, 0, 0, 0):
             raise tldap.exceptions.ValidationError("Invalid sid")
 
-        array = array[0:1] + array[3:]
+        array = array[0:1] + array[7:]
         return "-".join([str(i) for i in array])
 
     def value_to_db(self, value):
@@ -281,10 +281,10 @@ class SidField(Field):
 
         assert l >= 0
 
-        array = array[0:1] + [l, 0] + array[1:]
+        array = array[0:1] + [l, 0, 0, 0, 0, 0] + array[1:]
         array = [ int(i) for i in array ]
 
-        return struct.pack('>bbHI' + 'I'*l, *array)
+        return struct.pack('<bbbbbbbb' + 'I'*l, *array)
 
     def value_validate(self, value):
         """
