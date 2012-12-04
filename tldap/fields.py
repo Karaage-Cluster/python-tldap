@@ -270,18 +270,19 @@ class SidField(Field):
         if array[2:7] != (0, 0, 0, 0, 0):
             raise tldap.exceptions.ValidationError("Invalid sid")
 
-        array = array[0:1] + array[7:]
+        array = ( "S", ) + array[0:1] + array[7:]
         return "-".join([str(i) for i in array])
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
 
         array = value.split("-")
-        l = len(array) - 2
+        l = len(array) - 3
 
         assert l >= 0
+        assert array[0] == 'S'
 
-        array = array[0:1] + [l, 0, 0, 0, 0, 0] + array[1:]
+        array = array[1:2] + [l, 0, 0, 0, 0, 0] + array[2:]
         array = [ int(i) for i in array ]
 
         return struct.pack('<bbbbbbbb' + 'I'*l, *array)
@@ -296,9 +297,12 @@ class SidField(Field):
             return value
 
         array = value.split("-")
-        l = len(array) - 2
+        l = len(array) - 3
 
-        if l < 0:
+        if l < 1:
+            raise tldap.exceptions.ValidationError("Invalid sid")
+
+        if array.pop(0) != "S":
             raise tldap.exceptions.ValidationError("Invalid sid")
 
         try:
