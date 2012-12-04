@@ -419,16 +419,11 @@ class LinkDescriptor(object):
 
 
 class ManyToManyDescriptor(LinkDescriptor):
-    def __init__(self, this_key, linked_cls, linked_key, linked_has_foreign_key, related_name=None):
-        self._this_key = this_key
-        self._linked_cls = linked_cls
-        self._linked_key = linked_key
-        self._linked_has_foreign_key = linked_has_foreign_key
-        self._foreign_key_is_list = True
-        self._related_name = related_name
+    def __init__(self, **kwargs):
+        super(ManyToManyDescriptor, self).__init__(foreign_key_is_list=True, **kwargs)
 
     def get_reverse(self, cls):
-        return ManyToManyDescriptor(self._linked_key, cls, self._this_key, not self._linked_has_foreign_key)
+        return ManyToManyDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key, linked_has_foreign_key=not self._linked_has_foreign_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
@@ -443,16 +438,11 @@ class ManyToManyDescriptor(LinkDescriptor):
                 lm.add(value, commit=False)
 
 class ManyToOneDescriptor(LinkDescriptor):
-    def __init__(self, this_key, linked_cls, linked_key, related_name=None):
-        self._this_key = this_key
-        self._linked_cls = linked_cls
-        self._linked_key = linked_key
-        self._linked_has_foreign_key = False
-        self._foreign_key_is_list = False
-        self._related_name = related_name
+    def __init__(self, **kwargs):
+        super(ManyToOneDescriptor, self).__init__(linked_has_foreign_key=False, foreign_key_is_list=False, **kwargs)
 
     def get_reverse(self, cls):
-        return OneToManyDescriptor(self._linked_key, cls, self._this_key)
+        return OneToManyDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key)
 
     def __set__(self, instance, value):
         assert not isinstance(value, list)
@@ -462,16 +452,11 @@ class ManyToOneDescriptor(LinkDescriptor):
             lm.add(value, commit=False)
 
 class OneToManyDescriptor(LinkDescriptor):
-    def __init__(self, this_key, linked_cls, linked_key, related_name=None):
-        self._this_key = this_key
-        self._linked_cls = linked_cls
-        self._linked_key = linked_key
-        self._linked_has_foreign_key = True
-        self._foreign_key_is_list = False
-        self._related_name = related_name
+    def __init__(self, **kwargs):
+        super(OneToManyDescriptor, self).__init__(linked_has_foreign_key=True, foreign_key_is_list=False, **kwargs)
 
     def get_reverse(self, cls):
-        return ManyToOneDescriptor(self._linked_key, cls, self._this_key)
+        return ManyToOneDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
@@ -492,17 +477,12 @@ class AliasDescriptor(object):
         setattr(instance, self._linked_key, value)
 
 
-class AdGroupLinkDescriptor(LinkDescriptor):
-    def __init__(self, linked_cls, related_name=None):
-        self._this_key = 'dn'
-        self._linked_cls = linked_cls
-        self._linked_key = 'member'
-        self._linked_has_foreign_key = True
-        self._foreign_key_is_list = True
-        self._related_name = related_name
+class AdGroupLinkDescriptor(ManyToManyDescriptor):
+    def __init__(self, **kwargs):
+        super(AdGroupLinkDescriptor, self).__init__(this_key="dn", linked_key="member", linked_has_foreign_key=True, **kwargs)
 
     def get_reverse(self, cls):
-        return AdUserLinkDescriptor(cls)
+        return AdUserLinkDescriptor(linked_cls=cls)
 
     def get_q_for_linked_instance(self, obj, operation):
         # We have to do the search using this_key of memberOf, not dn,
@@ -559,17 +539,12 @@ def _create_ad_account_link_manager(superclass, linked_has_foreign_key, foreign_
     return AdAccountLinkManager
 
 
-class AdAccountLinkDescriptor(ManyToOneDescriptor):
-    def __init__(self, linked_cls, related_name=None):
-        self._this_key = 'member'
-        self._linked_cls = linked_cls
-        self._linked_key = 'dn'
-        self._linked_has_foreign_key = False
-        self._foreign_key_is_list = True
-        self._related_name = related_name
+class AdAccountLinkDescriptor(ManyToManyDescriptor):
+    def __init__(self, **kwargs):
+        super(AdAccountLinkDescriptor, self).__init__(this_key="member", linked_key="dn", linked_has_foreign_key=False, **kwargs)
 
     def get_reverse(self, cls):
-        return AdGroupLinkDescriptor(cls)
+        return AdGroupLinkDescriptor(linked_cls=cls)
 
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
