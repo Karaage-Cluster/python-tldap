@@ -58,11 +58,11 @@ class QuerySet(object):
     # PYTHON MAGIC METHODS #
     ########################
 
-    def __repr__(self):
+    def __unicode__(self):
         data = list(self[:REPR_OUTPUT_SIZE + 1])
         if len(data) > REPR_OUTPUT_SIZE:
             data[-1] = "...(remaining elements truncated)..."
-        return repr(data)
+        return unicode(data)
 
     def __len__(self):
         # Since __len__ is called quite frequently (for example, as part of
@@ -175,6 +175,7 @@ class QuerySet(object):
         """
         A field could be found for this term, try to get filter string for it.
         """
+        assert isinstance(value, str)
         if operation is None:
             return ldap.filter.filter_format("(%s=%s)",[name, value])
         elif operation == "contains":

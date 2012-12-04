@@ -42,6 +42,7 @@ class user(tldap.base.LDAPobject):
     memberOf = tldap.fields.CharField(max_instances=None)
     objectSid = tldap.fields.SidField()
     o = tldap.fields.CharField()
+    primaryGroupID = tldap.fields.IntegerField()
     sAMAccountName = tldap.fields.CharField(required=True)
     sn = tldap.fields.CharField()
     telephoneNumber = tldap.fields.CharField()
