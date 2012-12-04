@@ -385,6 +385,9 @@ class LinkDescriptor(object):
                 foreign_key_is_list=self._foreign_key_is_list)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
 
+    def get_translated_linked_value(self, value):
+        return value
+
     def get_q_for_linked_instance(self, obj, operation):
         if operation is not None:
             raise ValueError("Unknown search operation %s"%operation)
@@ -394,7 +397,7 @@ class LinkDescriptor(object):
         linked_cls = _lookup(self._linked_cls)
         linked_key = self._linked_key
         assert isinstance(obj, linked_cls)
-        linked_value = getattr(obj, linked_key)
+        linked_value = self.get_translated_linked_value(getattr(obj, linked_key))
         if not isinstance(linked_value, list):
             linked_value = [ linked_value ]
 
@@ -619,6 +622,14 @@ class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
                 foreign_key_is_list=self._foreign_key_is_list)
         return LinkManager(this_instance=instance, this_key=self._this_key, linked_cls=linked_cls, linked_key=self._linked_key, domain_sid=self.domain_sid)
 
+    def get_translated_linked_value(self, value):
+        this_value = super(AdPrimaryAccountLinkDescriptor, self).get_translated_linked_value(value)
+        if this_value is None:
+            return None
+        assert isinstance(this_value, int)
+        this_value = "S-1-5-%s-%s" % (self.domain_sid, this_value)
+        return this_value
+
 def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
     superclass = _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list)
 
@@ -661,3 +672,11 @@ class AdPrimaryGroupLinkDescriptor(ManyToOneDescriptor):
                 linked_has_foreign_key=self._linked_has_foreign_key,
                 foreign_key_is_list=self._foreign_key_is_list)
         return LinkManager(this_instance=instance, this_key=self._this_key, linked_cls=linked_cls, linked_key=self._linked_key, domain_sid=self.domain_sid)
+
+    def get_translated_linked_value(self, value):
+        this_value = super(AdPrimaryGroupLinkDescriptor, self).get_translated_linked_value(value)
+        if this_value is None:
+            return None
+        _, _, rid = this_value.rpartition("-")
+        return int(rid)
+
