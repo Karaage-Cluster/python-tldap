@@ -477,6 +477,39 @@ class AliasDescriptor(object):
         setattr(instance, self._linked_key, value)
 
 
+def _create_ad_group_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
+    assert foreign_key_is_list
+    superclass = _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list)
+
+    class AdLinkManager(superclass):
+
+        if linked_has_foreign_key:
+
+            pass
+
+        else:
+
+            def get_query_set(self):
+                this_instance = self._this_instance
+                this_key = "dn"
+                this_value = self.get_translated_this_value()
+                if this_value is None:
+                    this_value = [ ]
+
+                if not isinstance(this_value, list):
+                    this_value = [ this_value ]
+
+                linked_key = "memberOf"
+
+                query = self.get_empty_query_set()
+                for v in this_value:
+                    kwargs = { linked_key: v }
+                    query = query | super(superclass, self).get_query_set().filter(**kwargs)
+                return query.using(this_instance._alias)
+
+    return AdLinkManager
+
+
 class AdGroupLinkDescriptor(ManyToManyDescriptor):
     def __init__(self, **kwargs):
         super(AdGroupLinkDescriptor, self).__init__(this_key="dn", linked_key="member", linked_has_foreign_key=True, **kwargs)
@@ -511,34 +544,6 @@ class AdGroupLinkDescriptor(ManyToManyDescriptor):
         return q
 
 
-def _create_ad_account_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
-    assert not linked_has_foreign_key
-    assert foreign_key_is_list
-    superclass = _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list)
-
-    class AdAccountLinkManager(superclass):
-
-        def get_query_set(self):
-            this_instance = self._this_instance
-            this_key = "dn"
-            this_value = self.get_translated_this_value()
-            if this_value is None:
-                this_value = [ ]
-
-            if not isinstance(this_value, list):
-                this_value = [ this_value ]
-
-            linked_key = "memberOf"
-
-            query = self.get_empty_query_set()
-            for v in this_value:
-                kwargs = { linked_key: v }
-                query = query | super(superclass, self).get_query_set().filter(**kwargs)
-            return query.using(this_instance._alias)
-
-    return AdAccountLinkManager
-
-
 class AdAccountLinkDescriptor(ManyToManyDescriptor):
     def __init__(self, **kwargs):
         super(AdAccountLinkDescriptor, self).__init__(this_key="member", linked_key="dn", linked_has_foreign_key=False, **kwargs)
@@ -549,12 +554,13 @@ class AdAccountLinkDescriptor(ManyToManyDescriptor):
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_ad_account_link_manager(superclass,
+        LinkManager = _create_ad_group_link_manager(superclass,
                 linked_has_foreign_key=self._linked_has_foreign_key,
                 foreign_key_is_list=self._foreign_key_is_list)
         return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
 
-def _create_ad_primary_account_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
+
+def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
     superclass = _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list)
 
     class AdLinkManager(superclass):
@@ -563,22 +569,42 @@ def _create_ad_primary_account_link_manager(superclass, linked_has_foreign_key, 
             self.domain_sid = domain_sid
             super(AdLinkManager, self).__init__(*args, **kwargs)
 
-        def get_translated_this_value(self):
-            this_value = super(AdLinkManager, self).get_translated_this_value()
-            if this_value is None:
-                return None
-            _, _, rid = this_value.rpartition("-")
-            return int(rid)
+        if linked_has_foreign_key:
 
-        def get_translated_linked_value(self, value):
-            this_value = super(AdLinkManager, self).get_translated_linked_value(value)
-            if this_value is None:
-                return None
-            assert isinstance(this_value, int)
-            this_value = "S-1-5-%s-%s" % (self.domain_sid, this_value)
-            return this_value
+            def get_translated_this_value(self):
+                this_value = super(AdLinkManager, self).get_translated_this_value()
+                if this_value is None:
+                    return None
+                _, _, rid = this_value.rpartition("-")
+                return int(rid)
+
+            def get_translated_linked_value(self, value):
+                this_value = super(AdLinkManager, self).get_translated_linked_value(value)
+                if this_value is None:
+                    return None
+                assert isinstance(this_value, int)
+                this_value = "S-1-5-%s-%s" % (self.domain_sid, this_value)
+                return this_value
+
+        else:
+
+            def get_translated_this_value(self):
+                this_value = super(AdLinkManager, self).get_translated_this_value()
+                if this_value is None:
+                    return None
+                assert isinstance(this_value, int)
+                this_value = "S-1-5-%s-%s" % (self.domain_sid, this_value)
+                return this_value
+
+            def get_translated_linked_value(self, value):
+                this_value = super(AdLinkManager, self).get_translated_linked_value(value)
+                if this_value is None:
+                    return None
+                _, _, rid = this_value.rpartition("-")
+                return int(rid)
 
     return AdLinkManager
+
 
 class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
 
@@ -592,7 +618,7 @@ class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_ad_primary_account_link_manager(superclass,
+        LinkManager = _create_ad_primary_group_link_manager(superclass,
                 linked_has_foreign_key=self._linked_has_foreign_key,
                 foreign_key_is_list=self._foreign_key_is_list)
         return LinkManager(this_instance=instance, this_key=self._this_key, linked_cls=linked_cls, linked_key=self._linked_key, domain_sid=self.domain_sid)
@@ -605,31 +631,6 @@ class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
         this_value = "S-1-5-%s-%s" % (self.domain_sid, this_value)
         return this_value
 
-def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list):
-    superclass = _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list)
-
-    class AdLinkManager(superclass):
-
-        def __init__(self, domain_sid, *args, **kwargs):
-            self.domain_sid = domain_sid
-            super(AdLinkManager, self).__init__(*args, **kwargs)
-
-        def get_translated_this_value(self):
-            this_value = super(AdLinkManager, self).get_translated_this_value()
-            if this_value is None:
-                return None
-            assert isinstance(this_value, int)
-            this_value = "S-1-5-%s-%s" % (self.domain_sid, this_value)
-            return this_value
-
-        def get_translated_linked_value(self, value):
-            this_value = super(AdLinkManager, self).get_translated_linked_value(value)
-            if this_value is None:
-                return None
-            _, _, rid = this_value.rpartition("-")
-            return int(rid)
-
-    return AdLinkManager
 
 class AdPrimaryGroupLinkDescriptor(ManyToOneDescriptor):
 
