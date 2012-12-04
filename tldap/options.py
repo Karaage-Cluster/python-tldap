@@ -17,6 +17,7 @@
 
 import re
 import django.utils.translation
+import tldap.helpers
 
 get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1', class_name).lower().strip()
 
@@ -29,7 +30,7 @@ class Options(object):
         self.verbose_name_plural = None
         self.object_name, self.app_label = None, app_label
         self.meta = meta
-        self._fields = {}
+        self._fields = tldap.helpers.CaseInsensitiveDict()
         self.object_classes = set()
         self.search_classes = set()
         self.base_dn = None
@@ -75,6 +76,10 @@ class Options(object):
 
     def get_field_by_name(self, name):
         return self._fields[name]
+
+    def get_field_name(self, name):
+        """ get the field name with the correct case. """
+        return self._fields.get_correct_key(name)
 
     def get_all_field_names(self):
         return set(self._fields.keys())

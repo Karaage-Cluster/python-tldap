@@ -27,6 +27,7 @@ import ldap.filter
 
 import tldap
 import tldap.manager
+import tldap.helpers
 
 import copy
 
@@ -491,7 +492,7 @@ class QuerySet(object):
                         setattr(o, name, value)
 
                     # save raw db values for latter use
-                    o._db_values[alias] = i[1]
+                    o._db_values[alias] = tldap.helpers.CaseInsensitiveDict(i[1])
 
                     # save database alias for latter use
                     o._alias = alias

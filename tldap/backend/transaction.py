@@ -37,6 +37,7 @@ import ldap.dn
 import ldaptor
 import ldaptor.entryhelpers
 import tldap.exceptions
+import tldap.helpers
 import copy
 import sys
 
@@ -62,7 +63,7 @@ class Filter(ldaptor.entryhelpers.MatchMixin):
         self._dn = dn
         self._attributes = attributes
 
-    def get(self, key, default):
+    def get(self, key, default=None):
         return self._attributes.get(key, default)
 
     def __getitem__(self, key):
@@ -156,7 +157,7 @@ class LDAPwrapper(object):
         self._oncommit = []
         self._onrollback = []
         if forceflushcache or self.autoflushcache:
-            self._cache = {}
+            self._cache = tldap.helpers.CaseInsensitiveDict()
 
     def _cache_normalize_dn(self, dn):
         """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
@@ -174,7 +175,7 @@ class LDAPwrapper(object):
                 raise ldap.NO_SUCH_OBJECT("No results finding current value")
             if len(results) > 1:
                 raise RuntimeError("Too many results finding current value")
-            self._cache[dn] = results[0]
+            self._cache[dn] = results[0][0], tldap.helpers.CaseInsensitiveDict(results[0][1])
 
         elif self._cache[dn] is None:
             # don't allow access to deleted items
@@ -187,27 +188,25 @@ class LDAPwrapper(object):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
         dn = self._cache_normalize_dn(dn)
-        ldn = dn.lower()
-        if ldn in self._cache and self._cache[ldn] is not None:
+        if dn in self._cache and self._cache[dn] is not None:
             raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%dn)
-        self._cache[ldn] = ( dn, {} )
-        return self._cache[ldn]
+        self._cache[dn] = ( dn, tldap.helpers.CaseInsensitiveDict() )
+        return self._cache[dn]
 
     def _cache_rename_dn(self, dn, newdn):
         """ The function will rename the DN in the cache. """
         newdn = self._cache_normalize_dn(newdn)
-        lnewdn = newdn.lower()
-        if newdn in self._cache and self._cache[lnewdn] is not None:
+        if newdn in self._cache and self._cache[newdn] is not None:
             raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%newdn)
 
         cache = self._cache_get_for_dn(dn)
         self._cache_del_dn(dn)
 
-        self._cache[lnewdn] = (newdn, cache[1])
+        self._cache[newdn] = (newdn, cache[1])
 
     def _cache_del_dn(self, dn):
         """ This function will mark as deleted the DN created with _cache_get_for_dn and mark it as unsuable. """
-        dn = self._cache_normalize_dn(dn).lower()
+        dn = self._cache_normalize_dn(dn)
         if dn in self._cache:
             self._cache[dn] = None
 

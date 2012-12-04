@@ -229,7 +229,7 @@ class LDAPobject(object):
             raise self.model.MultipleObjectsReturned("get() returned more than one %s -- it returned %s!"
                     % (self._meta.object_name, num))
 
-        self._db_values[using] = db_values[0][1]
+        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(db_values[0][1])
 
     load_db_values.alters_data = True
 
@@ -386,7 +386,7 @@ class LDAPobject(object):
             raise self.AlreadyExists("Object with dn %r already exists doing add"%(self._dn,))
 
         # save new values
-        self._db_values[using] = moddict
+        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(moddict)
 
     _add.alters_data = True
 
@@ -446,7 +446,7 @@ class LDAPobject(object):
                 raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
 
         # save new values
-        self._db_values[using] = moddict
+        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(moddict)
 
     _modify.alters_data = True
 
@@ -537,6 +537,7 @@ class LDAPobject(object):
             self._db_values[using] = copy.copy(self._db_values[using])
 
             # delete old rdn attribute in object
+            old_key = self._meta.get_field_name(old_key)
             field = self._meta.get_field_by_name(old_key)
             v = getattr(self, old_key, [])
             old_value = field.value_to_python(old_value)
@@ -549,11 +550,14 @@ class LDAPobject(object):
                 v = None
             if v == None:
                 del self._db_values[using][old_key]
+            elif isinstance(v, list) and len(v)==0:
+                del self._db_values[using][old_key]
             else:
                 self._db_values[using][old_key] = field.to_db(v)
             setattr(self, old_key, v)
 
             # update new rdn attribute in object
+            new_key = self._meta.get_field_name(new_key)
             field = self._meta.get_field_by_name(new_key)
             v = getattr(self, new_key, None)
             new_value = field.value_to_python(new_value)
