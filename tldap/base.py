@@ -461,6 +461,10 @@ class LDAPobject(object):
         assert len(kwargs)==1
         name,value = kwargs.iteritems().next()
 
+        # replace pk with the real attribute
+        if name == "pk":
+            name = self._meta.pk
+
         # get the new field and turn value into db value
         field = self._meta.get_field_by_name(name)
         value = field.value_to_db(value)
