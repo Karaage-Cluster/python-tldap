@@ -70,3 +70,6 @@ class CaseInsensitiveDict(dict):
 
     def get_correct_key(self, key):
         return self.lc[key.lower()]
+
+    def clone(self):
+        return self.__class__(self)

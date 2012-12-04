@@ -585,7 +585,7 @@ class LDAPwrapper(object):
                     debug("---> match")
                     rset.add(dn)
                     debug("---> yielding", v)
-                    yield copy.deepcopy(v)
+                    yield v[0], v[1].clone()
                     if items_left is not None:
                         items_left = items_left - 1
                 else:
