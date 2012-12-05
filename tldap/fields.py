@@ -364,7 +364,7 @@ class SidField(Field):
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
 
-        assert isinstance(value, str):
+        assert isinstance(value, str)
 
         array = value.split("-")
         l = len(array) - 3
