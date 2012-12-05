@@ -379,8 +379,8 @@ class SidField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is None:
-            return value
+        if not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("Invalid sid")
 
         array = value.split("-")
         l = len(array) - 3
