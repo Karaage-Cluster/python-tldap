@@ -91,7 +91,8 @@ class Field(object):
                 if value is None:
                     raise tldap.exceptions.ValidationError("%r is required"%self.name)
             # validate the value
-            self.value_validate(value)
+            if value is not None:
+                self.value_validate(value)
         else:
             # check object type
             if not isinstance(value, list):
@@ -149,7 +150,7 @@ class BinaryField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is not None and not isinstance(value, str):
+        if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
         return value
 
@@ -158,8 +159,8 @@ class BinaryField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if value is not None and not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
+        if not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
 
 
 class CharField(Field):
@@ -175,7 +176,7 @@ class CharField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is not None and not isinstance(value, str):
+        if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
         return value.decode("utf_8")
 
@@ -184,8 +185,8 @@ class CharField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if value is not None and not (isinstance(value, str) or isinstance(value, unicode)):
-            raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
+        if not (isinstance(value, str) or isinstance(value, unicode)):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
 
 
 class UnicodeField(Field):
@@ -200,7 +201,7 @@ class UnicodeField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is not None and not isinstance(value, str):
+        if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
         return value.decode("utf_16")
 
@@ -209,8 +210,8 @@ class UnicodeField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if value is not None and not (isinstance(value, str) or isinstance(value, unicode)):
-            raise tldap.exceptions.ValidationError("%r should be a string or None"%self.name)
+        if not (isinstance(value, str) or isinstance(value, unicode)):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
 
 
 class IntegerField(Field):
@@ -220,7 +221,7 @@ class IntegerField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is not None and not isinstance(value, str):
+        if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
         if value is None:
             return value
@@ -242,8 +243,6 @@ class IntegerField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is None:
-            return value
         try:
             return str(int(value))
         except (TypeError, ValueError):
@@ -257,7 +256,7 @@ class DaysSinceEpochField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is not None and not isinstance(value, str):
+        if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
 
         try:
@@ -299,7 +298,7 @@ class SecondsSinceEpochField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if value is not None and not isinstance(value, str):
+        if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
 
         try:
