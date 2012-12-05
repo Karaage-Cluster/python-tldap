@@ -308,7 +308,7 @@ class SecondsSinceEpochField(Field):
             raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
 
         try:
-            value = datetime.datetime.fromtimestamp(value)
+            value = datetime.datetime.utcfromtimestamp(value)
         except OverflowError:
             raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
 
