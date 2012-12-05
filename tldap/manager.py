@@ -484,7 +484,7 @@ def _sid_to_rid(sid):
     return int(rid)
 
 
-def _rid_to_sid(self, domain_sid, rid):
+def _rid_to_sid(domain_sid, rid):
     if rid is None:
         return None
     assert isinstance(rid, int)
