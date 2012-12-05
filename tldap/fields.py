@@ -243,8 +243,11 @@ class IntegerField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
+        if not isinstance(value, int):
+            raise tldap.exceptions.ValidationError("%r should be a integer"%self.name)
+
         try:
-            return str(int(value))
+            return str(value)
         except (TypeError, ValueError):
             raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
 
