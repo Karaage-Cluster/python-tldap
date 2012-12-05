@@ -132,7 +132,7 @@ class posixAccount(tldap.base.LDAPobject):
 
 class shadowAccount(tldap.base.LDAPobject):
     userPassword = tldap.fields.BinaryField()
-    shadowLastChange = tldap.fields.IntegerField()
+    shadowLastChange = tldap.fields.DaysSinceEpochField()
     shadowMin = tldap.fields.IntegerField()
     shadowMax = tldap.fields.IntegerField()
     shadowWarning = tldap.fields.IntegerField()

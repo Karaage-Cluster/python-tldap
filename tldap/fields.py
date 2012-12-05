@@ -16,6 +16,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import tldap.exceptions
+import datetime
 import struct
 
 class Field(object):
@@ -247,6 +248,91 @@ class IntegerField(Field):
             return str(int(value))
         except (TypeError, ValueError):
             raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+
+
+class DaysSinceEpochField(Field):
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+
+        try:
+            value = datetime.date.fromtimestamp(value * 24 * 60 * 60)
+        except OverflowError:
+            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+
+        return value
+
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+        assert isinstance(value, datetime.date)
+
+        try:
+            value = value - datetime.date(year=1970, month=1, day=1)
+        except OverflowError:
+            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+
+        return str(value.days)
+
+    def value_validate(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if not isinstance(value, datetime.date):
+            raise tldap.exceptions.ValidationError("%r is invalid date"%self.name)
+
+class SecondsSinceEpochField(Field):
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if value is not None and not isinstance(value, str):
+            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+
+        try:
+            value = datetime.datetime.fromtimestamp(value)
+        except OverflowError:
+            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+
+        return value
+
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+        assert isinstance(value, datetime.datetime)
+
+        try:
+            value = value - datetime.datetime(1970, 1, 1)
+        except OverflowError:
+            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+
+        return str(int(value.total_seconds()))
+
+    def value_validate(self, value):
+        """
+        Converts the input single value into the expected Python data type, raising
+        django.core.exceptions.ValidationError if the data can't be converted.
+        Returns the converted value. Subclasses should override this.
+        """
+        if not isinstance(value, datetime.datetime):
+            raise tldap.exceptions.ValidationError("%r is invalid date time"%self.name)
 
 class SidField(Field):
 
