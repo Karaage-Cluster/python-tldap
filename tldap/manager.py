@@ -532,7 +532,7 @@ def _create_ad_group_link_manager(superclass, linked_has_foreign_key, foreign_ke
             def get_query_set(self):
                 this_instance = self._this_instance
                 this_key = "dn"
-                this_value = self.get_translated_this_value()
+                this_value = getattr(this_instance, this_key)
                 if this_value is None:
                     this_value = [ ]
 
