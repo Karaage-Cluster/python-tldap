@@ -571,7 +571,7 @@ class LDAPwrapper(object):
             debug("---> checking", dn, v, limit)
 
             # check dn is in search scope
-            if not check_scope(dn):
+            if not check_scope(dn.lower()):
                 debug("---> not in scope")
                 continue
             debug("---> is in scope")
@@ -583,7 +583,7 @@ class LDAPwrapper(object):
                 t = Filter(item_dn, item_attributes)
                 if filterobj is None or t.match(filterobj):
                     debug("---> match")
-                    rset.add(dn)
+                    rset.add(dn.lower())
                     debug("---> yielding", v)
                     yield v[0], v[1].clone()
                     if items_left is not None:
