@@ -325,7 +325,10 @@ class SecondsSinceEpochField(Field):
         except OverflowError:
             raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
 
-        return str(int(value.total_seconds()))
+        value = value.seconds + value.days*24*3600
+        value = str(value)
+
+        return value
 
     def value_validate(self, value):
         """
