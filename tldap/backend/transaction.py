@@ -78,7 +78,6 @@ class LDAPwrapper(object):
         self._obj = None
 
         self._cache = None
-        self._oncommit = None
         self._onrollback = None
         self._bind_args = None
         self._bind_kwargs = None
@@ -150,7 +149,6 @@ class LDAPwrapper(object):
 
     def reset(self, forceflushcache=False):
         """ Reset transaction back to original state, discarding all uncompleted transactions. """
-        self._oncommit = []
         self._onrollback = []
         if forceflushcache or self.autoflushcache:
             self._cache = tldap.helpers.CaseInsensitiveDict()
@@ -212,8 +210,6 @@ class LDAPwrapper(object):
 
     def is_dirty(self):
         """ Are there uncommitted changes? """
-        if len(self._oncommit) > 0:
-            return True
         if len(self._onrollback) > 0:
             return True
         return False
@@ -228,7 +224,6 @@ class LDAPwrapper(object):
             raise RuntimeError("enter_transaction_management called inside transaction")
 
         self._transact = True
-        self._oncommit = []
         self._onrollback = []
 
     def leave_transaction_management(self):
@@ -236,9 +231,6 @@ class LDAPwrapper(object):
         rollback() must be called if changes made. If dirty, changes will be discarded. """
         if not self._transact:
             raise RuntimeError("leave_transaction_management called outside transaction")
-        if len(self._oncommit) > 0:
-            self.reset(forceflushcache=True)
-            raise RuntimeError("leave_transaction_management called with uncommited changes")
         if len(self._onrollback) > 0:
             self.reset(forceflushcache=True)
             raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
@@ -246,28 +238,13 @@ class LDAPwrapper(object):
         self._transact = False
 
     def commit(self):
-        """ Attempt to commit all changes to LDAP database, NOW! However stay inside transaction management. """
+        """ Attempt to commit all changes to LDAP database. i.e. forget all rollbacks.
+        However stay inside transaction management. """
         if not self._transact:
             raise RuntimeError("commit called outside transaction")
 
-        debug("\ncommit", self._oncommit)
-        try:
-            # for every action ...
-            for oncommit, onrollback, onfailure in self._oncommit:
-                # execute it
-                debug("---> commiting", oncommit)
-                self._do_with_retry(oncommit)
-                # add statement to rollback log in case something goes wrong
-                self._onrollback.insert(0, (onrollback, onfailure))
-        except:
-            # oops. Something went wrong. Attempt to rollback.
-            debug("commit failed")
-            self.rollback()
-            # rollback appears to have worked, reraise exception
-            raise
-        finally:
-            # reset everything to clean state
-            self.reset()
+        debug("\ncommit")
+        self.reset()
 
     def rollback(self):
         """ Roll back to previous database state. However stay inside transaction management. """
