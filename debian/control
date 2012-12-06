@@ -7,7 +7,7 @@ Standards-Version: 3.9.3
 
 Package: django-tldap
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-django (>= 1.2.1), python-ldaptor
+Depends: ${misc:Depends}, ${python:Depends}, python-django (>= 1.2.1)
 Description: Fake LDAP Transacations
  Fake LDAP transactions, to try and ensure LDAP database remains in a consistant
  state, even if there are errors that cause the transaction to fail.

@@ -30,11 +30,7 @@ the caching functionality could be split into a seperate class."""
 
 import ldap
 import ldap.dn
-import ldaptor
-import ldaptor.entryhelpers
 import tldap.exceptions
-import tldap.helpers
-import copy
 import sys
 
 # hardcoded settings for this module
@@ -52,22 +48,6 @@ def debug(*argv):
 def raise_testfailure(place):
     raise tldap.exceptions.TestFailure("fail %s called"%place)
 
-# private
-
-class Filter(ldaptor.entryhelpers.MatchMixin):
-    def __init__(self, dn, attributes):
-        self._dn = dn
-        self._attributes = attributes
-
-    def get(self, key, default=None):
-        return self._attributes.get(key, default)
-
-    def __getitem__(self, key):
-        return self._attributes.get(key)
-
-    def __contains__(self, item):
-        return item in self._attributes
-
 # wrapper class
 
 class LDAPwrapper(object):
@@ -77,16 +57,10 @@ class LDAPwrapper(object):
         self._transact = False
         self._obj = None
 
-        self._cache = None
         self._onrollback = None
         self._bind_args = None
         self._bind_kwargs = None
 
-        # just autoflushes the cache after every transaction
-        # not strictly required, however guarantees that one transaction
-        # can't stuff up future transactions if something went wrong
-        # with the caching
-        self.autoflushcache = True
         self.reset()
 
         if not delayed_connect:
@@ -147,11 +121,9 @@ class LDAPwrapper(object):
     # Cache Management #
     ####################
 
-    def reset(self, forceflushcache=False):
+    def reset(self):
         """ Reset transaction back to original state, discarding all uncompleted transactions. """
         self._onrollback = []
-        if forceflushcache or self.autoflushcache:
-            self._cache = tldap.helpers.CaseInsensitiveDict()
 
     def _cache_normalize_dn(self, dn):
         """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
@@ -162,47 +134,15 @@ class LDAPwrapper(object):
         """ Object state is cached. When an update is required the update will be simulated on this cache,
         so that rollback information can be correct. This function retrieves the cached data. """
         dn = self._cache_normalize_dn(dn).lower()
-        if dn not in self._cache:
-            # no cached item, retrieve from ldap
-            results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE, '(objectclass=*)', ['*','+']))
-            if len(results) < 1:
-                raise ldap.NO_SUCH_OBJECT("No results finding current value")
-            if len(results) > 1:
-                raise RuntimeError("Too many results finding current value")
-            self._cache[dn] = results[0][0], tldap.helpers.CaseInsensitiveDict(results[0][1])
 
-        elif self._cache[dn] is None:
-            # don't allow access to deleted items
-            raise ldap.NO_SUCH_OBJECT("Object with dn %s was deleted in cache"%dn)
+        # no cached item, retrieve from ldap
+        results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE, '(objectclass=*)', ['*','+']))
+        if len(results) < 1:
+            raise ldap.NO_SUCH_OBJECT("No results finding current value")
+        if len(results) > 1:
+            raise RuntimeError("Too many results finding current value")
+        return results[0]
 
-        # return result
-        return self._cache[dn]
-
-    def _cache_create_for_dn(self, dn):
-        """ Object state is cached. When an update is required the update will be simulated on this cache,
-        so that rollback information can be correct. This function retrieves the cached data. """
-        dn = self._cache_normalize_dn(dn)
-        if dn in self._cache and self._cache[dn] is not None:
-            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%dn)
-        self._cache[dn] = ( dn, tldap.helpers.CaseInsensitiveDict() )
-        return self._cache[dn]
-
-    def _cache_rename_dn(self, dn, newdn):
-        """ The function will rename the DN in the cache. """
-        newdn = self._cache_normalize_dn(newdn)
-        if newdn in self._cache and self._cache[newdn] is not None:
-            raise ldap.ALREADY_EXISTS("Object with dn %s already exists in cache"%newdn)
-
-        cache = self._cache_get_for_dn(dn)
-        self._cache_del_dn(dn)
-
-        self._cache[newdn] = (newdn, cache[1])
-
-    def _cache_del_dn(self, dn):
-        """ This function will mark as deleted the DN created with _cache_get_for_dn and mark it as unsuable. """
-        dn = self._cache_normalize_dn(dn)
-        if dn in self._cache:
-            self._cache[dn] = None
 
     ##########################
     # Transaction Management #
@@ -230,9 +170,12 @@ class LDAPwrapper(object):
         """ End a transaction. Must not be dirty when doing so. ie. commit() or
         rollback() must be called if changes made. If dirty, changes will be discarded. """
         if not self._transact:
+            self.reset()
+            self._transact = False
             raise RuntimeError("leave_transaction_management called outside transaction")
         if len(self._onrollback) > 0:
-            self.reset(forceflushcache=True)
+            self.reset()
+            self._transact = False
             raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
         self.reset()
         self._transact = False
@@ -258,19 +201,20 @@ class LDAPwrapper(object):
             # for every rollback action ...
             for onrollback, onfailure in self._onrollback:
                 # execute it
-                debug("rolling back", onrollback)
+                debug("--> rolling back", onrollback)
                 self._do_with_retry(onrollback)
                 if onfailure is not None:
                     onfailure()
 
         except:
-            debug("rollback failed")
+            debug("--> rollback failed")
             exc_class, exc, tb = sys.exc_info()
             new_exc = tldap.exceptions.RollbackError("FATAL Unrecoverable rollback error: %r"%(exc))
             raise new_exc.__class__, new_exc, tb
         finally:
             # reset everything to clean state
-            self.reset(forceflushcache=True)
+            debug("--> rollback success")
+            self.reset()
 
     def _process(self, oncommit, onrollback, onfailure):
         """ Process action. oncommit is a callback to execute action,
@@ -301,16 +245,6 @@ class LDAPwrapper(object):
         # if rollback of add required, delete it
         oncommit   = lambda obj: obj.add_s(dn, modlist)
         onrollback = lambda obj: obj.delete_s(dn)
-
-        # simulate this action in cache
-        cache = self._cache_create_for_dn(dn)
-        k,v,_ = ldap.dn.str2dn(dn)[0][0]
-        cache[1][k] = [v]
-        for k,v in modlist:
-            if isinstance(v, list):
-                cache[1][k] = v
-            else:
-                cache[1][k] = [v]
 
         # process this action
         return self._process(oncommit, onrollback, onfailure)
@@ -346,31 +280,10 @@ class LDAPwrapper(object):
                 # reverse of MOD_ADD is MOD_DELETE
                 reverse = (ldap.MOD_DELETE,mod_type,mod_vals)
 
-                # also carry out simulation in cache
-                if mod_type not in result:
-                    result[mod_type] = []
-
-                for val in mod_vals:
-                    if val in result[mod_type]:
-                        raise ldap.TYPE_OR_VALUE_EXISTS("%s value %s already exists"%(mod_type,val))
-                    result[mod_type].append(val)
-
             elif mod_op == ldap.MOD_DELETE and mod_vals is not None:
                 # Reverse of MOD_DELETE is MOD_ADD, but only if value is given
                 # if mod_vals is None, this means all values where deleted.
                 reverse = (ldap.MOD_ADD,mod_type,mod_vals)
-
-                # also carry out simulation in cache
-                if mod_type not in result:
-                    raise ldap.NO_SUCH_ATTRIBUTE("%s value doesn't exist"%mod_type)
-
-                for val in mod_vals:
-                    if val not in result[mod_type]:
-                        raise ldap.NO_SUCH_ATTRIBUTE("%s value %s doesn't exist"%(mod_type,val))
-                    result[mod_type].remove(val)
-
-                if len(result[mod_type]) == 0:
-                    del result[mod_type]
 
             elif mod_op == ldap.MOD_DELETE or mod_op == ldap.MOD_REPLACE:
                 if mod_type in result:
@@ -380,12 +293,6 @@ class LDAPwrapper(object):
                 else:
                     # except if we have no cached state for this DN, in which case we delete it.
                     reverse = (ldap.MOD_DELETE,mod_type,None)
-
-                # also carry out simulation in cache
-                if mod_vals is not None:
-                    result[mod_type] = mod_vals
-                elif mod_type in result:
-                    del result[mod_type]
 
             else:
                 raise RuntimeError("mod_op of %d not supported"%mod_op)
@@ -428,8 +335,6 @@ class LDAPwrapper(object):
         delete_attribute('creatorsName')
         # turn into modlist list.
         modlist = ldap.modlist.addModlist(result)
-        # delete the cache entry
-        self._cache_del_dn(dn)
 
         # on commit carry out action; on rollback restore cached state
         oncommit   = lambda obj: obj.delete_s(dn)
@@ -462,20 +367,6 @@ class LDAPwrapper(object):
         oncommit   = lambda obj: obj.rename_s(dn, newrdn)
         onrollback = lambda obj: obj.rename_s(newdn, rdn)
 
-        debug("--> rename cache", dn, newdn)
-        self._cache_rename_dn(dn, newdn)
-        cache = self._cache_get_for_dn(newdn)[1]
-        old_key,old_value,_ = split_dn[0][0]
-        if old_value in cache[old_key]:
-            cache[old_key].remove(old_value)
-        if len(cache[old_key]) == 0:
-            del cache[old_key]
-        new_key,new_value,_ = split_newrdn[0][0]
-        if new_key not in cache:
-            cache[new_key] = [ ]
-        if new_value not in cache[new_key]:
-            cache[new_key].append(new_value)
-
         return self._process(oncommit, onrollback, onfailure)
 
     def fail(self):
@@ -495,82 +386,6 @@ class LDAPwrapper(object):
 
         debug("\nsearch", base, scope, filterstr, attrlist, limit)
 
-        # parse the filter string
-        debug("---> filterstr", filterstr)
-        if filterstr is not None:
-            if filterstr[0] != "(":
-                filterstr = "(%s)"%filterstr
-
-            filterobj = ldaptor.ldapfilter.parseFilter(filterstr)
-        else:
-            filterobj = None
-        debug("---> filterobj", type(filterobj))
-
-        # is this dn in the search scope?
-        split_base = ldap.dn.str2dn(base.lower())
-        base = ldap.dn.dn2str(split_base)
-        def check_scope(dn):
-            split_dn = ldap.dn.str2dn(dn)
-
-            if dn == base:
-                return True
-
-            nested = len(split_dn) - len(split_base)
-            if scope == ldap.SCOPE_BASE:
-                pass
-            elif scope == ldap.SCOPE_ONELEVEL:
-                if nested == 1:
-                    for i in range(len(split_base)):
-                        if split_dn[i+nested] != split_base[i]:
-                            return False
-                    return True
-            elif scope == ldap.SCOPE_SUBTREE:
-                if nested > 0:
-                    for i in range(len(split_base)):
-                        if split_dn[i+nested] != split_base[i]:
-                            return False
-                    return True
-            else:
-                raise RuntimeError("Unknown search scope %d"%scope)
-
-            return False
-
-        # search cache
-        rset = set()
-        items_left = limit
-        for dn, v in self._cache.iteritems():
-            if items_left is not None and items_left == 0:
-                return
-
-            debug("---> checking", dn, v, limit)
-
-            # check dn is in search scope
-            if not check_scope(dn.lower()):
-                debug("---> not in scope")
-                continue
-            debug("---> is in scope")
-
-            # if this entry is not deleted
-            if v is not None:
-                item_dn, item_attributes = v
-                # then check if it matches the filter
-                t = Filter(item_dn, item_attributes)
-                if filterobj is None or t.match(filterobj):
-                    debug("---> match")
-                    rset.add(dn.lower())
-                    debug("---> yielding", v)
-                    yield v[0], v[1].clone()
-                    if items_left is not None:
-                        items_left = items_left - 1
-                else:
-                    debug("---> nomatch")
-            else:
-                # otherwise, entry deleted in cache, delete from
-                # results
-                debug("---> deleted")
-                rset.add(dn)
-
-
         # first results
         if isinstance(attrlist, set):
             attrlist = list(attrlist)
@@ -582,12 +397,6 @@ class LDAPwrapper(object):
         # get the 1st result
         try:
             msgid,result_type,result_list,result_msgid,result_serverctrls = self._do_with_retry(first_results)
-        except ldap.NO_SUCH_OBJECT:
-            # if base doesn't exist in LDAP, it really should exist in cache
-            debug("---> got NO_SUCH_OBJECT")
-            self._cache_get_for_dn(base)
-            debug("---> ... but ok because base is cached")
-            return
         except ldap.SIZELIMIT_EXCEEDED:
             debug("---> got SIZELIMIT_EXCEEDED")
             return
@@ -596,19 +405,11 @@ class LDAPwrapper(object):
         while result_type and result_list:
             # Loop over list of search results
             for result_item in result_list:
-                if items_left is not None and items_left == 0:
-                    self._obj.abandon(msgid)
-                    return
                 dn, attributes = result_item
                 # did we already retrieve this from cache?
                 debug("---> got ldap result", dn)
-                if dn.lower() not in rset:
-                    debug("---> yielding", result_item)
-                    yield result_item
-                    if items_left is not None:
-                        items_left = items_left - 1
-                else:
-                    debug("---> skipping", dn)
+                debug("---> yielding", result_item)
+                yield result_item
             try:
                 result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
             except ldap.SIZELIMIT_EXCEEDED:
