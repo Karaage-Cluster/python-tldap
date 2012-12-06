@@ -633,10 +633,14 @@ def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, fo
                 assert isinstance(linked_value, list)
 
                 this_value = ldap.dn.dn2str(ldap.dn.str2dn(this_value)).lower()
+                found = False
                 for dn in linked_value:
                     dn = ldap.dn.dn2str(ldap.dn.str2dn(dn)).lower()
                     if dn == this_value:
-                        raise ValueError(u"Cannot set primary account to %s as it is already a secondary account" % obj)
+                        found = True
+
+                if not found:
+                    raise ValueError(u"Cannot set primary account to %s as it is already a secondary account" % obj)
 
                 super(AdLinkManager, self).add(obj, commit)
 
@@ -663,10 +667,14 @@ def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, fo
                 assert isinstance(linked_value, str)
 
                 linked_value = ldap.dn.dn2str(ldap.dn.str2dn(linked_value)).lower()
+                found = False
                 for dn in this_value:
                     dn = ldap.dn.dn2str(ldap.dn.str2dn(dn)).lower()
                     if dn == linked_value:
-                        raise ValueError(u"Cannot set primary group to %s as it is already a secondary group" % obj)
+                        found = True
+
+                if not found:
+                    raise ValueError(u"Cannot set primary group to %s unless it is already a secondary group" % obj)
 
                 super(AdLinkManager, self).add(obj, commit)
 
