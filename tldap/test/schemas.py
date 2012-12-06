@@ -40,8 +40,8 @@ class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
             self.cn = u"%s %s" % (self.givenName, self.sn)
         super(person, self).save(*args, **kwargs)
 
-    managed_by = tldap.manager.ManyToOneDescriptor('manager', 'tldap.test.schemas.person', 'dn')
-    manager_of = tldap.manager.OneToManyDescriptor('dn', 'tldap.test.schemas.person', 'manager')
+    managed_by = tldap.manager.ManyToOneDescriptor(this_key='manager', linked_cls='tldap.test.schemas.person', linked_key='dn')
+    manager_of = tldap.manager.OneToManyDescriptor(this_key='dn', linked_cls='tldap.test.schemas.person', linked_key='manager')
 
 
 class account(person, rfc.posixAccount, rfc.shadowAccount):
@@ -60,9 +60,9 @@ class account(person, rfc.posixAccount, rfc.shadowAccount):
 
 
 class group(rfc.posixGroup):
-    primary_accounts = tldap.manager.OneToManyDescriptor('gidNumber', account, 'gidNumber', "primary_group")
-    secondary_people = tldap.manager.ManyToManyDescriptor('memberUid', person, 'uid', False, "secondary_groups")
-    secondary_accounts = tldap.manager.ManyToManyDescriptor('memberUid', account, 'uid', False, "secondary_groups")
+    primary_accounts = tldap.manager.OneToManyDescriptor(this_key='gidNumber', linked_cls=account, linked_key='gidNumber', related_name="primary_group")
+    secondary_people = tldap.manager.ManyToManyDescriptor(this_key='memberUid', linked_cls=person, linked_key='uid', linked_has_foreign_key=False, related_name="secondary_groups")
+    secondary_accounts = tldap.manager.ManyToManyDescriptor(this_key='memberUid', linked_cls=account, linked_key='uid', linked_has_foreign_key=False, related_name="secondary_groups")
 
     class Meta:
         base_dn = django.conf.settings.LDAP_GROUP_BASE
