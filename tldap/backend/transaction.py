@@ -253,12 +253,12 @@ class LDAPwrapper(object):
         debug("\ncommit", self._oncommit)
         try:
             # for every action ...
-            for oncommit, onrollback, _ in self._oncommit:
+            for oncommit, onrollback, onfailure in self._oncommit:
                 # execute it
                 debug("---> commiting", oncommit)
                 self._do_with_retry(oncommit)
                 # add statement to rollback log in case something goes wrong
-                self._onrollback.insert(0, onrollback)
+                self._onrollback.insert(0, (onrollback, onfailure))
         except:
             # oops. Something went wrong. Attempt to rollback.
             debug("commit failed")
@@ -279,14 +279,11 @@ class LDAPwrapper(object):
         # database as is.
         try:
             # for every rollback action ...
-            for onrollback in self._onrollback:
+            for onrollback, onfailure in self._onrollback:
                 # execute it
                 debug("rolling back", onrollback)
                 self._do_with_retry(onrollback)
-
-            for _, _, onfailure in reversed(self._oncommit):
                 if onfailure is not None:
-                    debug("failure", onfailure)
                     onfailure()
 
         except:
@@ -310,7 +307,7 @@ class LDAPwrapper(object):
             self.reset()
         else:
             # add statement to rollback log in case something goes wrong
-            self._onrollback.insert(0, onrollback)
+            self._onrollback.insert(0, (onrollback, onfailure))
 
         return result
 
