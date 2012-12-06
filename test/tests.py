@@ -40,7 +40,7 @@ def assert_cache_dn(ut, dn, c):
         dn = c._cache_normalize_dn(dn)
 
         try:
-            result_data = c._obj.search_s(dn, ldap.SCOPE_BASE)
+            result_data = c._obj.search_s(dn, ldap.SCOPE_BASE, '(objectclass=*)', ['*','+'])
         except ldap.NO_SUCH_OBJECT:
             result_data = []
 
@@ -52,8 +52,9 @@ def assert_cache_dn(ut, dn, c):
             return
 
         ut.assertEqual(len(result_data), 1)
-        ut.assertEqual(result_data[0][0].lower(), dn)
-        ut.assertEqual(result_data[0][1], c._cache[dn])
+        ut.assertEqual(result_data[0][0].lower(), dn.lower())
+        ut.assertEqual(result_data[0][0].lower(), c._cache_normalize_dn(c._cache[dn][0].lower()))
+        ut.assertEqual(result_data[0][1], c._cache[dn][1])
 
 def raise_testfailure(place):
     raise TestFailure("fail %s called"%place)
