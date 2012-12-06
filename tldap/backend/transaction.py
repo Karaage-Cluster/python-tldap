@@ -20,10 +20,6 @@ with a subset of the functions from the real ldap module.  Note that the async
 and sync functions are identical. When transactions are not enabled they will
 behave like the sync functions and return the same information.
 
-When transactions are enabled, the action will be delayed until commit() is
-called. This means that rollback() is normally a nop. This could also be easily
-changed to make the changes immediately and rollback if required.
-
 The current state is simulated in cache, so that functions to retrieve
 the current data should work as expected.
 
@@ -303,16 +299,20 @@ class LDAPwrapper(object):
             self.reset(forceflushcache=True)
 
     def _process(self, oncommit, onrollback, onfailure):
-        """ Add action to list. oncommit is a callback to execute on commit(),
+        """ Process action. oncommit is a callback to execute action,
         onrollback is a callback to execute if the oncommit() has been called and
         a rollback is required """
+
+        debug("---> commiting", oncommit)
+        result = self._do_with_retry(oncommit)
+
         if not self._transact:
-            result = self._do_with_retry(oncommit)
             self.reset()
-            return result
         else:
-            self._oncommit.append( (oncommit, onrollback, onfailure) )
-            return None
+            # add statement to rollback log in case something goes wrong
+            self._onrollback.insert(0, onrollback)
+
+        return result
 
     ##################################
     # Functions needing Transactions #
