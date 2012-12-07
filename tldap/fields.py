@@ -277,6 +277,7 @@ class DaysSinceEpochField(Field):
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
         assert isinstance(value, datetime.date)
+        assert not isinstance(value, datetime.datetime)
 
         try:
             value = value - datetime.date(year=1970, month=1, day=1)
@@ -293,6 +294,9 @@ class DaysSinceEpochField(Field):
         """
         if not isinstance(value, datetime.date):
             raise tldap.exceptions.ValidationError("%r is invalid date"%self.name)
+        # a datetime is also a date but they are not compatable
+        if isinstance(value, datetime.datetime):
+            raise tldap.exceptions.ValidationError("%r should be a date, not a datetime"%self.name)
 
 class SecondsSinceEpochField(Field):
     def value_to_python(self, value):
