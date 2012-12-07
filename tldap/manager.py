@@ -620,30 +620,6 @@ def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, fo
 
         if linked_has_foreign_key:
 
-            def add(self, obj, commit=True):
-                this_instance = self._this_instance
-                this_key = "dn"
-                this_value = getattr(this_instance, this_key)
-                assert isinstance(this_value, str)
-
-                linked_cls = self._linked_cls
-                linked_key = "memberOf"
-                assert isinstance(obj, linked_cls)
-                linked_value = getattr(obj, linked_key)
-                assert isinstance(linked_value, list)
-
-                this_value = ldap.dn.dn2str(ldap.dn.str2dn(this_value)).lower()
-                found = False
-                for dn in linked_value:
-                    dn = ldap.dn.dn2str(ldap.dn.str2dn(dn)).lower()
-                    if dn == this_value:
-                        found = True
-
-                if not found:
-                    raise ValueError(u"Cannot set primary account to %s as it is already a secondary account" % obj)
-
-                super(AdLinkManager, self).add(obj, commit)
-
             def get_translated_this_value(self):
                 this_value = super(AdLinkManager, self).get_translated_this_value()
                 return _sid_to_rid(this_value)
@@ -653,30 +629,6 @@ def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, fo
                 return _rid_to_sid(self.domain_sid, this_value)
 
         else:
-
-            def add(self, obj, commit=True):
-                this_instance = self._this_instance
-                this_key = "memberOf"
-                this_value = getattr(this_instance, this_key)
-                assert isinstance(this_value, list)
-
-                linked_cls = self._linked_cls
-                linked_key = "dn"
-                assert isinstance(obj, linked_cls)
-                linked_value = getattr(obj, linked_key)
-                assert isinstance(linked_value, str)
-
-                linked_value = ldap.dn.dn2str(ldap.dn.str2dn(linked_value)).lower()
-                found = False
-                for dn in this_value:
-                    dn = ldap.dn.dn2str(ldap.dn.str2dn(dn)).lower()
-                    if dn == linked_value:
-                        found = True
-
-                if not found:
-                    raise ValueError(u"Cannot set primary group to %s unless it is already a secondary group" % obj)
-
-                super(AdLinkManager, self).add(obj, commit)
 
             def get_translated_this_value(self):
                 this_value = super(AdLinkManager, self).get_translated_this_value()
