@@ -140,6 +140,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 this_key = self._this_key
                 this_value = self.get_translated_this_value()
                 assert not isinstance(this_value, list)
+                assert this_value is not None
 
                 linked_key = self._linked_key
 
@@ -160,6 +161,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 this_key = self._this_key
                 this_value = self.get_translated_this_value()
                 assert not isinstance(this_value, list)
+                assert this_value is not None
 
                 linked_key = self._linked_key
 
@@ -174,6 +176,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 this_key = self._this_key
                 this_value = self.get_translated_this_value()
                 assert not isinstance(this_value, list)
+                assert this_value is not None
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
@@ -196,6 +199,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 this_key = self._this_key
                 this_value = self.get_translated_this_value()
                 assert not isinstance(this_value, list)
+                assert this_value is not None
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
@@ -227,6 +231,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 linked_key = self._linked_key
                 linked_value = self.get_translated_linked_value(kwargs[linked_key])
                 assert not isinstance(linked_value, list)
+                assert linked_value is not None
 
                 r = super(LinkManager,self).get_or_create(**kwargs)
 
@@ -252,6 +257,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 linked_key = self._linked_key
                 linked_value = self.get_translated_linked_value(kwargs[linked_key])
                 assert not isinstance(linked_value, list)
+                assert linked_value is not None
 
                 r = super(LinkManager,self).create(**kwargs)
                 v = kwargs[linked_key]
@@ -280,6 +286,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 assert isinstance(obj, linked_cls)
                 linked_value = self.get_translated_linked_value(getattr(obj, linked_key))
                 assert not isinstance(linked_value, list)
+                assert linked_value is not None
 
                 if foreign_key_is_list:
                     assert isinstance(this_value, list)
@@ -305,6 +312,7 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                 assert isinstance(obj, linked_cls)
                 linked_value = self.get_translated_linked_value(getattr(obj, linked_key))
                 assert not isinstance(linked_value, list)
+                assert linked_value is not None
 
                 if foreign_key_is_list:
                     assert isinstance(this_value, list)
