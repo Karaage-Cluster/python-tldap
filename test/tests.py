@@ -162,7 +162,7 @@ class BackendTest(unittest.TestCase):
         self.assertRaises(ldap.NO_SUCH_OBJECT, list, r)
 
         r = c.search("uid=tux, ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
-        self.assertEqual(len(list(r)), 1)
+        self.assertEqual(len(list(r)), 0)
         r = c.search("ou=People, dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
         self.assertEqual(len(list(r)), 1)
         r = c.search("dc=python-ldap,dc=org", ldap.SCOPE_ONELEVEL, "uid=tux")
