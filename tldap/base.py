@@ -233,7 +233,7 @@ class LDAPobject(object):
 
     load_db_values.alters_data = True
 
-    def rdn_to_dn(self, name, using=None):
+    def rdn_to_dn(self, name, using):
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
@@ -244,7 +244,6 @@ class LDAPobject(object):
 
         base_dn = self._base_dn or self._meta.base_dn
         if base_dn is None:
-            using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
             c = tldap.connections[using]
             base_dn = c.settings_dict[self._meta.base_dn_setting]
 
@@ -264,6 +263,10 @@ class LDAPobject(object):
         that the "save" must be an SQL insert or update (or equivalent for
         non-SQL backends), respectively. Normally, they should not be set.
         """
+
+        # what database should we be using?
+        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+
         if self._dn is None and self._meta.pk is not None:
             self._dn = self.rdn_to_dn(self._meta.pk, using)
 
@@ -272,9 +275,6 @@ class LDAPobject(object):
 
         if force_add and force_modify:
             raise ValueError("Cannot force both insert and updating in model saving.")
-
-        # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
 
         if force_add:
             self._add(using)
