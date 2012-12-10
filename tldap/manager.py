@@ -512,7 +512,7 @@ def _create_ad_group_link_manager(superclass, linked_has_foreign_key, foreign_ke
                 this_instance = self._this_instance
                 this_key = "primaryGroupID"
                 this_value = getattr(this_instance, this_key)
-                assert isinstance(this_value, int)
+                assert this_value is None or isinstance(this_value, int)
 
                 linked_cls = self._linked_cls
                 linked_key = "objectSid"
@@ -533,7 +533,7 @@ def _create_ad_group_link_manager(superclass, linked_has_foreign_key, foreign_ke
                 linked_key = "primaryGroupID"
                 assert isinstance(obj, linked_cls)
                 linked_value = getattr(obj, linked_key)
-                assert isinstance(linked_value, int)
+                assert linked_value is None or isinstance(linked_value, int)
 
                 if _sid_to_rid(this_value) != linked_value:
                     super(AdLinkManager, self).add(obj, commit)
