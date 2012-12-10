@@ -129,6 +129,15 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
         def p_to_f(self, value):
             return value
 
+        if p_value_is_list:
+            def is_f_in_p(self, f_value, p_value):
+                assert isinstance(p_value, list)
+                return f_value in p_value
+        else:
+            def is_f_in_p(self, p_value, f_value):
+                assert not isinstance(p_value, list)
+                return f_value == p_value
+
         def _get_query_set(self, this_value, linked_key):
             if this_value is None:
                 this_value = [ ]
@@ -150,12 +159,11 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
             f_value = self.f_to_p(f_value)
 
             if p_value_is_list:
-                assert isinstance(p_value, list)
-                if f_value not in p_value:
+                if not self.is_f_in_p(f_value, p_value):
                     p_value.append(f_value)
             else:
                 assert not isinstance(p_value, list)
-                assert p_value is None or p_value == f_value
+                assert p_value is None or self.is_f_in_p(f_value, p_value)
                 p_value = f_value
                 setattr(p_instance, p_key, p_value)
 
@@ -167,12 +175,11 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
             f_value = self.f_to_p(f_value)
 
             if p_value_is_list:
-                assert isinstance(p_value, list)
-                if f_value in p_value:
+                if self.is_f_in_p(f_value, p_value):
                     p_value.remove(f_value)
             else:
                 assert not isinstance(p_value, list)
-                assert p_value is None or p_value == f_value
+                assert p_value is None or self.is_f_in_p(f_value, p_value)
                 p_value = None
                 setattr(p_instance, p_key, p_value)
 
@@ -484,6 +491,10 @@ def _create_ad_group_link_manager(superclass, linked_is_p, p_value_is_list):
     superclass = _create_link_manager(superclass, linked_is_p, p_value_is_list)
 
     class AdLinkManager(superclass):
+
+        def is_f_in_p(self, f_value, p_value):
+            assert isinstance(p_value, list)
+            return f_value.lower() in [ x.lower() for x in p_value ]
 
         if linked_is_p:
 
