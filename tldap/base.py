@@ -418,8 +418,7 @@ class LDAPobject(object):
         # remove items in force_replace
         force_value = {}
         for field in self.force_replace:
-            if modold[field] != moddict[field]:
-                force_value[field] = moddict[field]
+            force_value[field] = moddict[field]
             del modold[field]
             del moddict[field]
         self.force_replace = set()
