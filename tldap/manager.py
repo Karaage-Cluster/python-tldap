@@ -534,7 +534,6 @@ def _create_ad_group_link_manager(superclass, linked_is_p, p_value_is_list):
                 this_key = "dn"
                 this_value = getattr(this_instance, this_key)
                 linked_key = "memberOf"
-                print "------------", this_value
                 return self._get_query_set(this_value, linked_key)
 
     return AdLinkManager
