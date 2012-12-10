@@ -428,9 +428,10 @@ class LDAPobject(object):
         modlist = tldap.modlist.modifyModlist(modold, moddict)
 
         # add items in force_replace
+        force_modlist = []
         for field, value in force_value.iteritems():
-            modlist.append((ldap.MOD_DELETE, field, None))
-            modlist.append((ldap.MOD_ADD, field, value))
+            force_modlist.append((ldap.MOD_DELETE, field, None))
+            force_modlist.append((ldap.MOD_ADD, field, value))
             moddict[field] = value
 
         # what to do if transaction is reversed
@@ -442,6 +443,13 @@ class LDAPobject(object):
         if len(modlist) > 0:
             try:
                 c.modify(self._dn, modlist, onfailure)
+            except ldap.NO_SUCH_OBJECT:
+                raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
+
+        # we can't rollback these values
+        if len(force_modlist) > 0:
+            try:
+                c.modify_no_rollback(self._dn, force_modlist)
             except ldap.NO_SUCH_OBJECT:
                 raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
 

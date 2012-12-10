@@ -147,6 +147,12 @@ class LDAPwrapper(object):
 
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
+    def modify_no_rollback(self, dn, modlist):
+        """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled. """
+
+        return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
+
     def delete(self, dn, onfailure=None):
         """ delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled. """
