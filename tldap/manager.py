@@ -107,10 +107,8 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
             self._cls = linked_cls
 
-        def get_translated_this_value(self):
-            this_instance = self._this_instance
-            this_key = self._this_key
-            return getattr(this_instance, this_key)
+        def get_translated_this_value(self, value):
+            return value
 
         def get_translated_linked_value(self, value):
             return value
@@ -118,7 +116,8 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
         def get_query_set(self):
             this_instance = self._this_instance
             this_key = self._this_key
-            this_value = self.get_translated_this_value()
+            this_value = getattr(this_instance, this_key)
+            this_value = self.get_translated_this_value(this_value)
             if this_value is None:
                 this_value = [ ]
 
@@ -135,12 +134,13 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
 
         if linked_has_foreign_key:
 
-            def get_or_create(self, **kwargs):
+            def get_or_create(self, commit=True, **kwargs):
                 this_instance = self._this_instance
                 this_key = self._this_key
-                this_value = self.get_translated_this_value()
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
                 assert this_value is not None
+                this_value = self.get_translated_this_value(this_value)
 
                 linked_key = self._linked_key
 
@@ -156,12 +156,13 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
                         assert kwargs['defaults'][linked_key] == this_value
                 return super(LinkManager,self).get_or_create(**kwargs)
 
-            def create(self, **kwargs):
+            def create(self, commit=True, **kwargs):
                 this_instance = self._this_instance
                 this_key = self._this_key
-                this_value = self.get_translated_this_value()
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
                 assert this_value is not None
+                this_value = self.get_translated_this_value(this_value)
 
                 linked_key = self._linked_key
 
@@ -174,9 +175,10 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             def add(self, obj, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
-                this_value = self.get_translated_this_value()
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
                 assert this_value is not None
+                this_value = self.get_translated_this_value(this_value)
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
@@ -197,9 +199,10 @@ def _create_link_manager(superclass, linked_has_foreign_key, foreign_key_is_list
             def remove(self, obj, commit=True):
                 this_instance = self._this_instance
                 this_key = self._this_key
-                this_value = self.get_translated_this_value()
+                this_value = getattr(this_instance, this_key)
                 assert not isinstance(this_value, list)
                 assert this_value is not None
+                this_value = self.get_translated_this_value(this_value)
 
                 linked_cls = self._linked_cls
                 linked_key = self._linked_key
@@ -628,23 +631,19 @@ def _create_ad_primary_group_link_manager(superclass, linked_has_foreign_key, fo
 
         if linked_has_foreign_key:
 
-            def get_translated_this_value(self):
-                this_value = super(AdLinkManager, self).get_translated_this_value()
-                return _sid_to_rid(this_value)
+            def get_translated_this_value(self, value):
+                return _sid_to_rid(value)
 
             def get_translated_linked_value(self, value):
-                this_value = super(AdLinkManager, self).get_translated_linked_value(value)
-                return _rid_to_sid(self.domain_sid, this_value)
+                return _rid_to_sid(self.domain_sid, value)
 
         else:
 
-            def get_translated_this_value(self):
-                this_value = super(AdLinkManager, self).get_translated_this_value()
-                return _rid_to_sid(self.domain_sid, this_value)
+            def get_translated_this_value(self, value):
+                return _rid_to_sid(self.domain_sid, value)
 
             def get_translated_linked_value(self, value):
-                this_value = super(AdLinkManager, self).get_translated_linked_value(value)
-                return _sid_to_rid(this_value)
+                return _sid_to_rid(value)
 
     return AdLinkManager
 
