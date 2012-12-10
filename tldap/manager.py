@@ -494,7 +494,7 @@ def _create_ad_group_link_manager(superclass, linked_is_p, p_value_is_list):
 
     class AdLinkManager(superclass):
 
-        def is_f_in_p(self, f_value, p_value):
+        def is_f_eq_p(self, f_value, p_value):
             return f_value.lower() == p_value.lower()
 
         if linked_is_p:
