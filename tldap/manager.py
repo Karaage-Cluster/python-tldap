@@ -174,7 +174,7 @@ def _create_link_manager(superclass, linked_is_p, p_key_is_list):
                 assert not isinstance(p_value, list)
                 assert p_value is None or p_value == f_value
                 p_value = None
-                setattr(obj, linked_key, p_value)
+                setattr(p_instance, p_key, p_value)
 
         def get_query_set(self):
             this_instance = self._this_instance
@@ -310,7 +310,7 @@ def _create_link_manager(superclass, linked_is_p, p_key_is_list):
                 assert isinstance(f_instance, self._linked_cls)
                 self._add(p_instance, p_key, f_instance, f_key)
                 if commit:
-                    this_instance.save()
+                    obj.save()
 
             def remove(self, obj, commit=True):
                 p_instance = self._this_instance
@@ -320,7 +320,7 @@ def _create_link_manager(superclass, linked_is_p, p_key_is_list):
                 assert isinstance(f_instance, self._linked_cls)
                 self._remove(p_instance, p_key, f_instance, f_key)
                 if commit:
-                    this_instance.save()
+                    obj.save()
 
             if not p_key_is_list:
                 def is_set(self):
