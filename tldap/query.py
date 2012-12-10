@@ -29,8 +29,6 @@ import tldap
 import tldap.manager
 import tldap.helpers
 
-import copy
-
 import django.utils.tree
 
 class QuerySet(object):
@@ -251,6 +249,26 @@ class QuerySet(object):
         else:
             # multiple terms
             return "("+ op + "".join(search) + ")"
+
+
+    def _clone_query(self, q):
+        dst = tldap.Q()
+        dst.connector = q.connector
+        dst.negated = q.negated
+
+        """
+        Expands exandable q items, i.e. for relations between objects.
+        """
+        # scan through every child
+        for child in q.children:
+
+            # if this child is a node, then descend into it
+            if isinstance(child, django.utils.tree.Node):
+                dst.children.append(self._clone_query(child))
+            else:
+                dst.children.append(child)
+
+        return dst
 
 
     def _expand_query(self, q):
@@ -644,7 +662,10 @@ class QuerySet(object):
         if klass is None:
             klass = self.__class__
         qs = klass(self._cls, self._alias)
-        qs._query = copy.deepcopy(self._query)
+        if self._query is not None:
+            qs._query = self._clone_query(self._query)
+        else:
+            qs._query = None
         qs._base_dn = self._base_dn
         qs._from_cls = self._from_cls
         return qs
