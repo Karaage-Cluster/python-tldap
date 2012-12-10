@@ -401,10 +401,10 @@ class LinkDescriptor(object):
         if len(linked_value) == 0:
             return None
 
-        v = linked_value.pop()
+        v = linked_value[0]
         kwargs = { this_key: v }
         q = tldap.Q(**kwargs)
-        for v in linked_value:
+        for v in linked_value[1:]:
             kwargs = { this_key: v }
             q = q | tldap.Q(**kwargs)
         return q
