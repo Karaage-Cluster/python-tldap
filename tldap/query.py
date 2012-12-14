@@ -145,6 +145,7 @@ class QuerySet(object):
 
     def __and__(self, other):
         assert isinstance(other, QuerySet)
+        assert self._alias == other._alias
         self._merge_sanity_check(other)
         if self._query is None:
             return other._clone()
@@ -156,6 +157,7 @@ class QuerySet(object):
 
     def __or__(self, other):
         assert isinstance(other, QuerySet)
+        assert self._alias == other._alias
         self._merge_sanity_check(other)
         combined = self._clone()
         if self._query is None:
