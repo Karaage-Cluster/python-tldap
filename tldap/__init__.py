@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-from tldap.query_utils import Q
 import tldap.utils
 from tldap.utils import DEFAULT_LDAP_ALIAS
 

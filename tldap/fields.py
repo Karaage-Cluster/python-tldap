@@ -232,10 +232,8 @@ class IntegerField(Field):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        try:
-            return str(int(value))
-        except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+        assert isinstance(value, int) or isinstance(value, long)
+        return str(value)
 
     def value_validate(self, value):
         """
@@ -243,7 +241,7 @@ class IntegerField(Field):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        if not isinstance(value, int):
+        if not isinstance(value, int) and not isinstance(value, long):
             raise tldap.exceptions.ValidationError("%r should be a integer"%self.name)
 
         try:

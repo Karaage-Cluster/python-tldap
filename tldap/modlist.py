@@ -10,11 +10,9 @@ This module is known to work with Python 2.0+ but should work
 with Python 1.5.2 as well.
 """
 
-from ldap import __version__
-
 import string,ldap
 
-from ldap.modlist import *
+from ldap.modlist import list_dict
 
 def modifyModlist(
   old_entry,new_entry,ignore_attr_types=None,ignore_oldexistent=0

@@ -308,7 +308,7 @@ class QuerySet(object):
 
             # try to find field associated with name
             try:
-                field = self._cls._meta.get_field_by_name(name)
+                self._cls._meta.get_field_by_name(name)
                 dst.children.append(child)
                 continue
             except KeyError:
@@ -538,38 +538,6 @@ class QuerySet(object):
                     % self._cls._meta.object_name)
         raise self._cls.MultipleObjectsReturned("get() returned more than one %s -- it returned %s! Lookup parameters were %s"
                 % (self._cls._meta.object_name, num, kwargs))
-
-    def count(self):
-        """
-        Performs a SELECT COUNT() and returns the number of records as an
-        integer.
-
-        If the QuerySet is already fully cached this simply returns the length
-        of the cached results set to avoid multiple SELECT COUNT(*) calls.
-        """
-        if self._result_cache is not None and not self._iter:
-            return len(self._result_cache)
-
-        # get search parameters
-        alias, connection, dn_list, scope, search_filter, field_names = self._get_search_params()
-        if search_filter is None:
-            return
-
-        # repeat for every dn
-        count = 0
-        for base_dn in dn_list:
-            assert base_dn is not None
-
-            try:
-                # get the results
-                for i in connection.search(base_dn, scope, search_filter, [ 'z' ]):
-                    count = count + 1
-            except ldap.NO_SUCH_OBJECT:
-                # return with no results
-                pass
-
-        return count
-
 
     def create(self, **kwargs):
         """

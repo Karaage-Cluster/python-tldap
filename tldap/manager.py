@@ -18,7 +18,7 @@
 import tldap
 import tldap.query
 import django.utils.importlib
-import ldap.dn
+import copy
 
 # Terminology:
 #
@@ -295,7 +295,6 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 assert f_value is not None
 
                 r = super(LinkManager,self).create(**kwargs)
-                v = kwargs[f_key]
 
                 if p_value_is_list:
                     assert isinstance(p_value, list)
@@ -544,7 +543,7 @@ class AdGroupLinkDescriptor(ManyToManyDescriptor):
         super(AdGroupLinkDescriptor, self).__init__(this_key="dn", linked_key="member", linked_is_p=True, **kwargs)
 
     def get_reverse(self, cls):
-        return AdUserLinkDescriptor(linked_cls=cls)
+        return AdAccountLinkDescriptor(linked_cls=cls)
 
     def get_q_for_linked_instance(self, obj, operation):
         # We have to do the search using this_key of memberOf, not dn,

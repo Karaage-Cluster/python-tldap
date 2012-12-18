@@ -3,9 +3,9 @@
 Utilities for starting up a test slapd server 
 and talking to it with ldapsearch/ldapadd.
 """
-from django.conf import settings
 from os import path as os_path
 import sys, os, socket, time, subprocess, logging, tempfile
+import base64
 
 _log = logging.getLogger("slapd")
 
@@ -159,7 +159,7 @@ class Slapd:
     def _write_config(self):
         """Writes the slapd.conf file out, and returns the path to it."""
         path = os.path.join(self._tmpdir, "slapd.conf")
-        ldif_dir = mkdirs(self._tmpdir)
+        mkdirs(self._tmpdir)
         if os.access(path, os.F_OK):
             self._log.debug("deleting existing %s", path)
             os.remove(path)

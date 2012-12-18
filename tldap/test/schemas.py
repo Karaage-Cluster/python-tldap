@@ -18,9 +18,6 @@
 import tldap.schemas.rfc as rfc
 import tldap.manager
 
-import time
-import datetime
-
 import django.conf
 
 # standard objects

@@ -26,7 +26,7 @@ class eduPerson(tldap.base.LDAPobject):
     eduPersonOrgUnitDN = tldap.fields.CharField()
     eduPersonPrimaryAffiliation = tldap.fields.CharField()
     eduPersonPrincipalName = tldap.fields.CharField()
-    eduPersonEntitlement = tldap.fields.CharField()
+    eduPersonEntitlement = tldap.fields.CharField(max_instances=None)
     eduPersonPrimaryOrgUnitDN = tldap.fields.CharField()
     eduPersonScopedAffiliation = tldap.fields.CharField()
     eduPersonTargetedID = tldap.fields.CharField()

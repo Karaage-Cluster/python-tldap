@@ -255,6 +255,7 @@ class LDAPwrapper(object):
         result if transactions enabled. """
 
         debug("\nmodify", self, dn, modlist)
+        print dn, modlist
 
         # need to work out how to reverse changes in modlist; result in revlist
         revlist = []

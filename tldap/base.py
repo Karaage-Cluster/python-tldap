@@ -93,7 +93,6 @@ class LDAPmeta(type):
             new_class.add_to_class(obj_name, obj)
 
         # list of field names
-        new_fields = new_class._meta.fields
         field_names = new_class._meta.get_all_field_names()
 
         # check for clashes with reserved names

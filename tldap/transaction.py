@@ -35,7 +35,6 @@ try:
 except ImportError:
     from django.utils.functional import wraps  # Python 2.4 fallback.
 
-import django.conf as settings
 import tldap
 
 class TransactionManagementError(Exception):
