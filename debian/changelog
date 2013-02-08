@@ -1,3 +1,9 @@
+django-tldap (0.2-1) unstable; urgency=low
+
+  * Lots and lots and lots of updates.
+
+ -- Brian May <bam@debian.org>  Fri, 08 Feb 2013 11:59:23 +1100
+
 django-tldap (0.1-1) unstable; urgency=low
 
   * Initial release.
