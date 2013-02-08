@@ -36,9 +36,6 @@ import tldap.test.schemas
 
 import ldap.modlist
 
-def raise_testfailure(place):
-    raise TestFailure("fail %s called"%place)
-
 server = None
 
 class BackendTest(unittest.TestCase):
@@ -46,7 +43,6 @@ class BackendTest(unittest.TestCase):
         server = tldap.test.slapd.Slapd()
         server.set_port(38911)
         server.start()
-        base = server.get_dn_suffix()
 
         self.server = server
         tldap.connection.reset()
@@ -345,7 +341,6 @@ class ModelTest(unittest.TestCase):
         server = tldap.test.slapd.Slapd()
         server.set_port(38911)
         server.start()
-        base = server.get_dn_suffix()
 
         self.server = server
         tldap.connection.reset()
@@ -854,7 +849,6 @@ class UserAPITest(unittest.TestCase):
         server = tldap.test.slapd.Slapd()
         server.set_port(38911)
         server.start()
-        base = server.get_dn_suffix()
 
         server.ldapadd("\n".join(tldap.test.data.test_ldif)+"\n")
 
@@ -882,7 +876,7 @@ class UserAPITest(unittest.TestCase):
         self.failUnlessEqual(len(self.account.objects.all()), 2)
 
     def test_in_ldap(self):
-        u = self.account.objects.get(uid='testuser1')
+        self.account.objects.get(uid='testuser1')
         self.failUnlessRaises(self.account.DoesNotExist, self.account.objects.get, cn='testuser4')
 
     def test_update_user(self):
@@ -931,7 +925,7 @@ class UserAPITest(unittest.TestCase):
         self.failUnlessRaises(StopIteration, a.next)
 
     def test_user_search(self):
-        u = self.account.objects.get(uid='testuser1').save()
+        self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='User')
         self.failUnlessEqual(users.count(), 3)
         self.failUnlessEqual(len(users), 3)
@@ -985,7 +979,6 @@ class GroupAPITest(unittest.TestCase):
         server = tldap.test.slapd.Slapd()
         server.set_port(38911)
         server.start()
-        base = server.get_dn_suffix()
 
         server.ldapadd("\n".join(tldap.test.data.test_ldif)+"\n")
 
