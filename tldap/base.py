@@ -63,6 +63,8 @@ class LDAPmeta(type):
         if base_meta is not None:
             if new_class._meta.base_dn is None:
                 new_class._meta.base_dn = base_meta.base_dn
+            if new_class._meta.base_dn_setting is None:
+                new_class._meta.base_dn_setting = base_meta.base_dn_setting
             if new_class._meta.pk is None:
                 new_class._meta.pk = base_meta.pk
 
