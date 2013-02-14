@@ -674,9 +674,6 @@ class EmptyQuerySet(QuerySet):
         assert isinstance(other, QuerySet)
         return other._clone()
 
-    def count(self):
-        return 0
-
     def delete(self):
         pass
 
