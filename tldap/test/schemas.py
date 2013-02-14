@@ -22,7 +22,7 @@ import django.conf
 
 # standard objects
 
-class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
+class account(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson, rfc.posixAccount, rfc.shadowAccount):
 
     class Meta:
         base_dn_setting = "LDAP_ACCOUNT_BASE"
@@ -30,23 +30,11 @@ class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
         pk = 'uid'
 
     def __unicode__(self):
-        return u"P:%s"%self.cn
+        return u"A:%s"%self.cn
 
     def save(self, *args, **kwargs):
         if self.cn is None:
             self.cn = u"%s %s" % (self.givenName, self.sn)
-        super(person, self).save(*args, **kwargs)
-
-    managed_by = tldap.manager.ManyToOneDescriptor(this_key='manager', linked_cls='tldap.test.schemas.person', linked_key='dn')
-    manager_of = tldap.manager.OneToManyDescriptor(this_key='dn', linked_cls='tldap.test.schemas.person', linked_key='manager')
-
-
-class account(person, rfc.posixAccount, rfc.shadowAccount):
-
-    def __unicode__(self):
-        return u"A:%s"%self.cn
-
-    def save(self, *args, **kwargs):
         if self.uidNumber is None:
             uid = None
             for u in account.objects.all():
@@ -55,10 +43,12 @@ class account(person, rfc.posixAccount, rfc.shadowAccount):
             self.uidNumber = uid + 1
         super(account, self).save(*args, **kwargs)
 
+    managed_by = tldap.manager.ManyToOneDescriptor(this_key='manager', linked_cls='tldap.test.schemas.account', linked_key='dn')
+    manager_of = tldap.manager.OneToManyDescriptor(this_key='dn', linked_cls='tldap.test.schemas.account', linked_key='manager')
+
 
 class group(rfc.posixGroup):
     primary_accounts = tldap.manager.OneToManyDescriptor(this_key='gidNumber', linked_cls=account, linked_key='gidNumber', related_name="primary_group")
-    secondary_people = tldap.manager.ManyToManyDescriptor(this_key='memberUid', linked_cls=person, linked_key='uid', linked_is_p=False, related_name="secondary_groups")
     secondary_accounts = tldap.manager.ManyToManyDescriptor(this_key='memberUid', linked_cls=account, linked_key='uid', linked_is_p=False, related_name="secondary_groups")
 
     class Meta:

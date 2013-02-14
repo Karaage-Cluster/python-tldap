@@ -356,12 +356,12 @@ class ModelTest(unittest.TestCase):
 
         c = tldap.connection
 
-        person = tldap.test.schemas.person
-        DoesNotExist = person.DoesNotExist
-        AlreadyExists = person.AlreadyExists
-        get = person.objects.get
-        get_or_create = person.objects.get_or_create
-        create = person.objects.create
+        account = tldap.test.schemas.account
+        DoesNotExist = account.DoesNotExist
+        AlreadyExists = account.AlreadyExists
+        get = account.objects.get
+        get_or_create = account.objects.get_or_create
+        create = account.objects.create
 
         kwargs = {
             'givenName': "Tux",
@@ -683,7 +683,7 @@ class ModelTest(unittest.TestCase):
         organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
-        person = tldap.test.schemas.person
+        account = tldap.test.schemas.account
         group = tldap.test.schemas.group
 
         kwargs = {
@@ -695,42 +695,42 @@ class ModelTest(unittest.TestCase):
             'o': "Linux Rules £",
             'userPassword': "silly",
         }
-        p1 = person.objects.create(uid="tux", **kwargs)
-        p2 = person.objects.create(uid="tuz", **kwargs)
+        p1 = account.objects.create(uid="tux", **kwargs)
+        p2 = account.objects.create(uid="tuz", **kwargs)
         g1 = group.objects.create(cn="group1", gidNumber=10, memberUid=[ "tux" ])
         g2 = group.objects.create(cn="group2", gidNumber=11, memberUid=[ "tux", "tuz" ])
 
         self.assertEqual(
-            person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
+            account.objects.all()._get_filter(tldap.Q(uid='t\ux')),
             "(uid=t\\5cux)")
         self.assertEqual(
-            person.objects.all()._get_filter(~tldap.Q(uid='tux')),
+            account.objects.all()._get_filter(~tldap.Q(uid='tux')),
             "(!(uid=tux))")
         self.assertEqual(
-            person.objects.all()._get_filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz')),
+            account.objects.all()._get_filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz')),
             "(|(uid=tux)(uid=tuz))")
         self.assertEqual(
-            person.objects.all()._get_filter(tldap.Q(uid='tux') & tldap.Q(uid='tuz')),
+            account.objects.all()._get_filter(tldap.Q(uid='tux') & tldap.Q(uid='tuz')),
             "(&(uid=tux)(uid=tuz))")
         self.assertEqual(
-            person.objects.all()._get_filter(tldap.Q(uid='tux') & ( tldap.Q(uid='tuz') | tldap.Q(uid='meow'))),
+            account.objects.all()._get_filter(tldap.Q(uid='tux') & ( tldap.Q(uid='tuz') | tldap.Q(uid='meow'))),
             "(&(uid=tux)(|(uid=tuz)(uid=meow)))")
 
-        person.objects.get(dn="uid=tux,ou=People, dc=python-ldap,dc=org")
-        self.assertRaises(person.DoesNotExist, person.objects.get, dn="uid=tuy,ou=People, dc=python-ldap,dc=org")
-        person.objects.get(dn="uid=tuz,ou=People, dc=python-ldap,dc=org")
+        account.objects.get(dn="uid=tux,ou=People, dc=python-ldap,dc=org")
+        self.assertRaises(account.DoesNotExist, account.objects.get, dn="uid=tuy,ou=People, dc=python-ldap,dc=org")
+        account.objects.get(dn="uid=tuz,ou=People, dc=python-ldap,dc=org")
 
-        r = person.objects.filter(
+        r = account.objects.filter(
             tldap.Q(dn="uid=tux,ou=People, dc=python-ldap,dc=org") |
             tldap.Q(dn="uid=tuy,ou=People, dc=python-ldap,dc=org") |
             tldap.Q(dn="uid=tuz,ou=People, dc=python-ldap,dc=org"))
         self.assertEqual(len(r), 2)
 
-        r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+        r = account.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         self.assertEqual(len(r), 2)
 
-        self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        person.objects.get(~tldap.Q(uid='tuz'))
+        self.assertRaises(account.MultipleObjectsReturned, account.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+        account.objects.get(~tldap.Q(uid='tuz'))
 
         r = g1.secondary_people.all()
         self.assertEqual(len(r), 1)
@@ -822,17 +822,17 @@ class ModelTest(unittest.TestCase):
         u.primary_group = None
         self.assertRaises(tldap.exceptions.ValidationError, u.save)
 
-        u1 = person.objects.get(dn="uid=tux,ou=People, dc=python-ldap,dc=org")
-        u2 = person.objects.get(dn="uid=tuz,ou=People, dc=python-ldap,dc=org")
+        u1 = account.objects.get(dn="uid=tux,ou=People, dc=python-ldap,dc=org")
+        u2 = account.objects.get(dn="uid=tuz,ou=People, dc=python-ldap,dc=org")
 
         u2.managed_by = u1
         u2.save()
         self.assertEqual(u2.managed_by.get_obj(), u1)
         r = u1.manager_of.all()
         self.assertEqual(len(list(r)), 1)
-        r = person.objects.filter(managed_by=u1)
+        r = account.objects.filter(managed_by=u1)
         self.assertEqual(len(list(r)), 1)
-        r = person.objects.filter(manager_of=u2)
+        r = account.objects.filter(manager_of=u2)
         self.assertEqual(len(list(r)), 1)
 
         u1.manager_of.remove(u2)
