@@ -15,17 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-INSTALLED_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.admin',
-    'placard',
-    'placard.lusers',
-    'placard.lgroups',
-    'andsome',
-    'andsome.layout',
-)
+DEBUG=True
+TEMPLATE_DEBUG = DEBUG
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
@@ -50,14 +42,3 @@ LDAP = {
     }
 }
 
-TEST_RUNNER='andsome.test_utils.xmlrunner.run_tests'
-
-ROOT_URLCONF = 'demo.urls'
-
-MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'andsome.middleware.threadlocals.ThreadLocals',
-    'django.middleware.doc.XViewMiddleware',
-)
