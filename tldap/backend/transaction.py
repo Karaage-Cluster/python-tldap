@@ -344,7 +344,7 @@ class LDAPwrapper(object):
         delete_attribute('createTimestamp')
         delete_attribute('creatorsName')
         # turn into modlist list.
-        modlist = ldap.modlist.addModlist(result)
+        modlist = tldap.modlist.addModlist(result)
 
         # on commit carry out action; on rollback restore cached state
         oncommit   = lambda obj: obj.delete_s(dn)

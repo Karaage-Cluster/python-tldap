@@ -31,10 +31,11 @@ import tldap.test.data
 import tldap.test.slapd
 import tldap.transaction
 import tldap.exceptions
+import tldap.modlist
 
 import tldap.test.schemas
 
-import ldap.modlist
+import ldap
 
 server = None
 
@@ -68,7 +69,7 @@ class BackendTest(unittest.TestCase):
     def test_transactions(self):
         c = tldap.connection
 
-        modlist = ldap.modlist.addModlist({
+        modlist = tldap.modlist.addModlist({
             'givenName': "Tux",
             'sn': "Torvalds",
             'cn': "Tux Torvalds",

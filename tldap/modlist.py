@@ -12,7 +12,7 @@ with Python 1.5.2 as well.
 
 import string,ldap
 
-from ldap.modlist import list_dict
+from ldap.modlist import list_dict, addModlist
 
 def modifyModlist(
   old_entry,new_entry,ignore_attr_types=None,ignore_oldexistent=0
