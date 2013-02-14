@@ -727,7 +727,7 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(len(r), 2)
 
         r = person.objects.filter(tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        self.assertEqual(r.count(), 2)
+        self.assertEqual(len(r), 2)
 
         self.assertRaises(person.MultipleObjectsReturned, person.objects.get, tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
         person.objects.get(~tldap.Q(uid='tuz'))
@@ -928,30 +928,22 @@ class UserAPITest(unittest.TestCase):
     def test_user_search(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='User')
-        self.failUnlessEqual(users.count(), 3)
         self.failUnlessEqual(len(users), 3)
-        self.failUnlessEqual(users.count(), 3)
 
     def test_user_search_one(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(uid__contains='testuser1')
-        self.failUnlessEqual(users.count(), 1)
         self.failUnlessEqual(len(users), 1)
-        self.failUnlessEqual(users.count(), 1)
 
     def test_user_search_empty(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='nothing')
-        self.failUnlessEqual(users.count(), 0)
         self.failUnlessEqual(len(users), 0)
-        self.failUnlessEqual(users.count(), 0)
 
     def test_user_search_multi(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
-        self.failUnlessEqual(users.count(), 3)
         self.failUnlessEqual(len(users), 3)
-        self.failUnlessEqual(users.count(), 3)
 
     def test_get_groups_empty(self):
         u = self.account.objects.get(uid="testuser2")
