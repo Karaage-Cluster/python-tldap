@@ -18,9 +18,9 @@
 
 from django.conf import settings
 
-GROUP_DN = settings.LDAP_GROUP_BASE
+GROUP_DN = settings.LDAP['default']['LDAP_GROUP_BASE']
 GROUP_OU = GROUP_DN.split(',')[0].split('=')[1]
-USER_DN = settings.LDAP_USER_BASE
+USER_DN = settings.LDAP['default']['LDAP_ACCOUNT_BASE']
 USER_OU = USER_DN.split(',')[0].split('=')[1]
 
 test_ldif = [
@@ -32,7 +32,7 @@ test_ldif = [
     "objectClass: organizationalUnit",
     "ou: " + USER_OU,
     "",
-    'dn: uid=testuser1, ' + settings.LDAP_USER_BASE,
+    'dn: uid=testuser1, ' + USER_DN,
     'cn: Test User',
     'objectClass: person',
     'objectClass: shadowAccount',
@@ -59,7 +59,7 @@ test_ldif = [
     'homeDirectory: /tmp',
     'pwdAttribute: userPassword',
     '',
-    'dn: uid=testuser2, ' + settings.LDAP_USER_BASE,
+    'dn: uid=testuser2, ' + USER_DN,
     'cn: Test User2',
     'objectClass: person',
     'objectClass: shadowAccount',
@@ -86,7 +86,7 @@ test_ldif = [
     'homeDirectory: /tmp',
     'pwdAttribute: userPassword',
     '',
-    'dn: uid=testuser3, ' + settings.LDAP_USER_BASE,
+    'dn: uid=testuser3, ' + USER_DN,
     'cn: Test User3',
     'objectClass: person',
     'objectClass: shadowAccount',
@@ -113,7 +113,7 @@ test_ldif = [
     'homeDirectory: /tmp',
     'pwdAttribute: userPassword',
     '',
-    'dn: cn=systems, ' + settings.LDAP_GROUP_BASE,
+    'dn: cn=systems, ' + GROUP_DN,
     'objectClass: top',
     'objectClass: posixGroup',
     'gidNumber: 10001',
@@ -121,14 +121,14 @@ test_ldif = [
     'description: Systems Services',
     'memberUid: testuser1',
     '',
-    'dn: cn=empty, ' + settings.LDAP_GROUP_BASE,
+    'dn: cn=empty, ' + GROUP_DN,
     'objectClass: top',
     'objectClass: posixGroup',
     'gidNumber: 10002',
     'cn: empty',
     'description: Empty Group',
     '',
-    'dn: cn=full,' + settings.LDAP_GROUP_BASE,
+    'dn: cn=full,' + GROUP_DN,
     'objectClass: top',
     'objectClass: posixGroup',
     'gidNumber: 10003',

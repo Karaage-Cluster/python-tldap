@@ -25,7 +25,7 @@ import django.conf
 class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_USER_BASE
+        base_dn_setting = "LDAP_ACCOUNT_BASE"
         object_classes = { 'top', }
         pk = 'uid'
 
@@ -62,7 +62,7 @@ class group(rfc.posixGroup):
     secondary_accounts = tldap.manager.ManyToManyDescriptor(this_key='memberUid', linked_cls=account, linked_key='uid', linked_is_p=False, related_name="secondary_groups")
 
     class Meta:
-        base_dn = django.conf.settings.LDAP_GROUP_BASE
+        base_dn_setting = "LDAP_GROUP_BASE"
         object_classes = { 'top', }
         pk = 'cn'
 
