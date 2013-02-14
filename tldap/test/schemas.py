@@ -18,8 +18,6 @@
 import tldap.schemas.rfc as rfc
 import tldap.manager
 
-import django.conf
-
 # standard objects
 
 class account(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson, rfc.posixAccount, rfc.shadowAccount):

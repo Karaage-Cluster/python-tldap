@@ -27,12 +27,12 @@ import unittest
 
 import tldap
 import tldap.schemas.rfc
-import tldap.test.data
-import tldap.test.slapd
 import tldap.transaction
 import tldap.exceptions
 import tldap.modlist
 
+import tldap.test.data
+import tldap.test.slapd
 import tldap.test.schemas
 
 import ldap
