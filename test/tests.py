@@ -18,10 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-
-import django.core.management
-import test.settings
-django.core.management.setup_environ(test.settings)
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.test.settings'
 
 import unittest
 
