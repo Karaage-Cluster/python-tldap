@@ -24,7 +24,6 @@ import tldap.modlist
 
 import ldap.dn
 
-import copy
 import sys
 
 default_object_class_field = tldap.fields.CharField(required=True, max_instances=None)
@@ -546,7 +545,7 @@ class LDAPobject(object):
             new_key,new_value,_ = split_new_rdn[0][0]
 
             # make a copy before modifications
-            self._db_values[using] = copy.copy(self._db_values[using])
+            self._db_values[using] = self._db_values[using].clone()
 
             # delete old rdn attribute in object
             old_key = self._meta.get_field_name(old_key)
