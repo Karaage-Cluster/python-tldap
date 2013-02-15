@@ -24,7 +24,7 @@ class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
 
     class Meta:
         base_dn_setting = "LDAP_ACCOUNT_BASE"
-        object_classes = { 'top', }
+        object_classes = set(['top'])
         pk = 'uid'
 
     def __unicode__(self):
@@ -61,7 +61,7 @@ class group(rfc.posixGroup):
 
     class Meta:
         base_dn_setting = "LDAP_GROUP_BASE"
-        object_classes = { 'top', }
+        object_classes = set(['top'])
         pk = 'cn'
 
     def __unicode__(self):
