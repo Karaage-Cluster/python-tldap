@@ -198,7 +198,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
 
         def clear(self, commit=True):
             for obj in list(self.get_query_set()):
-                self.remove(obj)
+                self.remove(obj, commit)
 
         if linked_is_p:
 
@@ -318,7 +318,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 assert isinstance(f_instance, self._linked_cls)
                 self._add(p_instance, p_key, f_instance, f_key)
                 if commit:
-                    obj.save()
+                    p_instance.save()
 
             def remove(self, obj, commit=True):
                 p_instance = self._this_instance
@@ -328,7 +328,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 assert isinstance(f_instance, self._linked_cls)
                 self._remove(p_instance, p_key, f_instance, f_key)
                 if commit:
-                    obj.save()
+                    p_instance.save()
 
             if not p_value_is_list:
                 def is_set(self):
