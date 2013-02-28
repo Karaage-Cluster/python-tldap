@@ -20,8 +20,8 @@ This module implements a transaction manager that can be used to define
 transaction handling in a request or view function. It is used by transaction
 control middleware and decorators.
 
-The transaction manager can be in managed or in auto state. Auto state means the
-system is using a commit-on-save strategy (actually it's more like
+The transaction manager can be in managed or in auto state. Auto state means
+the system is using a commit-on-save strategy (actually it's more like
 commit-on-change). As soon as the .save() or .delete() (or related) methods are
 called, a commit is made.
 
@@ -37,6 +37,7 @@ except ImportError:
 
 import tldap
 
+
 class TransactionManagementError(Exception):
     """
     This exception is thrown when something bad happens with transaction
@@ -44,11 +45,12 @@ class TransactionManagementError(Exception):
     """
     pass
 
+
 def enter_transaction_management(using=None):
     """
-    Enters transaction management for a running thread. It must be balanced with
-    the appropriate leave_transaction_management call, since the actual state is
-    managed as a stack.
+    Enters transaction management for a running thread. It must be balanced
+    with the appropriate leave_transaction_management call, since the actual
+    state is managed as a stack.
 
     The state and dirty flag are carried over from the surrounding block or
     from the settings, if there is no surrounding block (dirty is always false
@@ -58,6 +60,7 @@ def enter_transaction_management(using=None):
         using = tldap.DEFAULT_LDAP_ALIAS
     connection = tldap.connections[using]
     connection.enter_transaction_management()
+
 
 def leave_transaction_management(using=None):
     """
@@ -70,6 +73,7 @@ def leave_transaction_management(using=None):
     connection = tldap.connections[using]
     connection.leave_transaction_management()
 
+
 def is_dirty(using=None):
     """
     Returns True if the current transaction requires a commit for changes to
@@ -80,6 +84,7 @@ def is_dirty(using=None):
     connection = tldap.connections[using]
     return connection.is_dirty()
 
+
 def is_managed(using=None):
     """
     Checks whether the transaction manager is in manual or in auto state.
@@ -89,6 +94,7 @@ def is_managed(using=None):
     connection = tldap.connections[using]
     return connection.is_managed()
 
+
 def commit(using=None):
     """
     Does the commit itself and resets the dirty flag.
@@ -97,6 +103,7 @@ def commit(using=None):
         using = tldap.DEFAULT_LDAP_ALIAS
     connection = tldap.connections[using]
     connection.commit()
+
 
 def rollback(using=None):
     """
@@ -110,6 +117,7 @@ def rollback(using=None):
 ##############
 # DECORATORS #
 ##############
+
 
 class Transaction(object):
     """
@@ -149,13 +157,14 @@ class Transaction(object):
                 return res
         return inner
 
+
 def _transaction_func(entering, exiting, using):
     """
     Takes 3 things, an entering function (what to do to start this block of
     transaction management), an exiting function (what to do to end it, on both
     success and failure, and using which can be: None, indiciating using is
-    DEFAULT_LDAP_ALIAS, a callable, indicating that using is DEFAULT_LDAP_ALIAS and
-    to return the function already wrapped.
+    DEFAULT_LDAP_ALIAS, a callable, indicating that using is DEFAULT_LDAP_ALIAS
+    and to return the function already wrapped.
 
     Returns either a Transaction objects, which is both a decorator and a
     context manager, or a wrapped function, if using is a callable.
@@ -196,6 +205,7 @@ def commit_on_success(using=None):
             leave_transaction_management(using=using)
 
     return _transaction_func(entering, exiting, using)
+
 
 def commit_manually(using=None):
     """

@@ -15,17 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-DEBUG=True
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'placard.db',            # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'placard.db',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
@@ -36,7 +36,7 @@ LDAP = {
         'USER': 'cn=Manager,dc=python-ldap,dc=org',
         'PASSWORD': 'password',
         'USE_TLS': False,
-        'TLS_CA' : None,
+        'TLS_CA': None,
         'LDAP_ACCOUNT_BASE': 'ou=People, dc=python-ldap,dc=org',
         'LDAP_GROUP_BASE': 'ou=Group, dc=python-ldap,dc=org'
     }

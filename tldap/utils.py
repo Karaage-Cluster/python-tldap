@@ -19,9 +19,11 @@ import sys
 
 DEFAULT_LDAP_ALIAS = "default"
 
+
 def load_backend(backend_name):
     __import__(backend_name)
     return sys.modules[backend_name]
+
 
 class ConnectionHandler(object):
     def __init__(self, databases):
@@ -44,4 +46,3 @@ class ConnectionHandler(object):
 
     def all(self):
         return [self[alias] for alias in self]
-

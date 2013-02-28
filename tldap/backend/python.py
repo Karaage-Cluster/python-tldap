@@ -22,12 +22,14 @@ import ldap
 debugging = True
 delayed_connect = True
 
+
 # debugging
 
 def debug(*argv):
-    argv = [ str(arg) for arg in argv ]
+    argv = [str(arg) for arg in argv]
     if debugging:
         print " ".join(argv)
+
 
 # wrapper class
 
@@ -40,7 +42,6 @@ class LDAPwrapper(object):
         if not delayed_connect:
             self._reconnect()
 
-
     def check_password(self, dn, password):
         s = self.settings_dict
         l = ldap.initialize(s['URI'])
@@ -49,7 +50,6 @@ class LDAPwrapper(object):
             return True
         except ldap.INVALID_CREDENTIALS:
             return False
-
 
     #########################
     # Connection Management #
@@ -73,7 +73,6 @@ class LDAPwrapper(object):
             debug("binding")
             self._obj.simple_bind_s(s['USER'], s['PASSWORD'])
 
-
     def _do_with_retry(self, fn):
         # if no connection
         if self._obj is None:
@@ -96,7 +95,10 @@ class LDAPwrapper(object):
     ####################
 
     def reset(self, forceflushcache=False):
-        """ Reset transaction back to original state, discarding all uncompleted transactions. """
+        """
+        Reset transaction back to original state, discarding all
+        uncompleted transactions.
+        """
         pass
 
     ##########################
@@ -118,16 +120,25 @@ class LDAPwrapper(object):
         pass
 
     def leave_transaction_management(self):
-        """ End a transaction. Must not be dirty when doing so. ie. commit() or
-        rollback() must be called if changes made. If dirty, changes will be discarded. """
+        """
+        End a transaction. Must not be dirty when doing so. ie. commit() or
+        rollback() must be called if changes made. If dirty, changes will be
+        discarded.
+        """
         pass
 
     def commit(self):
-        """ Attempt to commit all changes to LDAP database, NOW! However stay inside transaction management. """
+        """
+        Attempt to commit all changes to LDAP database. i.e. forget all
+        rollbacks.  However stay inside transaction management.
+        """
         pass
 
     def rollback(self):
-        """ Roll back to previous database state. However stay inside transaction management. """
+        """
+        Roll back to previous database state. However stay inside transaction
+        management.
+        """
         pass
 
     ##################################
@@ -135,56 +146,72 @@ class LDAPwrapper(object):
     ##################################
 
     def add(self, dn, modlist, onfailure=None):
-        """ Add a DN to the LDAP database; See ldap module. Doesn't return a
-        result if transactions enabled. """
+        """
+        Add a DN to the LDAP database; See ldap module. Doesn't return a result
+        if transactions enabled.
+        """
 
         return self._do_with_retry(lambda obj: obj.add_s(dn, modlist))
 
-
     def modify(self, dn, modlist, onfailure=None):
-        """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
-        result if transactions enabled. """
+        """
+        Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled.
+        """
 
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
     def modify_no_rollback(self, dn, modlist):
-        """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
-        result if transactions enabled. """
+        """
+        Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled.
+        """
 
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
     def delete(self, dn, onfailure=None):
-        """ delete a dn in the ldap database; see ldap module. doesn't return a
-        result if transactions enabled. """
+        """
+        delete a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled.
+        """
 
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
     def rename(self, dn, newrdn, onfailure=None):
-        """ rename a dn in the ldap database; see ldap module. doesn't return a
-        result if transactions enabled. """
+        """
+        rename a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled.
+        """
 
         return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn))
 
     # read only stuff
 
-    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, limit=None):
-        """ Search for entries in LDAP database. """
+    def search(self, base, scope, filterstr='(objectClass=*)',
+               attrlist=None, limit=None):
+        """
+        Search for entries in LDAP database.
+        """
 
         # first results
         if isinstance(attrlist, set):
             attrlist = list(attrlist)
+
         def first_results(obj):
-            msgid = obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+            msgid = obj.search_ext(base, scope, filterstr, attrlist,
+                                   sizelimit=limit or 0)
             return (msgid,) + self._obj.result3(msgid, 0)
 
         # get the 1st result
-        msgid,result_type,result_list,result_msgid,result_serverctrls = self._do_with_retry(first_results)
+        msgid, result_type, result_list, result_msgid, result_serverctrls \
+            = self._do_with_retry(first_results)
         # process the results
         while result_type and result_list:
             # Loop over list of search results
             for result_item in result_list:
                 yield result_item
-            result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+            result_type, result_list, result_msgid, result_serverctrls \
+                = self._obj.result3(msgid, 0)
 
         # we are finished - return results, eat cake
         return

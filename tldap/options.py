@@ -19,10 +19,14 @@ import re
 import django.utils.translation
 import tldap.helpers
 
-get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1', class_name).lower().strip()
+get_verbose_name = lambda class_name: re.sub(
+    '(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1',
+    class_name).lower().strip()
 
 DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
-                 'object_classes', 'search_classes', 'base_dn', 'base_dn_setting', 'pk')
+                 'object_classes', 'search_classes', 'base_dn',
+                 'base_dn_setting', 'pk')
+
 
 class Options(object):
     def __init__(self, meta, app_label=None):
@@ -61,13 +65,18 @@ class Options(object):
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
             if self.verbose_name_plural is None:
-                self.verbose_name_plural = django.utils.translation.string_concat(self.verbose_name, 's')
+                self.verbose_name_plural = (
+                    django.utils.translation.string_concat(
+                        self.verbose_name, 's'))
 
             # Any leftover attributes must be invalid.
             if meta_attrs != {}:
-                raise TypeError("'class Meta' got invalid attribute(s): %s" % ','.join(meta_attrs.keys()))
+                raise TypeError(
+                    "'class Meta' got invalid attribute(s): %s" %
+                    ','.join(meta_attrs.keys()))
         else:
-            self.verbose_name_plural = django.utils.translation.string_concat(self.verbose_name, 's')
+            self.verbose_name_plural = django.utils.translation.string_concat(
+                self.verbose_name, 's')
 
         del self.meta
 
@@ -87,4 +96,3 @@ class Options(object):
     @property
     def fields(self):
         return self._fields.values()
-

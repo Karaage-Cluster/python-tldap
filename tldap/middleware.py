@@ -17,6 +17,7 @@
 
 import tldap.transaction
 
+
 class TransactionMiddleware(object):
     """
     Transaction middleware. If this is enabled, each view function will be run

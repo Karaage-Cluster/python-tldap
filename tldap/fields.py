@@ -19,6 +19,7 @@ import tldap.exceptions
 import datetime
 import struct
 
+
 class Field(object):
     def __init__(self, max_instances=1, required=False):
         self._max_instances = max_instances
@@ -39,13 +40,13 @@ class Field(object):
         if self._max_instances == 1:
             assert not isinstance(value, list)
             if value is None:
-                value = [ ]
+                value = []
             else:
-                value = [ self.value_to_db(value) ]
+                value = [self.value_to_db(value)]
         else:
             assert isinstance(value, list)
             value = list(value)
-            for i,v in enumerate(value):
+            for i, v in enumerate(value):
                 value[i] = self.value_to_db(v)
 
         # return result
@@ -62,7 +63,7 @@ class Field(object):
 
         # convert every value in list
         value = list(value)
-        for i,v in enumerate(value):
+        for i, v in enumerate(value):
             value[i] = self.value_to_python(v)
 
         # if we only expect one value, see if we can remove list
@@ -85,34 +86,43 @@ class Field(object):
         if self._max_instances == 1:
             # check object type
             if isinstance(value, list):
-                raise tldap.exceptions.ValidationError("%r is a list and max_instances is %s"%(self.name, self._max_instances))
+                raise tldap.exceptions.ValidationError(
+                    "%r is a list and max_instances is %s" %
+                    (self.name, self._max_instances))
             # check this required value is given
             if self._required:
                 if value is None:
-                    raise tldap.exceptions.ValidationError("%r is required"%self.name)
+                    raise tldap.exceptions.ValidationError(
+                        "%r is required" % self.name)
             # validate the value
             if value is not None:
                 self.value_validate(value)
         else:
             # check object type
             if not isinstance(value, list):
-                raise tldap.exceptions.ValidationError("%r is not a list and max_instances is %s"%(self.name, self._max_instances))
+                raise tldap.exceptions.ValidationError(
+                    "%r is not a list and max_instances is %s" %
+                    (self.name, self._max_instances))
             # check maximum instances
-            if self._max_instances is not None and len(value) > self._max_instances:
-                raise tldap.exceptions.ValidationError("%r exceeds max_instances of %d"%(self.name, self._max_instances))
+            if (self._max_instances is not None and
+                    len(value) > self._max_instances):
+                raise tldap.exceptions.ValidationError(
+                    "%r exceeds max_instances of %d" %
+                    (self.name, self._max_instances))
             # check this required value is given
             if self._required:
                 if len(value) == 0:
-                    raise tldap.exceptions.ValidationError("%r is required"%self.name)
+                    raise tldap.exceptions.ValidationError(
+                        "%r is required" % self.name)
             # validate the value
-            for i,v in enumerate(value):
+            for i, v in enumerate(value):
                 self.value_validate(v)
 
     def clean(self, value):
         """
-        Convert the value's type and run validation. Validation errors from to_python
-        and validate are propagated. The correct value is returned if no error is
-        raised.
+        Convert the value's type and run validation. Validation errors from
+        to_python and validate are propagated. The correct value is returned if
+        no error is raised.
         """
         value = self.to_python(value)
         self.validate(value)
@@ -124,9 +134,10 @@ class Field(object):
 
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         raise RuntimeError("Not implemented")
 
@@ -146,12 +157,14 @@ class BinaryField(Field):
 
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
         return value
 
     def value_validate(self, value):
@@ -160,7 +173,8 @@ class BinaryField(Field):
         this to provide validation logic.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
 
 
 class CharField(Field):
@@ -172,12 +186,14 @@ class CharField(Field):
 
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
         return value.decode("utf_8")
 
     def value_validate(self, value):
@@ -186,7 +202,8 @@ class CharField(Field):
         this to provide validation logic.
         """
         if not (isinstance(value, str) or isinstance(value, unicode)):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
 
 
 class UnicodeField(Field):
@@ -197,12 +214,14 @@ class UnicodeField(Field):
 
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
         return value.decode("utf_16")
 
     def value_validate(self, value):
@@ -211,24 +230,28 @@ class UnicodeField(Field):
         this to provide validation logic.
         """
         if not (isinstance(value, str) or isinstance(value, unicode)):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
 
 
 class IntegerField(Field):
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
         if value is None:
             return value
         try:
             return int(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is invalid integer" % self.name)
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
@@ -237,38 +260,45 @@ class IntegerField(Field):
 
     def value_validate(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, int) and not isinstance(value, long):
-            raise tldap.exceptions.ValidationError("%r should be a integer"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a integer" % self.name)
 
         try:
             return str(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is invalid integer" % self.name)
 
 
 class DaysSinceEpochField(Field):
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
 
         try:
             value = int(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is invalid integer" % self.name)
 
         try:
             value = datetime.date.fromtimestamp(value * 24 * 60 * 60)
         except OverflowError:
-            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is too big a date" % self.name)
 
         return value
 
@@ -280,41 +310,50 @@ class DaysSinceEpochField(Field):
         try:
             value = value - datetime.date(year=1970, month=1, day=1)
         except OverflowError:
-            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is too big a date" % self.name)
 
         return str(value.days)
 
     def value_validate(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, datetime.date):
-            raise tldap.exceptions.ValidationError("%r is invalid date"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is invalid date" % self.name)
         # a datetime is also a date but they are not compatable
         if isinstance(value, datetime.datetime):
-            raise tldap.exceptions.ValidationError("%r should be a date, not a datetime"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a date, not a datetime" % self.name)
+
 
 class SecondsSinceEpochField(Field):
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
-            raise tldap.exceptions.ValidationError("%r should be a string"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r should be a string" % self.name)
 
         try:
             value = int(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError("%r is invalid integer"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is invalid integer" % self.name)
 
         try:
             value = datetime.datetime.utcfromtimestamp(value)
         except OverflowError:
-            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is too big a date" % self.name)
 
         return value
 
@@ -325,37 +364,42 @@ class SecondsSinceEpochField(Field):
         try:
             value = value - datetime.datetime(1970, 1, 1)
         except OverflowError:
-            raise tldap.exceptions.ValidationError("%r is too big a date"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is too big a date" % self.name)
 
-        value = value.seconds + value.days*24*3600
+        value = value.seconds + value.days * 24 * 3600
         value = str(value)
 
         return value
 
     def value_validate(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, datetime.datetime):
-            raise tldap.exceptions.ValidationError("%r is invalid date time"%self.name)
+            raise tldap.exceptions.ValidationError(
+                "%r is invalid date time" % self.name)
+
 
 class SidField(Field):
 
     def value_to_python(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         l = len(value) - 8
-        if l%4 != 0:
+        if l % 4 != 0:
             raise tldap.exceptions.ValidationError("Invalid sid")
 
         l = l / 4
 
-        array = struct.unpack('<bbbbbbbb' + 'I'*l, value)
+        array = struct.unpack('<bbbbbbbb' + 'I' * l, value)
 
         if array[1] != l:
             raise tldap.exceptions.ValidationError("Invalid sid")
@@ -363,7 +407,7 @@ class SidField(Field):
         if array[2:7] != (0, 0, 0, 0, 0):
             raise tldap.exceptions.ValidationError("Invalid sid")
 
-        array = ( "S", ) + array[0:1] + array[7:]
+        array = ("S", ) + array[0:1] + array[7:]
         return "-".join([str(i) for i in array])
 
     def value_to_db(self, value):
@@ -378,15 +422,16 @@ class SidField(Field):
         assert array[0] == 'S'
 
         array = array[1:2] + [l, 0, 0, 0, 0, 0] + array[2:]
-        array = [ int(i) for i in array ]
+        array = [int(i) for i in array]
 
-        return struct.pack('<bbbbbbbb' + 'I'*l, *array)
+        return struct.pack('<bbbbbbbb' + 'I' * l, *array)
 
     def value_validate(self, value):
         """
-        Converts the input single value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value. Subclasses should override this.
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
         """
         if not isinstance(value, str):
             raise tldap.exceptions.ValidationError("Invalid sid")
@@ -401,6 +446,6 @@ class SidField(Field):
             raise tldap.exceptions.ValidationError("Invalid sid")
 
         try:
-            [ int(i) for i in array ]
+            [int(i) for i in array]
         except TypeError:
             raise tldap.exceptions.ValidationError("Invalid sid")

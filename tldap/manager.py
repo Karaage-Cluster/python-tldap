@@ -36,6 +36,7 @@ import copy
 # this is the object being operated on.
 # linked is the object being referenced for this operation.
 
+
 class Manager(object):
     def __init__(self):
         self._cls = None
@@ -90,16 +91,19 @@ class Manager(object):
     def convert(self, *args, **kwargs):
         return self.get_query_set().convert(*args, **kwargs)
 
+
 class ManagerDescriptor(object):
-    # This class ensures managers aren't accessible via model instances.
-    # For example, Poll.objects works, but poll_obj.objects raises AttributeError.
+    # This class ensures managers aren't accessible via model instances.  For
+    # example, Poll.objects works, but poll_obj.objects raises AttributeError.
     def __init__(self, manager):
         self._manager = manager
 
     def __get__(self, instance, cls=None):
         if instance is not None:
-            raise AttributeError("Manager isn't accessible via %s instances" % cls.__name__)
+            raise AttributeError(
+                "Manager isn't accessible via %s instances" % cls.__name__)
         return self._manager
+
 
 def _lookup(cls):
     if isinstance(cls, str):
@@ -111,10 +115,11 @@ def _lookup(cls):
             raise AttributeError("%s reference cannot be found" % cls)
     return(cls)
 
+
 def _create_link_manager(superclass, linked_is_p, p_value_is_list):
     class LinkManager(superclass):
         def __init__(self, this_instance, this_key, linked_cls, linked_key):
-            super(LinkManager,self).__init__()
+            super(LinkManager, self).__init__()
 
             self._this_instance = this_instance
             self._this_key = this_key
@@ -135,15 +140,16 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
 
         def _get_query_set(self, this_value, linked_key):
             if this_value is None:
-                this_value = [ ]
+                this_value = []
 
             if not isinstance(this_value, list):
-                this_value = [ this_value ]
+                this_value = [this_value]
 
             query = self.get_empty_query_set()
             for v in this_value:
-                kwargs = { linked_key: v }
-                query = query | super(LinkManager,self).get_query_set().filter(**kwargs)
+                kwargs = {linked_key: v}
+                query = query | (
+                    super(LinkManager, self).get_query_set().filter(**kwargs))
             return query.using(self._this_instance._alias)
 
         def _add(self, p_instance, p_key, f_instance, f_key):
@@ -213,7 +219,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 p_key = self._linked_key
 
                 if p_value_is_list:
-                    kwargs[p_key] = [ f_value ]
+                    kwargs[p_key] = [f_value]
                     if p_key in kwargs['defaults']:
                         assert isinstance(kwargs['defaults'][p_key], list)
                         kwargs['defaults'][p_key].append(f_value)
@@ -222,7 +228,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                     if p_key in kwargs['defaults']:
                         assert not isinstance(kwargs['defaults'][p_key], list)
                         assert kwargs['defaults'][p_key] == f_value
-                return super(LinkManager,self).get_or_create(**kwargs)
+                return super(LinkManager, self).get_or_create(**kwargs)
 
             def create(self, commit=True, **kwargs):
                 f_instance = self._this_instance
@@ -235,10 +241,10 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 p_key = self._linked_key
 
                 if p_value_is_list:
-                    kwargs[p_key] = [ f_value ]
+                    kwargs[p_key] = [f_value]
                 else:
                     kwargs[p_key] = f_value
-                return super(LinkManager,self).create(**kwargs)
+                return super(LinkManager, self).create(**kwargs)
 
             def add(self, obj, commit=True):
                 p_instance = obj
@@ -269,7 +275,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 assert not isinstance(f_value, list)
                 assert f_value is not None
 
-                r = super(LinkManager,self).get_or_create(**kwargs)
+                r = super(LinkManager, self).get_or_create(**kwargs)
 
                 if p_value_is_list:
                     assert isinstance(p_value, list)
@@ -294,7 +300,7 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 assert not isinstance(f_value, list)
                 assert f_value is not None
 
-                r = super(LinkManager,self).create(**kwargs)
+                r = super(LinkManager, self).create(**kwargs)
 
                 if p_value_is_list:
                     assert isinstance(p_value, list)
@@ -342,8 +348,8 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
 
                 def get_obj(self):
                     """
-                    Retrieve this value. Unlike get returns None if there is no value,
-                    instead of raisng an exception.
+                    Retrieve this value. Unlike get returns None if there is no
+                    value, instead of raisng an exception.
                     """
                     this_instance = self._this_instance
                     this_key = self._this_key
@@ -355,8 +361,10 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
 
     return LinkManager
 
+
 class LinkDescriptor(object):
-    def __init__(self, this_key, linked_cls, linked_key, linked_is_p, p_value_is_list, related_name=None):
+    def __init__(self, this_key, linked_cls, linked_key,
+                 linked_is_p, p_value_is_list, related_name=None):
         self._this_key = this_key
         self._linked_cls = linked_cls
         self._linked_key = linked_key
@@ -369,57 +377,67 @@ class LinkDescriptor(object):
         if self._related_name is not None:
             reverse = self.get_reverse(cls)
             if self._related_name in self._linked_cls.__dict__:
-                raise AttributeError("%s class member %s produces reverse member %s in class %s that conflicts" %
-                    (cls.__name__, name, self._related_name, self._linked_cls.__name__))
+                raise AttributeError(
+                    "%s class member %s produces reverse member"
+                    "%s in class %s that conflicts" %
+                    (cls.__name__, name, self._related_name,
+                    self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
 
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_link_manager(superclass,
-                linked_is_p=self._linked_is_p,
-                p_value_is_list=self._p_value_is_list)
-        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        LinkManager = _create_link_manager(
+            superclass,
+            linked_is_p=self._linked_is_p,
+            p_value_is_list=self._p_value_is_list)
+        return LinkManager(instance, self._this_key,
+                           linked_cls, self._linked_key)
 
     def get_translated_linked_value(self, value):
         return value
 
     def get_q_for_linked_instance(self, obj, operation):
         if operation is not None:
-            raise ValueError("Unknown search operation %s"%operation)
+            raise ValueError("Unknown search operation %s" % operation)
 
         this_key = self._this_key
 
         linked_cls = _lookup(self._linked_cls)
         linked_key = self._linked_key
         assert isinstance(obj, linked_cls)
-        linked_value = self.get_translated_linked_value(getattr(obj, linked_key))
+        linked_value = self.get_translated_linked_value(
+            getattr(obj, linked_key))
         if not isinstance(linked_value, list):
-            linked_value = [ linked_value ]
+            linked_value = [linked_value]
 
         if len(linked_value) == 0:
             return None
 
         v = linked_value[0]
-        kwargs = { this_key: v }
+        kwargs = {this_key: v}
         q = tldap.Q(**kwargs)
         for v in linked_value[1:]:
-            kwargs = { this_key: v }
+            kwargs = {this_key: v}
             q = q | tldap.Q(**kwargs)
         return q
 
     def __get__(self, instance, cls=None):
         if instance is None:
-            raise AttributeError("Manager isn't accessible via %s class" % cls.__name__)
+            raise AttributeError(
+                "Manager isn't accessible via %s class" % cls.__name__)
         return self.get_manager(instance)
 
 
 class ManyToManyDescriptor(LinkDescriptor):
     def __init__(self, **kwargs):
-        super(ManyToManyDescriptor, self).__init__(p_value_is_list=True, **kwargs)
+        super(ManyToManyDescriptor, self).__init__(
+            p_value_is_list=True, **kwargs)
 
     def get_reverse(self, cls):
-        return ManyToManyDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key, linked_is_p=not self._linked_is_p)
+        return ManyToManyDescriptor(
+            this_key=self._linked_key, linked_cls=cls,
+            linked_key=self._this_key, linked_is_p=not self._linked_is_p)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
@@ -433,12 +451,16 @@ class ManyToManyDescriptor(LinkDescriptor):
             for v in value:
                 lm.add(value, commit=False)
 
+
 class ManyToOneDescriptor(LinkDescriptor):
     def __init__(self, **kwargs):
-        super(ManyToOneDescriptor, self).__init__(linked_is_p=False, p_value_is_list=False, **kwargs)
+        super(ManyToOneDescriptor, self).__init__(
+            linked_is_p=False, p_value_is_list=False, **kwargs)
 
     def get_reverse(self, cls):
-        return OneToManyDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key)
+        return OneToManyDescriptor(
+            this_key=self._linked_key, linked_cls=cls,
+            linked_key=self._this_key)
 
     def __set__(self, instance, value):
         assert not isinstance(value, list)
@@ -447,12 +469,16 @@ class ManyToOneDescriptor(LinkDescriptor):
         if value is not None:
             lm.add(value, commit=False)
 
+
 class OneToManyDescriptor(LinkDescriptor):
     def __init__(self, **kwargs):
-        super(OneToManyDescriptor, self).__init__(linked_is_p=True, p_value_is_list=False, **kwargs)
+        super(OneToManyDescriptor, self).__init__(
+            linked_is_p=True, p_value_is_list=False, **kwargs)
 
     def get_reverse(self, cls):
-        return ManyToOneDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key)
+        return ManyToOneDescriptor(
+            this_key=self._linked_key, linked_cls=cls,
+            linked_key=self._this_key)
 
     def __set__(self, instance, value):
         assert isinstance(value, list)
@@ -540,7 +566,8 @@ def _create_ad_group_link_manager(superclass, linked_is_p, p_value_is_list):
 
 class AdGroupLinkDescriptor(ManyToManyDescriptor):
     def __init__(self, **kwargs):
-        super(AdGroupLinkDescriptor, self).__init__(this_key="dn", linked_key="member", linked_is_p=True, **kwargs)
+        super(AdGroupLinkDescriptor, self).__init__(
+            this_key="dn", linked_key="member", linked_is_p=True, **kwargs)
 
     def get_reverse(self, cls):
         return AdAccountLinkDescriptor(linked_cls=cls)
@@ -549,7 +576,8 @@ class AdGroupLinkDescriptor(ManyToManyDescriptor):
         # We have to do the search using this_key of memberOf, not dn,
         # as this makes it more efficient. Also dn searches are restricted.
         if operation is not None:
-            raise ValueError("Unknown search operation %s"%operation)
+            raise ValueError(
+                "Unknown search operation %s" % operation)
 
         this_key = "memberOf"
 
@@ -558,31 +586,34 @@ class AdGroupLinkDescriptor(ManyToManyDescriptor):
         assert isinstance(obj, linked_cls)
         linked_value = getattr(obj, linked_key)
         if not isinstance(linked_value, list):
-            linked_value = [ linked_value ]
+            linked_value = [linked_value]
 
         if len(linked_value) == 0:
             return None
 
         v = linked_value.pop()
-        kwargs = { this_key: v }
+        kwargs = {this_key: v}
         q = tldap.Q(**kwargs)
         for v in linked_value:
-            kwargs = { this_key: v }
+            kwargs = {this_key: v}
             q = q | tldap.Q(**kwargs)
         return q
 
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_ad_group_link_manager(superclass,
-                linked_is_p=self._linked_is_p,
-                p_value_is_list=self._p_value_is_list)
-        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        LinkManager = _create_ad_group_link_manager(
+            superclass,
+            linked_is_p=self._linked_is_p,
+            p_value_is_list=self._p_value_is_list)
+        return LinkManager(
+            instance, self._this_key, linked_cls, self._linked_key)
 
 
 class AdAccountLinkDescriptor(ManyToManyDescriptor):
     def __init__(self, **kwargs):
-        super(AdAccountLinkDescriptor, self).__init__(this_key="member", linked_key="dn", linked_is_p=False, **kwargs)
+        super(AdAccountLinkDescriptor, self).__init__(
+            this_key="member", linked_key="dn", linked_is_p=False, **kwargs)
 
     def get_reverse(self, cls):
         return AdGroupLinkDescriptor(linked_cls=cls)
@@ -590,13 +621,16 @@ class AdAccountLinkDescriptor(ManyToManyDescriptor):
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_ad_group_link_manager(superclass,
-                linked_is_p=self._linked_is_p,
-                p_value_is_list=self._p_value_is_list)
-        return LinkManager(instance, self._this_key, linked_cls, self._linked_key)
+        LinkManager = _create_ad_group_link_manager(
+            superclass,
+            linked_is_p=self._linked_is_p,
+            p_value_is_list=self._p_value_is_list)
+        return LinkManager(
+            instance, self._this_key, linked_cls, self._linked_key)
 
 
-def _create_ad_primary_group_link_manager(superclass, linked_is_p, p_value_is_list):
+def _create_ad_primary_group_link_manager(superclass,
+                                          linked_is_p, p_value_is_list):
     superclass = _create_link_manager(superclass, linked_is_p, p_value_is_list)
 
     class AdLinkManager(superclass):
@@ -618,21 +652,29 @@ class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
 
     def __init__(self, domain_sid, **kwargs):
         self.domain_sid = domain_sid
-        super(AdPrimaryAccountLinkDescriptor, self).__init__(this_key="objectSid", linked_key="primaryGroupID", **kwargs)
+        super(AdPrimaryAccountLinkDescriptor, self).__init__(
+            this_key="objectSid", linked_key="primaryGroupID", **kwargs)
 
     def get_reverse(self, cls):
-        return AdPrimaryGroupLinkDescriptor(linked_cls=cls, domain_sid=self.domain_sid)
+        return AdPrimaryGroupLinkDescriptor(
+            linked_cls=cls, domain_sid=self.domain_sid)
 
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_ad_primary_group_link_manager(superclass,
-                linked_is_p=self._linked_is_p,
-                p_value_is_list=self._p_value_is_list)
-        return LinkManager(this_instance=instance, this_key=self._this_key, linked_cls=linked_cls, linked_key=self._linked_key, domain_sid=self.domain_sid)
+        LinkManager = _create_ad_primary_group_link_manager(
+            superclass,
+            linked_is_p=self._linked_is_p,
+            p_value_is_list=self._p_value_is_list)
+        return LinkManager(
+            this_instance=instance, this_key=self._this_key,
+            linked_cls=linked_cls, linked_key=self._linked_key,
+            domain_sid=self.domain_sid)
 
     def get_translated_linked_value(self, value):
-        this_value = super(AdPrimaryAccountLinkDescriptor, self).get_translated_linked_value(value)
+        this_value = super(
+            AdPrimaryAccountLinkDescriptor, self).get_translated_linked_value(
+                value)
         return _rid_to_sid(self.domain_sid, this_value)
 
 
@@ -640,19 +682,29 @@ class AdPrimaryGroupLinkDescriptor(ManyToOneDescriptor):
 
     def __init__(self, domain_sid, **kwargs):
         self.domain_sid = domain_sid
-        super(AdPrimaryGroupLinkDescriptor, self).__init__(this_key="primaryGroupID", linked_key="objectSid", **kwargs)
+        super(AdPrimaryGroupLinkDescriptor, self).__init__(
+            this_key="primaryGroupID", linked_key="objectSid", **kwargs)
 
     def get_reverse(self, cls):
-        return AdPrimaryAccountLinkDescriptor(this_key=self._linked_key, linked_cls=cls, linked_key=self._this_key, domain_sid=self.domain_sid)
+        return AdPrimaryAccountLinkDescriptor(
+            this_key=self._linked_key,
+            linked_cls=cls, linked_key=self._this_key,
+            domain_sid=self.domain_sid)
 
     def get_manager(self, instance):
         linked_cls = _lookup(self._linked_cls)
         superclass = linked_cls._default_manager.__class__
-        LinkManager = _create_ad_primary_group_link_manager(superclass,
-                linked_is_p=self._linked_is_p,
-                p_value_is_list=self._p_value_is_list)
-        return LinkManager(this_instance=instance, this_key=self._this_key, linked_cls=linked_cls, linked_key=self._linked_key, domain_sid=self.domain_sid)
+        LinkManager = _create_ad_primary_group_link_manager(
+            superclass,
+            linked_is_p=self._linked_is_p,
+            p_value_is_list=self._p_value_is_list)
+        return LinkManager(
+            this_instance=instance, this_key=self._this_key,
+            linked_cls=linked_cls, linked_key=self._linked_key,
+            domain_sid=self.domain_sid)
 
     def get_translated_linked_value(self, value):
-        this_value = super(AdPrimaryGroupLinkDescriptor, self).get_translated_linked_value(value)
+        this_value = super(
+            AdPrimaryGroupLinkDescriptor, self).get_translated_linked_value(
+                value)
         return _sid_to_rid(this_value)

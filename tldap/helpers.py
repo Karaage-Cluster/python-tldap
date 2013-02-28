@@ -15,12 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+
 class CaseInsensitiveDict(dict):
-    """ Case insensitve dictionary for searches however preserves the case for retrieval. """
+    """
+    Case insensitve dictionary for searches however preserves the case for
+    retrieval.
+    """
 
     def __init__(self, d={}):
         self.lc = {}
-        for k,v in d.iteritems():
+        for k, v in d.iteritems():
             self.lc[k.lower()] = k
         super(CaseInsensitiveDict, self).__init__(d)
 
@@ -59,14 +63,6 @@ class CaseInsensitiveDict(dict):
             return default
         else:
             return super(CaseInsensitiveDict, self).get(key, default)
-
-    def has_key(self, key):
-        try:
-            key = self.lc[key.lower()]
-        except KeyError:
-            return False
-        else:
-            return super(CaseInsensitiveDict, self).has_key(key)
 
     def get_correct_key(self, key):
         return self.lc[key.lower()]

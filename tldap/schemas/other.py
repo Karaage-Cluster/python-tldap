@@ -20,7 +20,6 @@ import tldap.base
 import tldap.fields
 
 
-
 # SSH
 
 class ldapPublicKey(tldap.base.LDAPobject):

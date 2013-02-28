@@ -31,6 +31,7 @@ import tldap.helpers
 
 import django.utils.tree
 
+
 class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
@@ -97,7 +98,6 @@ class QuerySet(object):
             if len(self._result_cache) <= pos:
                 self._fill_cache()
 
-
     def __getitem__(self, k):
         """
         Retrieves an item or slice from the set of results.
@@ -137,10 +137,10 @@ class QuerySet(object):
                 stop = int(k.stop)
             else:
                 stop = None
-            qs._limits = start,stop
+            qs._limits = start, stop
             return k.step and list(qs)[::k.step] or qs
         qs = self._clone()
-        qs._limits = k, k+1
+        qs._limits = k, k + 1
         return list(qs)[0]
 
     def __and__(self, other):
@@ -177,12 +177,14 @@ class QuerySet(object):
         """
         assert isinstance(value, str)
         if operation is None:
-            return ldap.filter.filter_format("(%s=%s)",[name, value])
+            return ldap.filter.filter_format(
+                "(%s=%s)", [name, value])
         elif operation == "contains":
             assert value != ""
-            return ldap.filter.filter_format("(%s=*%s*)",[name, value])
+            return ldap.filter.filter_format(
+                "(%s=*%s*)", [name, value])
         else:
-            raise ValueError("Unknown search operation %s"%operation)
+            raise ValueError("Unknown search operation %s" % operation)
 
     def _get_filter(self, q):
         """
@@ -190,7 +192,7 @@ class QuerySet(object):
         if no results possible.
         """
         # check the details are valid
-        if q.negated and len(q.children)==1:
+        if q.negated and len(q.children) == 1:
             op = "!"
         elif q.connector == tldap.Q.AND:
             op = "&"
@@ -207,7 +209,7 @@ class QuerySet(object):
                 search.append(self._get_filter(child))
             else:
                 # otherwise get the values in this node
-                name,value = child
+                name, value = child
 
                 # split the name if possible
                 name, _, operation = name.rpartition("__")
@@ -223,11 +225,13 @@ class QuerySet(object):
                     field = self._cls._meta.get_field_by_name(name)
                 except KeyError:
                     # no field found, try to lookup linked models
-                    raise ValueError("Cannot do a search on %s as we cannot find the field" % name)
+                    raise ValueError(
+                        "Cannot do a search on %s "
+                        "as we cannot find the field" % name)
                 else:
                     # field was found
                     # try to turn list into single value
-                    if isinstance(value, list) and len(value)==1:
+                    if isinstance(value, list) and len(value) == 1:
                         value = value[0]
                         assert isinstance(value, str)
 
@@ -242,16 +246,16 @@ class QuerySet(object):
                     # or process just the single value
                     else:
                         value = field.value_to_db(value)
-                        search.append(self._get_filter_item(name, operation, value))
+                        search.append(
+                            self._get_filter_item(name, operation, value))
 
         # output the results
-        if len(search)==1 and not q.negated:
+        if len(search) == 1 and not q.negated:
             # just one non-negative term, return it
             return search[0]
         else:
             # multiple terms
-            return "("+ op + "".join(search) + ")"
-
+            return "(" + op + "".join(search) + ")"
 
     def _clone_query(self, q):
         dst = tldap.Q()
@@ -271,7 +275,6 @@ class QuerySet(object):
                 dst.children.append(child)
 
         return dst
-
 
     def _expand_query(self, q):
         dst = tldap.Q()
@@ -320,11 +323,15 @@ class QuerySet(object):
 
             # fail for cases we don't understand
             if cls_value is None:
-                raise ValueError("Cannot do a search on %s as we do not know about it" % name)
+                raise ValueError(
+                    "Cannot do a search on %s "
+                    "as we do not know about it" % name)
 
             # fail for cases we don't understand
             if not isinstance(cls_value, tldap.manager.LinkDescriptor):
-                raise ValueError("Cannot do a search on %s as we do not know the type" % name)
+                raise ValueError(
+                    "Cannot do a search on %s "
+                    "as we do not know the type" % name)
 
             # ask the LinkDescriptor for a q tree
             child = cls_value.get_q_for_linked_instance(value, operation)
@@ -353,13 +360,12 @@ class QuerySet(object):
         dst.children = new_children
 
         # output the results
-        if len(dst.children)==0:
+        if len(dst.children) == 0:
             # no search terms, all terms were None
             return None
         else:
             # multiple terms
             return dst
-
 
     def _get_dn_filter(self, q):
         """
@@ -368,7 +374,6 @@ class QuerySet(object):
         """
         dn_list = []
 
-
         # can't handle negated dn searches
         if q.negated:
             return None
@@ -376,7 +381,7 @@ class QuerySet(object):
         # can only handle OR, or AND with one term, nothing else makes sense
         if q.connector == tldap.Q.OR:
             pass
-        elif q.connector == tldap.Q.AND and len(q.children)==1:
+        elif q.connector == tldap.Q.AND and len(q.children) == 1:
             pass
         else:
             return None
@@ -396,7 +401,7 @@ class QuerySet(object):
 
             # otherwise add this dn value
             else:
-                name,value = child
+                name, value = child
                 if name != "dn":
                     return None
                 dn_list.append(value)
@@ -411,7 +416,9 @@ class QuerySet(object):
 
         # get object classes to search
         if self._from_cls is None:
-            object_classes = self._cls._meta.search_classes or self._cls._meta.object_classes
+            object_classes = (
+                self._cls._meta.search_classes or
+                self._cls._meta.object_classes)
         else:
             object_classes = self._from_cls._meta.search_classes
 
@@ -452,11 +459,11 @@ class QuerySet(object):
             # create a "list" of base_dn to search
             base_dn = self._base_dn or self._cls._meta.base_dn
             if base_dn is None:
-                base_dn = connection.settings_dict[self._cls._meta.base_dn_setting]
+                base_dn = (
+                    connection.settings_dict[self._cls._meta.base_dn_setting])
 
             assert base_dn is not None
-            dn_list = [ base_dn ]
-
+            dn_list = [base_dn]
 
         # get list of field names we support
         field_names = self._cls._meta.get_all_field_names()
@@ -476,7 +483,8 @@ class QuerySet(object):
         """
 
         # get search parameters
-        alias, connection, dn_list, scope, search_filter, field_names = self._get_search_params()
+        alias, connection, dn_list, scope, search_filter, field_names = (
+            self._get_search_params())
         if search_filter is None:
             return
 
@@ -494,7 +502,9 @@ class QuerySet(object):
 
             try:
                 # get the results
-                for i in connection.search(base_dn, scope, search_filter, field_names, limit=limit):
+                for i in connection.search(base_dn, scope,
+                                           search_filter, field_names,
+                                           limit=limit):
                     if start > 0:
                         start = start - 1
                         continue
@@ -513,7 +523,8 @@ class QuerySet(object):
                         setattr(o, name, value)
 
                     # save raw db values for latter use
-                    o._db_values[alias] = tldap.helpers.CaseInsensitiveDict(i[1])
+                    o._db_values[alias] = (
+                        tldap.helpers.CaseInsensitiveDict(i[1]))
 
                     # save database alias for latter use
                     o._alias = alias
@@ -534,10 +545,13 @@ class QuerySet(object):
         if num == 1:
             return qs._result_cache[0]
         if not num:
-            raise self._cls.DoesNotExist("%s matching query does not exist."
-                    % self._cls._meta.object_name)
-        raise self._cls.MultipleObjectsReturned("get() returned more than one %s -- it returned %s! Lookup parameters were %s"
-                % (self._cls._meta.object_name, num, kwargs))
+            raise self._cls.DoesNotExist(
+                "%s matching query does not exist." %
+                self._cls._meta.object_name)
+        raise self._cls.MultipleObjectsReturned(
+            "get() returned more than one %s "
+            "-- it returned %s! Lookup parameters were %s" %
+            (self._cls._meta.object_name, num, kwargs))
 
     def create(self, **kwargs):
         """
@@ -555,7 +569,7 @@ class QuerySet(object):
         specifying whether an object was created.
         """
         assert kwargs, \
-                'get_or_create() must be passed at least one keyword argument'
+            'get_or_create() must be passed at least one keyword argument'
         defaults = kwargs.pop('defaults', {})
         try:
             return self.get(**kwargs), False
@@ -604,7 +618,8 @@ class QuerySet(object):
 
     def using(self, alias):
         """
-        Selects which database this QuerySet should excecute it's query against.
+        Selects which database this QuerySet should excecute it's query
+        against.
         """
         clone = self._clone()
         clone._alias = alias
@@ -704,4 +719,3 @@ class EmptyQuerySet(QuerySet):
         Always returns EmptyQuerySet.
         """
         return self
-

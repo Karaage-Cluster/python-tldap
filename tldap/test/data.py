@@ -138,4 +138,4 @@ test_ldif = [
     'memberUid: testuser2',
     'memberUid: testuser3',
     '',
-    ]
+]

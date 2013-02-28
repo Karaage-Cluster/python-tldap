@@ -26,14 +26,16 @@ import ldap.dn
 
 import sys
 
-default_object_class_field = tldap.fields.CharField(required=True, max_instances=None)
+default_object_class_field = tldap.fields.CharField(required=True,
+                                                    max_instances=None)
+
 
 class LDAPmeta(type):
     def __new__(cls, name, bases, attrs):
         super_new = super(LDAPmeta, cls).__new__
         parents = [b for b in bases if isinstance(b, LDAPmeta)]
         if not parents:
-            # If this isn't a subclass of LDAPobject, don't do anything special.
+            # If this isn't a subclass of LDAPobject, don't do anything special
             return super_new(cls, name, bases, attrs)
 
         # create new class
@@ -74,20 +76,27 @@ class LDAPmeta(type):
 
         # add exceptions to the class
         ObjectDoesNotExist = tldap.exceptions.ObjectDoesNotExist
+        p = tuple(x.DoesNotExist
+                  for x in parents if hasattr(x, '_meta'))
+        p = p or (ObjectDoesNotExist,)
         new_class.add_to_class('DoesNotExist', subclass_exception(
-                'tldap.exceptions.DoesNotExist',
-                tuple(x.DoesNotExist for x in parents if hasattr(x, '_meta')) or (ObjectDoesNotExist,),
-                module))
+            'tldap.exceptions.DoesNotExist', p, module))
+
         MultipleObjectsReturned = tldap.exceptions.MultipleObjectsReturned
+        p = tuple(x.MultipleObjectsReturned
+                  for x in parents if hasattr(x, '_meta'))
+        p = p or (MultipleObjectsReturned,)
         new_class.add_to_class('MultipleObjectsReturned', subclass_exception(
-                'MultipleObjectsReturned',
-                tuple(x.MultipleObjectsReturned for x in parents if hasattr(x, '_meta')) or (MultipleObjectsReturned,),
-                module))
+            'MultipleObjectsReturned', p, module))
+
         ObjectAlreadyExists = tldap.exceptions.ObjectAlreadyExists
+        p = tuple(x.MultipleObjectsReturned
+                  for x in parents if hasattr(x, '_meta'))
+        p = p or (ObjectAlreadyExists,)
         new_class.add_to_class('AlreadyExists', subclass_exception(
-                'ObjectAlreadyExists',
-                tuple(x.MultipleObjectsReturned for x in parents if hasattr(x, '_meta')) or (ObjectAlreadyExists,),
-                module))
+            'ObjectAlreadyExists', p, module))
+
+        p = None
 
         # add rest of attributes to class
         for obj_name, obj in attrs.items():
@@ -97,9 +106,12 @@ class LDAPmeta(type):
         field_names = new_class._meta.get_all_field_names()
 
         # check for clashes with reserved names
-        for i in ["_db_values", "dn", "_dn", "base_dn", "_base_dn", "force_replace" ]:
+        for i in ["_db_values", "forcew_replace",
+                  "dn", "_dn", "base_dn", "_base_dn", ]:
             if i in field_names:
-                raise tldap.exceptions.FieldError('Local field %s clashes with reserved name from base class %r'%(i, name))
+                raise tldap.exceptions.FieldError(
+                    'Local field %s clashes with '
+                    'reserved name from base class %r' % (i, name))
 
         # for every parent ...
         parent_field_names = dict()
@@ -121,9 +133,11 @@ class LDAPmeta(type):
                     pass
                 elif field.name in parent_field_names:
                     if type(field) != type(parent_field_names[field.name]):
-                        raise tldap.exceptions.FieldError('In class %r field %r from parent clashes '
-                                     'with field of similar name from base class %r and is different type' %
-                                        (name, field.name, base.__name__))
+                        raise tldap.exceptions.FieldError(
+                            'In class %r field %r from parent clashes '
+                            'with field of similar name from base class %r '
+                            'and is different type' %
+                            (name, field.name, base.__name__))
                 else:
                     parent_field_names[field.name] = field
                     new_class._meta.add_field(field)
@@ -143,6 +157,7 @@ class LDAPmeta(type):
 
 def subclass_exception(name, parents, module):
     return type(name, parents, {'__module__': module})
+
 
 class LDAPobject(object):
     __metaclass__ = LDAPmeta
@@ -187,7 +202,6 @@ class LDAPobject(object):
 
             setattr(self, field.name, value)
 
-
         if 'base_dn' in kwargs:
             value = kwargs.pop('base_dn')
             setattr(self, '_base_dn', value)
@@ -197,7 +211,8 @@ class LDAPobject(object):
             setattr(self, '_dn', value)
 
         for key in kwargs:
-            raise TypeError("'%s' is an invalid keyword argument for this function" % key)
+            raise TypeError(
+                "'%s' is an invalid keyword argument for this function" % key)
 
         if self._dn is not None and self._base_dn is not None:
             raise ValueError("Makes no sense to set both dn and base_dn")
@@ -207,7 +222,8 @@ class LDAPobject(object):
 
     def load_db_values(self, using=None):
         """
-        Kludge to load DB values from other databases. Required for multiple DB use.
+        Kludge to load DB values from other databases. Required for multiple DB
+        use.
         """
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
@@ -220,16 +236,19 @@ class LDAPobject(object):
         field_names = self._meta.get_all_field_names()
 
         # get values
-        db_values = list(c.search(self._dn, ldap.SCOPE_BASE, attrlist=field_names))
+        db_values = list(
+            c.search(self._dn, ldap.SCOPE_BASE, attrlist=field_names))
         num = len(db_values)
-        if num==0:
-            raise self.DoesNotExist("%s matching query does not exist."
-                    % self._meta.object_name)
+        if num == 0:
+            raise self.DoesNotExist(
+                "%s matching query does not exist." % self._meta.object_name)
         elif num > 1:
-            raise self.model.MultipleObjectsReturned("get() returned more than one %s -- it returned %s!"
-                    % (self._meta.object_name, num))
+            raise self.model.MultipleObjectsReturned(
+                "get() returned more than one %s -- it returned %s!" %
+                (self._meta.object_name, num))
 
-        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(db_values[0][1])
+        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(
+            db_values[0][1])
 
     load_db_values.alters_data = True
 
@@ -237,9 +256,11 @@ class LDAPobject(object):
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
-            raise tldap.exceptions.ValidationError("Cannot use %s in dn as it is None"%name)
+            raise tldap.exceptions.ValidationError(
+                "Cannot use %s in dn as it is None" % name)
         if isinstance(value, list):
-            raise tldap.exceptions.ValidationError("Cannot use %s in dn as it is a list"%name)
+            raise tldap.exceptions.ValidationError(
+                "Cannot use %s in dn as it is a list" % name)
         value = field.value_to_db(value)
 
         base_dn = self._base_dn or self._meta.base_dn
@@ -271,10 +292,12 @@ class LDAPobject(object):
             self._dn = self.rdn_to_dn(self._meta.pk, using)
 
         if self._dn is None:
-            raise tldap.exceptions.ValidationError("Need a full DN for this object")
+            raise tldap.exceptions.ValidationError(
+                "Need a full DN for this object")
 
         if force_add and force_modify:
-            raise ValueError("Cannot force both insert and updating in model saving.")
+            raise ValueError(
+                "Cannot force both insert and updating in model saving.")
 
         if force_add:
             self._add(using)
@@ -287,7 +310,6 @@ class LDAPobject(object):
 
     save.alters_data = True
 
-
     def delete(self, using=None):
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
@@ -295,6 +317,7 @@ class LDAPobject(object):
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
+
         def onfailure():
             self._db_values[using] = old_values
 
@@ -304,9 +327,9 @@ class LDAPobject(object):
 
     delete.alters_data = True
 
-
-    def _get_moddict(self, default_object_class, default_object_class_db, using):
-        dn0k,dn0v,_ = ldap.dn.str2dn(self._dn)[0][0]
+    def _get_moddict(self, default_object_class, default_object_class_db,
+                     using):
+        dn0k, dn0v, _ = ldap.dn.str2dn(self._dn)[0][0]
 
         # get field for objectClass
         object_class_field = self._meta.get_field_by_name("objectClass")
@@ -317,10 +340,13 @@ class LDAPobject(object):
 
         if len(default_object_class) > 0:
             tmp_default_object_class = set(default_object_class)
-            tmp_default_object_class_db = set(object_class_field.to_db(default_object_class))
+            tmp_default_object_class_db = set(
+                object_class_field.to_db(default_object_class))
 
-        tmp_default_object_class = tmp_default_object_class | set(object_class_field.clean(default_object_class_db))
-        tmp_default_object_class_db = tmp_default_object_class_db | set(default_object_class_db)
+        tmp_default_object_class = tmp_default_object_class | set(
+            object_class_field.clean(default_object_class_db))
+        tmp_default_object_class_db = tmp_default_object_class_db | set(
+            default_object_class_db)
 
         default_object_class = list(tmp_default_object_class)
         default_object_class_db = list(tmp_default_object_class_db)
@@ -334,17 +360,19 @@ class LDAPobject(object):
         for field in fields:
             name = field.name
             value = getattr(self, name)
-            # if dn attribute not given, try to set it, otherwise just convert value
+            # if dn attribute not given, try to set it, otherwise just convert
+            # value
             if name == dn0k:
                 if isinstance(value, list) and len(value) == 0:
-                    value = [ dn0v ]
+                    value = [dn0v]
                     setattr(self, name, field.clean(value))
                 elif value is None:
-                    value = [ dn0v ]
+                    value = [dn0v]
                     setattr(self, name, field.clean(value))
                 else:
                     value = field.to_db(value)
-            # if objectClass not given, try to set it, otherwise just convert value
+            # if objectClass not given, try to set it, otherwise just convert
+            # value
             elif name == 'objectClass':
                 assert isinstance(value, list)
                 value = default_object_class_db
@@ -357,7 +385,9 @@ class LDAPobject(object):
             # if dn attribute given, it must match the dn
             if name == dn0k.lower():
                 if dn0v.lower() not in set(v.lower() for v in value):
-                    raise ValueError("value of %r is %r does not include %r from dn %r"%(name, value, dn0v, self._dn))
+                    raise ValueError(
+                        "value of %r is %r does not include %r from dn %r" %
+                        (name, value, dn0v, self._dn))
             moddict[name] = value
         return moddict
 
@@ -367,7 +397,9 @@ class LDAPobject(object):
         default_object_class_db = list(self._meta.object_classes)
 
         # generate moddict values
-        moddict = self._get_moddict(default_object_class, default_object_class_db, using)
+        moddict = self._get_moddict(default_object_class,
+                                    default_object_class_db,
+                                    using)
 
         # turn moddict into a modlist
         modlist = tldap.modlist.addModlist(moddict)
@@ -383,13 +415,13 @@ class LDAPobject(object):
         try:
             c.add(self._dn, modlist, onfailure)
         except ldap.ALREADY_EXISTS:
-            raise self.AlreadyExists("Object with dn %r already exists doing add"%(self._dn,))
+            raise self.AlreadyExists(
+                "Object with dn %r already exists doing add" % (self._dn,))
 
         # save new values
         self._db_values[using] = tldap.helpers.CaseInsensitiveDict(moddict)
 
     _add.alters_data = True
-
 
     def _modify(self, using):
         assert(using in self._db_values)
@@ -413,7 +445,9 @@ class LDAPobject(object):
             modold[name] = self._db_values[using].get(name, [])
 
         # generate moddict values
-        moddict = self._get_moddict(default_object_class, default_object_class_db, using)
+        moddict = self._get_moddict(default_object_class,
+                                    default_object_class_db,
+                                    using)
 
         # remove items in force_replace
         force_value = {}
@@ -435,6 +469,7 @@ class LDAPobject(object):
 
         # what to do if transaction is reversed
         old_values = self._db_values[using]
+
         def onfailure():
             self._db_values[using] = old_values
 
@@ -443,14 +478,18 @@ class LDAPobject(object):
             try:
                 c.modify(self._dn, modlist, onfailure)
             except ldap.NO_SUCH_OBJECT:
-                raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
+                raise self.DoesNotExist(
+                    "Object with dn %r doesn't already exist doing modify" %
+                    (self._dn,))
 
         # we can't rollback these values
         if len(force_modlist) > 0:
             try:
                 c.modify_no_rollback(self._dn, force_modlist)
             except ldap.NO_SUCH_OBJECT:
-                raise self.DoesNotExist("Object with dn %r doesn't already exist doing modify"%(self._dn,))
+                raise self.DoesNotExist(
+                    "Object with dn %r doesn't already exist doing modify" %
+                    (self._dn,))
 
         # save new values
         self._db_values[using] = tldap.helpers.CaseInsensitiveDict(moddict)
@@ -465,8 +504,8 @@ class LDAPobject(object):
         """
 
         # extract key and value from kwargs
-        assert len(kwargs)==1
-        name,value = kwargs.iteritems().next()
+        assert len(kwargs) == 1
+        name, value = kwargs.iteritems().next()
 
         # replace pk with the real attribute
         if name == "pk":
@@ -483,14 +522,14 @@ class LDAPobject(object):
         # replace cache, any connections not
         # renamed get discarded.
         old_cache = self._db_values
-        self._db_values = { }
+        self._db_values = {}
 
         # set using if not already set
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
 
         # turn using into a list if it isn't
         if not isinstance(using, list):
-            using = [ using ]
+            using = [using]
 
         # what database should we be using?
         for u in using:
@@ -522,12 +561,14 @@ class LDAPobject(object):
             # we need to reset cached data and the dn
             old_dn = self._dn
             old_values = self._db_values[using]
+
             def onfailure():
                 self._dn = old_dn
                 self._db_values[using] = old_values
         else:
             # no cached data, reset the dn however
             old_dn = self._dn
+
             def onfailure():
                 self._dn = old_dn
 
@@ -538,11 +579,11 @@ class LDAPobject(object):
         if using in self._db_values:
             # get old rdn values
             split_old_dn = ldap.dn.str2dn(self._dn)
-            old_key,old_value,_ = split_old_dn[0][0]
+            old_key, old_value, _ = split_old_dn[0][0]
 
             # get new rdn values
             split_new_rdn = ldap.dn.str2dn(new_rdn)
-            new_key,new_value,_ = split_new_rdn[0][0]
+            new_key, new_value, _ = split_new_rdn[0][0]
 
             # make a copy before modifications
             self._db_values[using] = self._db_values[using].clone()
@@ -559,9 +600,9 @@ class LDAPobject(object):
                     v.remove(old_value)
             elif old_value == v:
                 v = None
-            if v == None:
+            if v is None:
                 del self._db_values[using][old_key]
-            elif isinstance(v, list) and len(v)==0:
+            elif isinstance(v, list) and len(v) == 0:
                 del self._db_values[using][old_key]
             else:
                 self._db_values[using][old_key] = field.to_db(v)

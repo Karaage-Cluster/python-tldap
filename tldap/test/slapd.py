@@ -1,17 +1,26 @@
-
 """
-Utilities for starting up a test slapd server 
+Utilities for starting up a test slapd server
 and talking to it with ldapsearch/ldapadd.
 """
 from os import path as os_path
-import sys, os, socket, time, subprocess, logging, tempfile
+import sys
+import os
+import socket
+import time
+import subprocess
+import logging
+import tempfile
 import base64
 
 _log = logging.getLogger("slapd")
 
+
 def quote(s):
-    '''Quotes the '"' and '\' characters in a string and surrounds with "..."'''
-    return '"' + s.replace('\\','\\\\').replace('"','\\"') + '"'
+    '''
+    Quotes the '"' and '\' characters in a string and surrounds with "..."
+    '''
+    return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
 
 def mkdirs(path):
     """Creates the directory path unless it already exists"""
@@ -20,16 +29,18 @@ def mkdirs(path):
         os.mkdir(path)
     return path
 
+
 def delete_directory_content(path):
-    for dirpath,dirnames,filenames in os.walk(path, topdown=False):
-        for n in filenames: 
+    for dirpath, dirnames, filenames in os.walk(path, topdown=False):
+        for n in filenames:
             _log.info("remove %s", os.path.join(dirpath, n))
             os.remove(os.path.join(dirpath, n))
-        for n in dirnames: 
+        for n in dirnames:
             _log.info("rmdir %s", os.path.join(dirpath, n))
             os.rmdir(os.path.join(dirpath, n))
 
 LOCALHOST = '127.0.0.1'
+
 
 def find_available_tcp_port(host=LOCALHOST):
     s = socket.socket()
@@ -38,6 +49,7 @@ def find_available_tcp_port(host=LOCALHOST):
     s.close()
     _log.info("Found available port %d", port)
     return port
+
 
 class Slapd:
     """
@@ -55,7 +67,7 @@ class Slapd:
 
     # Use /var/tmp to placate apparmour on Ubuntu:
     TEST_UTILS_DIR = os_path.abspath(os_path.split(__file__)[0])
-    PATH_TMPDIR = tempfile.mkdtemp()  
+    PATH_TMPDIR = tempfile.mkdtemp()
     PATH_SBINDIR = "/usr/sbin"
     PATH_BINDIR = "/usr/bin"
     PATH_SCHEMA_DIR = TEST_UTILS_DIR + "/ldap_schemas/"
@@ -71,11 +83,11 @@ class Slapd:
         Checks that the configured executable paths look valid.
         If they don't, then logs warning messages (not errors).
         """
-        for name,path in (
+        for name, path in (
                 ("slapd", cls.PATH_SLAPD),
                 ("ldapadd", cls.PATH_LDAPADD),
                 ("ldapsearch", cls.PATH_LDAPSEARCH),
-             ):
+        ):
             cls._log.debug("checking %s executable at %s", name, path)
             if not os.access(path, os.X_OK):
                 cls._log.warn("cannot find %s executable at %s", name, path)
@@ -91,19 +103,25 @@ class Slapd:
         self._root_password = "password"
         self._slapd_debug_level = 0
 
-    # Setters 
+    # Setters
     def set_port(self, port):
         self._port = port
+
     def set_dn_suffix(self, dn):
         self._dn_suffix = dn
+
     def set_root_cn(self, cn):
         self._root_cn = cn
+
     def set_root_password(self, pw):
         self._root_password = pw
+
     def set_tmpdir(self, path):
         self._tmpdir = path
+
     def set_slapd_debug_level(self, level):
         self._slapd_debug_level = level
+
     def set_debug(self):
         self._log.setLevel(logging.DEBUG)
         self.set_slapd_debug_level('Any')
@@ -111,16 +129,21 @@ class Slapd:
     # getters
     def get_url(self):
         return "ldap://%s:%d/" % self.get_address()
+
     def get_address(self):
         if self._port == 0:
             self._port = find_available_tcp_port(LOCALHOST)
         return (LOCALHOST, self._port)
+
     def get_dn_suffix(self):
         return self._dn_suffix
+
     def get_root_dn(self):
         return "cn=" + self._root_cn + "," + self.get_dn_suffix()
+
     def get_root_password(self):
         return self._root_password
+
     def get_tmpdir(self):
         return self._tmpdir
 
@@ -139,12 +162,12 @@ class Slapd:
         schema_list.sort()
         for schema in schema_list:
             cfg.append("include " + quote(self.PATH_SCHEMA_DIR + schema))
-            
+
         cfg.append("allow bind_v2")
 
         # Database
         ldif_dir = mkdirs(os.path.join(self.get_tmpdir(), "ldif-data"))
-        delete_directory_content(ldif_dir) # clear it out
+        delete_directory_content(ldif_dir)  # clear it out
         cfg.append("database ldif")
         cfg.append("directory " + quote(ldif_dir))
 
@@ -154,7 +177,6 @@ class Slapd:
 
         cfg.append("moduleload ppolicy")
         cfg.append("overlay ppolicy")
-
 
     def _write_config(self):
         """Writes the slapd.conf file out, and returns the path to it."""
@@ -169,7 +191,7 @@ class Slapd:
 
     def start(self):
         """
-        Starts the slapd server process running, and waits for it to come up. 
+        Starts the slapd server process running, and waits for it to come up.
         """
         if self._proc is None:
             ok = False
@@ -185,8 +207,10 @@ class Slapd:
             finally:
                 if not ok:
                     if config_path:
-                        try: os.remove(config_path)
-                        except os.error: pass
+                        try:
+                            os.remove(config_path)
+                        except os.error:
+                            pass
                     if self._proc:
                         self.stop()
 
@@ -194,11 +218,12 @@ class Slapd:
         # Spawns/forks the slapd process
         config_path = self._write_config()
         self._log.info("starting slapd")
-        self._proc = subprocess.Popen([self.PATH_SLAPD, 
-                "-f", config_path, 
-                "-h", self.get_url(), 
-                "-d", str(self._slapd_debug_level),
-                ])
+        self._proc = subprocess.Popen([
+            self.PATH_SLAPD,
+            "-f", config_path,
+            "-h", self.get_url(),
+            "-d", str(self._slapd_debug_level),
+        ])
         self._proc_config = config_path
 
     def _wait_for_slapd(self):
@@ -209,12 +234,12 @@ class Slapd:
                 self._stopped()
                 raise RuntimeError("slapd exited before opening port")
             try:
-               self._log.debug("Connecting to %s", repr(self.get_address()))
-               s.connect(self.get_address())
-               s.close()
-               return
+                self._log.debug("Connecting to %s", repr(self.get_address()))
+                s.connect(self.get_address())
+                s.close()
+                return
             except socket.error:
-               time.sleep(1)
+                time.sleep(1)
 
     def stop(self):
         """Stops the slapd server, and waits for it to terminate"""
@@ -223,7 +248,8 @@ class Slapd:
             if hasattr(self._proc, 'terminate'):
                 self._proc.terminate()
             else:
-                import posix, signal
+                import posix
+                import signal
                 posix.kill(self._proc.pid, signal.SIGHUP)
                 #time.sleep(1)
                 #posix.kill(self._proc.pid, signal.SIGTERM)
@@ -249,9 +275,9 @@ class Slapd:
         if self._proc is not None:
             self._log.info("slapd terminated")
             self._proc = None
-            try: 
+            try:
                 os.remove(self._proc_config)
-            except os.error: 
+            except os.error:
                 self._log.debug("could not remove %s", self._proc_config)
 
     def _test_configuration(self):
@@ -262,8 +288,8 @@ class Slapd:
             if self._log.isEnabledFor(logging.DEBUG):
                 verboseflag = "-v"
             p = subprocess.Popen([
-                self.PATH_SLAPTEST, 
-                verboseflag, 
+                self.PATH_SLAPTEST,
+                verboseflag,
                 "-f", config_path
             ])
             if p.wait() != 0:
@@ -275,30 +301,32 @@ class Slapd:
     def ldapadd(self, ldif, extra_args=[]):
         """Runs ldapadd on this slapd instance, passing it the ldif content"""
         self._log.debug("adding %s", repr(ldif))
-        p = subprocess.Popen([self.PATH_LDAPADD, 
-                "-x",
-                "-D", self.get_root_dn(),
-                "-w", self.get_root_password(),
-                "-H", self.get_url()] + extra_args,
-                stdin = subprocess.PIPE, stdout=subprocess.PIPE)
+        p = subprocess.Popen([
+            self.PATH_LDAPADD,
+            "-x",
+            "-D", self.get_root_dn(),
+            "-w", self.get_root_password(),
+            "-H", self.get_url()] + extra_args,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         p.communicate(ldif)
         if p.wait() != 0:
             raise RuntimeError("ldapadd process failed")
 
     def ldapsearch(self, base=None, filter='(objectClass=*)', attrs=[],
-        scope='sub', extra_args=[]):
-        if base is None: base = self.get_dn_suffix()
+                   scope='sub', extra_args=[]):
+        if base is None:
+            base = self.get_dn_suffix()
         self._log.debug("ldapsearch filter=%s", repr(filter))
-        p = subprocess.Popen([self.PATH_LDAPSEARCH, 
-                "-x",
-                "-D", self.get_root_dn(),
-                "-w", self.get_root_password(),
-                "-H", self.get_url(),
-                "-b", base,
-                "-s", scope,
-                "-LL",
-                ] + extra_args + [ filter ] + attrs,
-                stdout = subprocess.PIPE)
+        p = subprocess.Popen([
+            self.PATH_LDAPSEARCH,
+            "-x",
+            "-D", self.get_root_dn(),
+            "-w", self.get_root_password(),
+            "-H", self.get_url(),
+            "-b", base,
+            "-s", scope,
+            "-LL", ] + extra_args + [filter] + attrs,
+            stdout=subprocess.PIPE)
         output = p.communicate()[0]
         if p.wait() != 0:
             raise RuntimeError("ldapadd process failed")
@@ -310,39 +338,42 @@ class Slapd:
             if l.startswith(' '):
                 lines[-1] = lines[-1] + l[1:]
             elif l == '' and lines and lines[-1] == '':
-                pass # ignore multiple blank lines
+                pass  # ignore multiple blank lines
             else:
                 lines.append(l)
         # Remove comments
         lines = [l for l in lines if not l.startswith("#")]
 
         # Remove leading version and blank line(s)
-        if lines and lines[0] == '': del lines[0]
+        if lines and lines[0] == '':
+            del lines[0]
         if not lines or lines[0] != 'version: 1':
             raise RuntimeError("expected 'version: 1', got " + repr(lines[:1]))
         del lines[0]
-        if lines and lines[0] == '': del lines[0]
+        if lines and lines[0] == '':
+            del lines[0]
 
         # ensure the ldif ends with a blank line (unless it is just blank)
-        if lines and lines[-1] != '': lines.append('')
+        if lines and lines[-1] != '':
+            lines.append('')
 
         objects = []
         obj = []
         for line in lines:
-            if line == '': # end of an object
+            if line == '':  # end of an object
                 if obj[0][0] != 'dn':
                     raise RuntimeError("first line not dn", repr(obj))
                 objects.append((obj[0][1], obj[1:]))
                 obj = []
             else:
-                attr,value = line.split(':',2)
+                attr, value = line.split(':', 2)
                 if value.startswith(': '):
                     value = base64.decodestring(value[2:])
                 elif value.startswith(' '):
                     value = value[1:]
                 else:
                     raise RuntimeError("bad line: " + repr(line))
-                obj.append((attr,value))
+                obj.append((attr, value))
         assert obj == []
         return objects
 
@@ -358,9 +389,10 @@ class Slapd:
         assert self.get_root_dn().endswith("," + self.get_dn_suffix())
         root_cn = self.get_root_dn().split(',')[0][3:]
 
-        self._log.debug("adding %s and %s",
-                self.get_dn_suffix(),
-                self.get_root_dn())
+        self._log.debug(
+            "adding %s and %s",
+            self.get_dn_suffix(),
+            self.get_root_dn())
 
         self.ldapadd("\n".join([
             'dn: ' + self.get_dn_suffix(),
@@ -383,11 +415,10 @@ if __name__ == '__main__' and sys.argv == ['run']:
     print("Starting slapd...")
     slapd.start()
     print("Contents of LDAP server follow:\n")
-    for dn,attrs in slapd.ldapsearch():
+    for dn, attrs in slapd.ldapsearch():
         print("dn: " + dn)
-        for name,val in attrs:
+        for name, val in attrs:
             print(name + ": " + val)
         print("")
     print(slapd.get_url())
     slapd.wait()
-

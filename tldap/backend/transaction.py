@@ -40,13 +40,16 @@ delayed_connect = True
 
 # debugging
 
+
 def debug(*argv):
-    argv = [ str(arg) for arg in argv ]
+    argv = [str(arg) for arg in argv]
     if debugging:
         print " ".join(argv)
 
+
 def raise_testfailure(place):
-    raise tldap.exceptions.TestFailure("fail %s called"%place)
+    raise tldap.exceptions.TestFailure("fail %s called" % place)
+
 
 # wrapper class
 
@@ -66,7 +69,6 @@ class LDAPwrapper(object):
         if not delayed_connect:
             self._reconnect()
 
-
     def check_password(self, dn, password):
         s = self.settings_dict
         l = ldap.initialize(s['URI'])
@@ -75,7 +77,6 @@ class LDAPwrapper(object):
             return True
         except ldap.INVALID_CREDENTIALS:
             return False
-
 
     #########################
     # Connection Management #
@@ -99,7 +100,6 @@ class LDAPwrapper(object):
             debug("binding")
             self._obj.simple_bind_s(s['USER'], s['PASSWORD'])
 
-
     def _do_with_retry(self, fn):
         # if no connection
         if self._obj is None:
@@ -122,27 +122,37 @@ class LDAPwrapper(object):
     ####################
 
     def reset(self):
-        """ Reset transaction back to original state, discarding all uncompleted transactions. """
+        """
+        Reset transaction back to original state, discarding all
+        uncompleted transactions.
+        """
         self._onrollback = []
 
     def _cache_normalize_dn(self, dn):
-        """ normalize the dn, i.e. remove unwanted white space - hopefully this will mean it
-        is not possible to have two or more cache entries representing the same ldap entry. """
+        """
+        normalize the dn, i.e. remove unwanted white space - hopefully this
+        will mean it is not possible to have two or more cache entries
+        representing the same ldap entry.
+        """
         return ldap.dn.dn2str(ldap.dn.str2dn(dn))
 
     def _cache_get_for_dn(self, dn):
-        """ Object state is cached. When an update is required the update will be simulated on this cache,
-        so that rollback information can be correct. This function retrieves the cached data. """
+        """
+        Object state is cached. When an update is required the update will be
+        simulated on this cache, so that rollback information can be correct.
+        This function retrieves the cached data.
+        """
         dn = self._cache_normalize_dn(dn).lower()
 
         # no cached item, retrieve from ldap
-        results = self._do_with_retry(lambda obj: obj.search_s(dn, ldap.SCOPE_BASE, '(objectclass=*)', ['*','+']))
+        results = self._do_with_retry(
+            lambda obj: obj.search_s(
+                dn, ldap.SCOPE_BASE, '(objectclass=*)', ['*', '+']))
         if len(results) < 1:
             raise ldap.NO_SUCH_OBJECT("No results finding current value")
         if len(results) > 1:
             raise RuntimeError("Too many results finding current value")
         return results[0]
-
 
     ##########################
     # Transaction Management #
@@ -161,28 +171,37 @@ class LDAPwrapper(object):
     def enter_transaction_management(self):
         """ Start a transaction. """
         if self._transact:
-            raise RuntimeError("enter_transaction_management called inside transaction")
+            raise RuntimeError(
+                "enter_transaction_management called inside transaction")
 
         self._transact = True
         self._onrollback = []
 
     def leave_transaction_management(self):
-        """ End a transaction. Must not be dirty when doing so. ie. commit() or
-        rollback() must be called if changes made. If dirty, changes will be discarded. """
+        """
+        End a transaction. Must not be dirty when doing so. ie. commit() or
+        rollback() must be called if changes made. If dirty, changes will be
+        discarded.
+        """
         if not self._transact:
             self.reset()
             self._transact = False
-            raise RuntimeError("leave_transaction_management called outside transaction")
+            raise RuntimeError(
+                "leave_transaction_management called outside transaction")
         if len(self._onrollback) > 0:
             self.reset()
             self._transact = False
-            raise RuntimeError("leave_transaction_management called with uncommited rollbacks")
+            raise RuntimeError(
+                "leave_transaction_management called "
+                "with uncommited rollbacks")
         self.reset()
         self._transact = False
 
     def commit(self):
-        """ Attempt to commit all changes to LDAP database. i.e. forget all rollbacks.
-        However stay inside transaction management. """
+        """
+        Attempt to commit all changes to LDAP database. i.e. forget all
+        rollbacks.  However stay inside transaction management.
+        """
         if not self._transact:
             raise RuntimeError("commit called outside transaction")
 
@@ -190,7 +209,10 @@ class LDAPwrapper(object):
         self.reset()
 
     def rollback(self):
-        """ Roll back to previous database state. However stay inside transaction management. """
+        """
+        Roll back to previous database state. However stay inside transaction
+        management.
+        """
         if not self._transact:
             raise RuntimeError("rollback called outside transaction")
 
@@ -209,7 +231,8 @@ class LDAPwrapper(object):
         except:
             debug("--> rollback failed")
             exc_class, exc, tb = sys.exc_info()
-            new_exc = tldap.exceptions.RollbackError("FATAL Unrecoverable rollback error: %r"%(exc))
+            new_exc = tldap.exceptions.RollbackError(
+                "FATAL Unrecoverable rollback error: %r" % (exc))
             raise new_exc.__class__, new_exc, tb
         finally:
             # reset everything to clean state
@@ -217,9 +240,11 @@ class LDAPwrapper(object):
             self.reset()
 
     def _process(self, oncommit, onrollback, onfailure):
-        """ Process action. oncommit is a callback to execute action,
-        onrollback is a callback to execute if the oncommit() has been called and
-        a rollback is required """
+        """
+        Process action. oncommit is a callback to execute action, onrollback is
+        a callback to execute if the oncommit() has been called and a rollback
+        is required
+        """
 
         debug("---> commiting", oncommit)
         result = self._do_with_retry(oncommit)
@@ -237,22 +262,25 @@ class LDAPwrapper(object):
     ##################################
 
     def add(self, dn, modlist, onfailure=None):
-        """ Add a DN to the LDAP database; See ldap module. Doesn't return a
-        result if transactions enabled. """
+        """
+        Add a DN to the LDAP database; See ldap module. Doesn't return a result
+        if transactions enabled.
+        """
 
         debug("\nadd", self, dn, modlist)
 
         # if rollback of add required, delete it
-        oncommit   = lambda obj: obj.add_s(dn, modlist)
+        oncommit = lambda obj: obj.add_s(dn, modlist)
         onrollback = lambda obj: obj.delete_s(dn)
 
         # process this action
         return self._process(oncommit, onrollback, onfailure)
 
-
     def modify(self, dn, modlist, onfailure=None):
-        """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
-        result if transactions enabled. """
+        """
+        Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled.
+        """
 
         debug("\nmodify", self, dn, modlist)
 
@@ -264,7 +292,7 @@ class LDAPwrapper(object):
 
         # find the how to reverse modlist (for rollback) and put result in
         # revlist. Also simulate actions on cache.
-        for mod_op,mod_type,mod_vals in modlist:
+        for mod_op, mod_type, mod_vals in modlist:
             reverse = None
             if mod_type in result:
                 debug("attribute cache:", result[mod_type])
@@ -274,28 +302,29 @@ class LDAPwrapper(object):
 
             if mod_vals is not None:
                 if not isinstance(mod_vals, list):
-                    mod_vals = [ mod_vals ]
+                    mod_vals = [mod_vals]
 
             if mod_op == ldap.MOD_ADD:
                 # reverse of MOD_ADD is MOD_DELETE
-                reverse = (ldap.MOD_DELETE,mod_type,mod_vals)
+                reverse = (ldap.MOD_DELETE, mod_type, mod_vals)
 
             elif mod_op == ldap.MOD_DELETE and mod_vals is not None:
                 # Reverse of MOD_DELETE is MOD_ADD, but only if value is given
                 # if mod_vals is None, this means all values where deleted.
-                reverse = (ldap.MOD_ADD,mod_type,mod_vals)
+                reverse = (ldap.MOD_ADD, mod_type, mod_vals)
 
             elif mod_op == ldap.MOD_DELETE or mod_op == ldap.MOD_REPLACE:
                 if mod_type in result:
                     # If MOD_DELETE with no values or MOD_REPLACE then we
                     # have to replace all attributes with cached state
-                    reverse = (ldap.MOD_REPLACE,mod_type,result[mod_type])
+                    reverse = (ldap.MOD_REPLACE, mod_type, result[mod_type])
                 else:
-                    # except if we have no cached state for this DN, in which case we delete it.
-                    reverse = (ldap.MOD_DELETE,mod_type,None)
+                    # except if we have no cached state for this DN, in which
+                    # case we delete it.
+                    reverse = (ldap.MOD_DELETE, mod_type, None)
 
             else:
-                raise RuntimeError("mod_op of %d not supported"%mod_op)
+                raise RuntimeError("mod_op of %d not supported" % mod_op)
 
             debug("attribute reverse:", reverse)
             if mod_type in result:
@@ -308,13 +337,15 @@ class LDAPwrapper(object):
         debug("--\n")
 
         # now the hard stuff is over, we get to the easy stuff
-        oncommit   = lambda obj: obj.modify_s(dn, modlist)
+        oncommit = lambda obj: obj.modify_s(dn, modlist)
         onrollback = lambda obj: obj.modify_s(dn, revlist)
         return self._process(oncommit, onrollback, onfailure)
 
     def modify_no_rollback(self, dn, modlist):
-        """ Modify a DN in the LDAP database; See ldap module. Doesn't return a
-        result if transactions enabled. """
+        """
+        Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled.
+        """
 
         debug("\nmodify_no_rollback", self, dn, modlist)
         result = self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
@@ -323,8 +354,10 @@ class LDAPwrapper(object):
         return result
 
     def delete(self, dn, onfailure=None):
-        """ delete a dn in the ldap database; see ldap module. doesn't return a
-        result if transactions enabled. """
+        """
+        delete a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled.
+        """
 
         debug("\ndelete", self)
 
@@ -333,7 +366,8 @@ class LDAPwrapper(object):
 
         # remove special values that can't be added
         def delete_attribute(name):
-            if name in result: del result[name]
+            if name in result:
+                del result[name]
         delete_attribute('entryUUID')
         delete_attribute('structuralObjectClass')
         delete_attribute('modifiersName')
@@ -347,20 +381,22 @@ class LDAPwrapper(object):
         modlist = tldap.modlist.addModlist(result)
 
         # on commit carry out action; on rollback restore cached state
-        oncommit   = lambda obj: obj.delete_s(dn)
+        oncommit = lambda obj: obj.delete_s(dn)
         onrollback = lambda obj: obj.add_s(dn, modlist)
         return self._process(oncommit, onrollback, onfailure)
 
     def rename(self, dn, newrdn, onfailure=None):
-        """ rename a dn in the ldap database; see ldap module. doesn't return a
-        result if transactions enabled. """
+        """
+        rename a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled.
+        """
 
         debug("\nrename", self, dn, newrdn)
 
         # split up the parameters
         split_dn = ldap.dn.str2dn(dn)
         split_newrdn = ldap.dn.str2dn(newrdn)
-        assert(len(split_newrdn)==1)
+        assert(len(split_newrdn) == 1)
 
         # make dn unqualified
         rdn = ldap.dn.dn2str(split_dn[0:1])
@@ -374,7 +410,7 @@ class LDAPwrapper(object):
         debug("--> rollback", self, newdn, rdn)
 
         # on commit carry out action; on rollback reverse rename
-        oncommit   = lambda obj: obj.rename_s(dn, newrdn)
+        oncommit = lambda obj: obj.rename_s(dn, newrdn)
         onrollback = lambda obj: obj.rename_s(newdn, rdn)
 
         return self._process(oncommit, onrollback, onfailure)
@@ -385,28 +421,34 @@ class LDAPwrapper(object):
         debug("fail")
 
         # on commit carry out action; on rollback reverse rename
-        oncommit   = lambda obj: raise_testfailure("commit")
+        oncommit = lambda obj: raise_testfailure("commit")
         onrollback = lambda obj: raise_testfailure("rollback")
         return self._process(oncommit, onrollback, None)
 
     # read only stuff
 
-    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, limit=None):
-        """ Search for entries in LDAP database. """
+    def search(self, base, scope, filterstr='(objectClass=*)',
+               attrlist=None, limit=None):
+        """
+        Search for entries in LDAP database.
+        """
 
         debug("\nsearch", base, scope, filterstr, attrlist, limit)
 
         # first results
         if isinstance(attrlist, set):
             attrlist = list(attrlist)
+
         def first_results(obj):
             debug("---> searching ldap", limit)
-            msgid = obj.search_ext(base, scope, filterstr, attrlist, sizelimit=limit or 0)
+            msgid = obj.search_ext(base, scope, filterstr, attrlist,
+                                   sizelimit=limit or 0)
             return (msgid,) + self._obj.result3(msgid, 0)
 
         # get the 1st result
         try:
-            msgid,result_type,result_list,result_msgid,result_serverctrls = self._do_with_retry(first_results)
+            msgid, result_type, result_list, result_msgid, result_serverctrls \
+                = self._do_with_retry(first_results)
         except ldap.SIZELIMIT_EXCEEDED:
             debug("---> got SIZELIMIT_EXCEEDED")
             return
@@ -421,7 +463,8 @@ class LDAPwrapper(object):
                 debug("---> yielding", result_item)
                 yield result_item
             try:
-                result_type,result_list,result_msgid,result_serverctrls = self._obj.result3(msgid, 0)
+                result_type, result_list, result_msgid, result_serverctrls \
+                    = self._obj.result3(msgid, 0)
             except ldap.SIZELIMIT_EXCEEDED:
                 debug("---> got SIZELIMIT_EXCEEDED")
                 return

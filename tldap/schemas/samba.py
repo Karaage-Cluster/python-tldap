@@ -51,7 +51,8 @@ class sambaSamAccount(tldap.base.LDAPobject):
     sambaLogonHours = tldap.fields.CharField()
 
     class Meta:
-        object_classes = set([ 'sambaSamAccount' ])
+        object_classes = set(['sambaSamAccount'])
+
 
 class sambaGroupMapping(tldap.base.LDAPobject):
     gidNumber = tldap.fields.IntegerField(required=True)
@@ -61,5 +62,4 @@ class sambaGroupMapping(tldap.base.LDAPobject):
     sambaSIDList = tldap.fields.CharField()
 
     class Meta:
-        object_classes = set([ 'sambaGroupMapping' ])
-
+        object_classes = set(['sambaGroupMapping'])

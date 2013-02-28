@@ -19,6 +19,7 @@ import tldap
 import tldap.base
 import tldap.fields
 
+
 class eduPerson(tldap.base.LDAPobject):
     eduPersonAffiliation = tldap.fields.CharField()
     eduPersonNickname = tldap.fields.CharField()
@@ -33,7 +34,8 @@ class eduPerson(tldap.base.LDAPobject):
     eduPersonAssurance = tldap.fields.CharField()
 
     class Meta:
-        object_classes = set([ 'eduPerson' ])
+        object_classes = set(['eduPerson'])
+
 
 class auEduPerson(tldap.base.LDAPobject):
     auEduPersonID = tldap.fields.CharField()
@@ -55,5 +57,4 @@ class auEduPerson(tldap.base.LDAPobject):
     auEduPersonSharedToken = tldap.fields.CharField()
 
     class Meta:
-        object_classes = set([ 'auEduPerson' ])
-
+        object_classes = set(['auEduPerson'])

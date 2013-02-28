@@ -36,31 +36,35 @@ if not django.conf.settings.LDAP:
         'URI': django.conf.settings.LDAP_URL,
         'USER': django.conf.settings.LDAP_ADMIN_USER,
         'PASSWORD': django.conf.settings.LDAP_ADMIN_PASSWORD,
-        'USE_TLS' : False,
-        'TLS_CA' : None,
+        'USE_TLS': False,
+        'TLS_CA': None,
         'LDAP_ACCOUNT_BASE': django.conf.settings.LDAP_USER_BASE,
         'LDAP_GROUP_BASE': django.conf.settings.LDAP_GROUP_BASE,
     }
     if hasattr(django.conf.settings, 'LDAP_USE_TLS'):
-        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = django.conf.settings.LDAP_USE_TLS
+        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = (
+            django.conf.settings.LDAP_USE_TLS)
     if django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"]:
-        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = django.conf.settings.LDAP_TLS_CA
+        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = (
+            django.conf.settings.LDAP_TLS_CA)
 
 if DEFAULT_LDAP_ALIAS not in django.conf.settings.LDAP:
-    raise RuntimeError("You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
+    raise RuntimeError(
+        "You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
 
 connections = tldap.utils.ConnectionHandler(django.conf.settings.LDAP)
 
-class DefaultConnectionProxy(object):
-  """
-  Proxy for accessing the default DatabaseWrapper object's attributes. If you
-  need to access the DatabaseWrapper object itself, use
-  connections[DEFAULT_LDAP_ALIAS] instead.
-  """
-  def __getattr__(self, item):
-      return getattr(connections[DEFAULT_LDAP_ALIAS], item)
 
-  def __setattr__(self, name, value):
-      return setattr(connections[DEFAULT_LDAP_ALIAS], name, value)
+class DefaultConnectionProxy(object):
+    """
+    Proxy for accessing the default DatabaseWrapper object's attributes. If you
+    need to access the DatabaseWrapper object itself, use
+    connections[DEFAULT_LDAP_ALIAS] instead.
+  """
+    def __getattr__(self, item):
+        return getattr(connections[DEFAULT_LDAP_ALIAS], item)
+
+    def __setattr__(self, name, value):
+        return setattr(connections[DEFAULT_LDAP_ALIAS], name, value)
 
 connection = DefaultConnectionProxy()
