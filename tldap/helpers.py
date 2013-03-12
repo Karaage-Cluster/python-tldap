@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 
 class CaseInsensitiveDict(dict):
     """
@@ -67,5 +69,14 @@ class CaseInsensitiveDict(dict):
     def get_correct_key(self, key):
         return self.lc[key.lower()]
 
-    def clone(self):
-        return self.__class__(self)
+    def __copy__(self):
+        clone = self.__class__()
+        for k, v in self.iteritems():
+            clone[k] = v
+        return clone
+
+    def __deepcopy__(self, memo):
+        clone = self.__class__()
+        for k, v in self.iteritems():
+            clone[k] = copy.deepcopy(v, memo)
+        return clone
