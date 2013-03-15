@@ -1,3 +1,10 @@
+django-tldap (0.2.3-2) unstable; urgency=low
+
+  * Don't support python 2.5, it is broken. With keyword not supported in
+    tests.
+
+ -- Brian May <bam@debian.org>  Fri, 15 Mar 2013 15:52:36 +1100
+
 django-tldap (0.2.3-1) unstable; urgency=low
 
   * Fix copy of CaseInsensitiveDict.
