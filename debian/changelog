@@ -1,3 +1,10 @@
+django-tldap (0.2.3-1) unstable; urgency=low
+
+  * Fix copy of CaseInsensitiveDict.
+  * PEP8 formatting fixed.
+
+ -- Brian May <bam@debian.org>  Fri, 15 Mar 2013 14:21:23 +1100
+
 django-tldap (0.2.2-1) unstable; urgency=low
 
   * Fix bug in processing commit flag.
