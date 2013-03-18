@@ -21,6 +21,22 @@ import tldap.fields
 import tldap.schemas.rfc
 
 
+class person(tldap.schemas.rfc.person):
+    sn = tldap.fields.CharField()
+    cn = tldap.fields.CharField()
+
+
+class posixAccount(tldap.schemas.rfc.posixAccount):
+    cn = tldap.fields.CharField()
+    uid = tldap.fields.CharField()
+    uidNumber = tldap.fields.IntegerField()
+    gidNumber = tldap.fields.IntegerField()
+    homeDirectory = tldap.fields.CharField()
+    unixHomeDirectory = tldap.fields.CharField()
+
+
+# Active Directory
+
 class user(tldap.base.LDAPobject):
     displayName = tldap.fields.CharField()
     givenName = tldap.fields.CharField()
