@@ -1,3 +1,9 @@
+django-tldap (0.2.4-1) unstable; urgency=low
+
+  * Add classes that were deleted in error.
+
+ -- Brian May <bam@debian.org>  Fri, 22 Mar 2013 15:25:28 +1100
+
 django-tldap (0.2.3-2) unstable; urgency=low
 
   * Don't support python 2.5, it is broken. With keyword not supported in
