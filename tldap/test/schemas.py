@@ -15,13 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+import tldap
 import tldap.schemas.rfc as rfc
 import tldap.manager
 
 # standard objects
 
 
-class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
+class person(tldap.base.LDAPobject):
+    schema_list = [rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson]
 
     class Meta:
         base_dn_setting = "LDAP_ACCOUNT_BASE"
@@ -44,7 +46,8 @@ class person(rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson):
         linked_cls='tldap.test.schemas.person', linked_key='manager')
 
 
-class account(person, rfc.posixAccount, rfc.shadowAccount):
+class account(person):
+    schema_list = [rfc.posixAccount, rfc.shadowAccount]
 
     def __unicode__(self):
         return u"A:%s" % self.cn
@@ -59,7 +62,9 @@ class account(person, rfc.posixAccount, rfc.shadowAccount):
         super(account, self).save(*args, **kwargs)
 
 
-class group(rfc.posixGroup):
+class group(tldap.base.LDAPobject):
+    schema_list = [rfc.posixGroup]
+
     primary_accounts = tldap.manager.OneToManyDescriptor(
         this_key='gidNumber', linked_cls=account, linked_key='gidNumber',
         related_name="primary_group")

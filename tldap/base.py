@@ -99,6 +99,9 @@ class LDAPmeta(type):
 
         p = None
 
+        # get schemas used
+        schema_list = attrs.pop('schema_list', [])
+
         # add rest of attributes to class
         for obj_name, obj in attrs.items():
             new_class.add_to_class(obj_name, obj)
@@ -116,7 +119,7 @@ class LDAPmeta(type):
 
         # for every parent ...
         parent_field_names = dict()
-        for base in parents:
+        for base in parents + schema_list:
             if not hasattr(base, '_meta'):
                 # Things without _meta aren't functional models, so they're
                 # uninteresting parents.
