@@ -1,3 +1,10 @@
+django-tldap (0.2.5-2) unstable; urgency=low
+
+  * Transition to dh_python2.
+    http://wiki.debian.org/Python/TransitionToDHPython2
+
+ -- Brian May <bam@debian.org>  Thu, 09 May 2013 14:05:49 +1000
+
 django-tldap (0.2.5-1) unstable; urgency=low
 
   * Support new method of creating schemas.
