@@ -102,6 +102,7 @@ class Slapd:
         self._root_cn = "Manager"
         self._root_password = "password"
         self._slapd_debug_level = 0
+        self._env = {}
 
     # Setters
     def set_port(self, port):
@@ -223,7 +224,7 @@ class Slapd:
             "-f", config_path,
             "-h", self.get_url(),
             "-d", str(self._slapd_debug_level),
-        ])
+        ], env=self._env)
         self._proc_config = config_path
 
     def _wait_for_slapd(self):
@@ -290,8 +291,8 @@ class Slapd:
             p = subprocess.Popen([
                 self.PATH_SLAPTEST,
                 verboseflag,
-                "-f", config_path
-            ])
+                "-f", config_path,
+                ], env=self._env)
             if p.wait() != 0:
                 raise RuntimeError("configuration test failed")
             self._log.debug("configuration seems ok")
@@ -307,7 +308,8 @@ class Slapd:
             "-D", self.get_root_dn(),
             "-w", self.get_root_password(),
             "-H", self.get_url()] + extra_args,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            env=self._env)
         p.communicate(ldif)
         if p.wait() != 0:
             raise RuntimeError("ldapadd process failed")
@@ -326,7 +328,8 @@ class Slapd:
             "-b", base,
             "-s", scope,
             "-LL", ] + extra_args + [filter] + attrs,
-            stdout=subprocess.PIPE)
+            stdout=subprocess.PIPE,
+            env=self._env)
         output = p.communicate()[0]
         if p.wait() != 0:
             raise RuntimeError("ldapadd process failed")
