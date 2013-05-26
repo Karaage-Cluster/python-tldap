@@ -1,3 +1,10 @@
+django-tldap (0.2.6-1) unstable; urgency=low
+
+  * Tests: Purge environment when calling slapd.
+  * Update description to reflect what tldap does.
+
+ -- Brian May <bam@debian.org>  Mon, 27 May 2013 09:31:04 +1000
+
 django-tldap (0.2.5-2) unstable; urgency=low
 
   * Transition to dh_python2.
