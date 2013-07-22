@@ -220,6 +220,21 @@ class QuerySet(object):
                 if name == "pk":
                     name = self._cls._meta.pk
 
+                # DN is a special case
+                if name == "dn":
+                    name = "entryDN:"
+                    if isinstance(value, list):
+                        s = []
+                        for v in value:
+                            s.append(self._get_filter_item(name, operation, v))
+                        search.append("(&".join(search) + ")")
+
+                    # or process just the single value
+                    else:
+                        search.append(
+                            self._get_filter_item(name, operation, value))
+                    continue
+
                 # try to find field associated with name
                 try:
                     field = self._cls._meta.get_field_by_name(name)
@@ -367,48 +382,6 @@ class QuerySet(object):
             # multiple terms
             return dst
 
-    def _get_dn_filter(self, q):
-        """
-        Get list of DN to search for from q, or None if this is not possible.
-        Searches for dn are rather restricted at the moment.
-        """
-        dn_list = []
-
-        # can't handle negated dn searches
-        if q.negated:
-            return None
-
-        # can only handle OR, or AND with one term, nothing else makes sense
-        if q.connector == tldap.Q.OR:
-            pass
-        elif q.connector == tldap.Q.AND and len(q.children) == 1:
-            pass
-        else:
-            return None
-
-        # for every child
-        for child in q.children:
-            if child is None:
-                continue
-
-            # descend if it is a node
-            elif isinstance(child, django.utils.tree.Node):
-                tmp_list = self._get_dn_filter(child)
-                if tmp_list is None:
-                    return None
-                dn_list.extend(tmp_list)
-                tmp_list = None
-
-            # otherwise add this dn value
-            else:
-                name, value = child
-                if name != "dn":
-                    return None
-                dn_list.append(value)
-
-        # return list of dn to search for
-        return dn_list
-
     def _get_search_params(self):
         # set the database we should use as required
         alias = self._alias or tldap.DEFAULT_LDAP_ALIAS
@@ -426,44 +399,27 @@ class QuerySet(object):
             # expand query
             requested_query = self._expand_query(self._query)
 
-            # try and get a list of dn to search for
-            if requested_query is not None:
-                dn_list = self._get_dn_filter(requested_query)
-            else:
-                dn_list = None
-
-        else:
-            # no query supplied
-            dn_list = None
-
         # add object classes to search array
         query = tldap.Q()
         for oc in object_classes:
             query = query & tldap.Q(objectClass=oc)
 
-        # refine search parameters
-        if dn_list is not None:
-            # we got a dn_list, we only search for these dn
-            scope = ldap.SCOPE_BASE
-        else:
-            # do a SUBTREE search
-            scope = ldap.SCOPE_SUBTREE
+        # do a SUBTREE search
+        scope = ldap.SCOPE_SUBTREE
 
-            # add requested query
-            if self._query is not None:
-                if requested_query is not None:
-                    query = query & requested_query
-                else:
-                    query = None
+        # add requested query
+        if self._query is not None:
+            if requested_query is not None:
+                query = query & requested_query
+            else:
+                query = None
 
-            # create a "list" of base_dn to search
-            base_dn = self._base_dn or self._cls._meta.base_dn
-            if base_dn is None:
-                base_dn = (
-                    connection.settings_dict[self._cls._meta.base_dn_setting])
-
-            assert base_dn is not None
-            dn_list = [base_dn]
+        # create a "list" of base_dn to search
+        base_dn = self._base_dn or self._cls._meta.base_dn
+        if base_dn is None:
+            base_dn = (
+                connection.settings_dict[self._cls._meta.base_dn_setting])
+        assert base_dn is not None
 
         # get list of field names we support
         field_names = self._cls._meta.get_all_field_names()
@@ -474,7 +430,7 @@ class QuerySet(object):
         else:
             search_filter = None
 
-        return alias, connection, dn_list, scope, search_filter, field_names
+        return alias, connection, base_dn, scope, search_filter, field_names
 
     def iterator(self):
         """
@@ -483,7 +439,7 @@ class QuerySet(object):
         """
 
         # get search parameters
-        alias, connection, dn_list, scope, search_filter, field_names = (
+        alias, connection, base_dn, scope, search_filter, field_names = (
             self._get_search_params())
         if search_filter is None:
             return
@@ -497,43 +453,41 @@ class QuerySet(object):
 
         # repeat for every dn
         fields = self._cls._meta.fields
-        for base_dn in dn_list:
-            assert base_dn is not None
 
-            try:
-                # get the results
-                for i in connection.search(base_dn, scope,
-                                           search_filter, field_names,
-                                           limit=limit):
-                    if start > 0:
-                        start = start - 1
-                        continue
+        try:
+            # get the results
+            for i in connection.search(base_dn, scope,
+                                       search_filter, field_names,
+                                       limit=limit):
+                if start > 0:
+                    start = start - 1
+                    continue
 
-                    # create new object
-                    o = self._cls()
+                # create new object
+                o = self._cls()
 
-                    # set dn manually
-                    setattr(o, '_dn', i[0])
+                # set dn manually
+                setattr(o, '_dn', i[0])
 
-                    # set the other fields
-                    for field in fields:
-                        name = field.name
-                        value = i[1].get(name, [])
-                        value = field.to_python(value)
-                        setattr(o, name, value)
+                # set the other fields
+                for field in fields:
+                    name = field.name
+                    value = i[1].get(name, [])
+                    value = field.to_python(value)
+                    setattr(o, name, value)
 
-                    # save raw db values for latter use
-                    o._db_values[alias] = (
-                        tldap.helpers.CaseInsensitiveDict(i[1]))
+                # save raw db values for latter use
+                o._db_values[alias] = (
+                    tldap.helpers.CaseInsensitiveDict(i[1]))
 
-                    # save database alias for latter use
-                    o._alias = alias
+                # save database alias for latter use
+                o._alias = alias
 
-                    # give caller this result
-                    yield o
-            except ldap.NO_SUCH_OBJECT:
-                # return with no results
-                pass
+                # give caller this result
+                yield o
+        except ldap.NO_SUCH_OBJECT:
+            # return with no results
+            pass
 
     def get(self, *args, **kwargs):
         """
