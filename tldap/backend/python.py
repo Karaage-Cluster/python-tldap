@@ -57,6 +57,7 @@ class LDAPwrapper(object):
 
     def _reconnect(self):
         s = self.settings_dict
+        self._obj = None
 
         debug("connecting")
         conn = ldap.initialize(s['URI'])
@@ -67,11 +68,11 @@ class LDAPwrapper(object):
             conn.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
             conn.start_tls_s()
 
-        self._obj = conn
-
         if s['USER'] is not None:
             debug("binding")
-            self._obj.simple_bind_s(s['USER'], s['PASSWORD'])
+            conn.simple_bind_s(s['USER'], s['PASSWORD'])
+
+        self._obj = conn
 
     def _do_with_retry(self, fn):
         # if no connection
