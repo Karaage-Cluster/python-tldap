@@ -331,8 +331,7 @@ class LDAPobject(object):
 
     delete.alters_data = True
 
-    def _get_moddict(self, default_object_class, default_object_class_db,
-                     using):
+    def _get_moddict(self, default_object_class, default_object_class_db):
         dn0k, dn0v, _ = ldap.dn.str2dn(self._dn)[0][0]
 
         # get field for objectClass
@@ -403,7 +402,7 @@ class LDAPobject(object):
         # generate moddict values
         moddict = self._get_moddict(default_object_class,
                                     default_object_class_db,
-                                    using)
+                                    )
 
         # turn moddict into a modlist
         modlist = tldap.modlist.addModlist(moddict)
@@ -451,7 +450,7 @@ class LDAPobject(object):
         # generate moddict values
         moddict = self._get_moddict(default_object_class,
                                     default_object_class_db,
-                                    using)
+                                    )
 
         # remove items in force_replace
         force_value = {}
