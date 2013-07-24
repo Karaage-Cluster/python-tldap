@@ -628,3 +628,16 @@ class LDAPobject(object):
             setattr(self, new_key, v)
 
     _rename.alters_data = True
+
+    def unparse(self, ldif_writer):
+        # objectClass = attribute + class meta setup
+        default_object_class = getattr(self, "objectClass", [])
+        default_object_class_db = list(self._meta.object_classes)
+
+        # generate moddict values
+        moddict = self._get_moddict(default_object_class,
+                                    default_object_class_db,
+                                    )
+
+        # do stuff
+        return ldif_writer.unparse(self.dn, moddict)
