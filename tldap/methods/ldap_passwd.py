@@ -310,8 +310,15 @@ class UserPassword(Password):
                 cmp_password, salt = hashed_p[:pos], hashed_p[pos:]
             else:
                 cmp_password, salt = hashed_p, ''
-        hashed_password = self._hashPassword(testPassword, scheme, salt)
-        return hashed_password == encoded_p
+            hashed_password = self._hashPassword(testPassword, scheme, salt)
+            return hashed_password == encoded_p
+        elif scheme in ['crypt']:
+            _, magic, salt, _ = encoded_p.split("$")
+            assert(magic=="1")
+            hashed_password = '{crypt}%s' % md5crypt(testPassword, salt)
+            return hashed_password == singlePasswordValue
+        else:
+            raise RuntimeError("Password scheme not supported.")
 
     def encodePassword(self, plainPassword, scheme):
         """
