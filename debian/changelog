@@ -1,6 +1,10 @@
-django-tldap (0.2.7-1) UNRELEASED; urgency=low
+django-tldap (0.2.7-1) unstable; urgency=low
 
   * New methods submodule, moved from placard schema.
+  * Add depends on python-ldap.
+  * Fix LDAP bind if connection failed.
+  * Fix md5-crypt password comparison.
+  * Write LDAP entries to ldif_writer.
 
  -- Brian May <bam@debian.org>  Thu, 18 Jul 2013 14:04:43 +1000
 
