@@ -22,7 +22,7 @@ import datetime
 class sambaAccountMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"SA:%s"%(self.displayName or self.cn)
+        return u"%s"%(self.displayName or self.cn)
 
     @classmethod
     def set_defaults(cls, self):

@@ -45,7 +45,7 @@ class accountMixin(object):
 
     @classmethod
     def __unicode__(cls, self):
-        return u"A:%s"%(self.displayName or self.cn)
+        return u"%s"%(self.displayName or self.cn)
 
     @classmethod
     def set_defaults(cls, self):
@@ -102,7 +102,7 @@ class groupMixin(object):
 
     @classmethod
     def __unicode__(cls, self):
-        return u"G:%s"%self.cn
+        return u"%s"%self.cn
 
     @classmethod
     def pre_create(cls, self, master):
