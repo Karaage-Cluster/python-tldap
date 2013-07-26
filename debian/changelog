@@ -1,3 +1,12 @@
+django-tldap (0.2.8-1) unstable; urgency=low
+
+  * Rename backends.
+    tldap.backend.transaction to tldap.backend.fake_transactions
+    tldap.backend.python to tldap.backend.no_transactions
+  * Remove prefixes from LDAP names.
+
+ -- Brian May <bam@debian.org>  Fri, 26 Jul 2013 16:01:07 +1000
+
 django-tldap (0.2.7-1) unstable; urgency=low
 
   * New methods submodule, moved from placard schema.
