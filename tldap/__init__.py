@@ -32,7 +32,7 @@ if not hasattr(django.conf.settings, 'LDAP'):
 # ok to use django settings
 if not django.conf.settings.LDAP:
     django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS] = {
-        'ENGINE': 'tldap.backend.transaction',
+        'ENGINE': 'tldap.backend.fake_transactions',
         'URI': django.conf.settings.LDAP_URL,
         'USER': django.conf.settings.LDAP_ADMIN_USER,
         'PASSWORD': django.conf.settings.LDAP_ADMIN_PASSWORD,
