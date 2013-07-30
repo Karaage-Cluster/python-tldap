@@ -281,9 +281,9 @@ class UserPassword(Password):
         if scheme=='crypt':
             return crypt.crypt(password, salt)
         elif scheme in ['md5', 'smd5']:
-            return base64.encodestring(md5(password+salt).digest()+salt).strip()
+            return base64.encodestring(md5(password.encode()+salt).digest()+salt).strip()
         elif scheme in ['sha', 'ssha']:
-            return base64.encodestring(sha(password+salt).digest()+salt).strip()
+            return base64.encodestring(sha(password.encode()+salt).digest()+salt).strip()
         else:
             return password
 
