@@ -31,7 +31,7 @@ DATABASES = {
 
 LDAP = {
     'default': {
-        'ENGINE': 'tldap.backend.transaction',
+        'ENGINE': 'tldap.backend.fake_transactions',
         'URI': 'ldap://localhost:38911/',
         'USER': 'cn=Manager,dc=python-ldap,dc=org',
         'PASSWORD': 'password',
