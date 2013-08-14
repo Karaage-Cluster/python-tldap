@@ -22,7 +22,7 @@ class baseMixin(tldap.base.LDAPobject):
     mixin_list = []
 
     def __init__(self, **kwargs):
-        super(baseMixin, self).__init__(self, **kwargs)
+        super(baseMixin, self).__init__(**kwargs)
         for mixin in self.mixin_list:
             if hasattr(mixin, 'set_defaults'):
                 mixin.set_defaults(self)
