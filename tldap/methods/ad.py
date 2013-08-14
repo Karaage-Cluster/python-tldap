@@ -25,10 +25,12 @@ class adUserMixin(object):
         self.userAccountControl = 512
 
     @classmethod
-    def pre_add(cls, self, settings, using, master):
+    def setup_from_master(cls, self, master):
+        self.sAMAccountName = getattr(master, "sAMAccountName", None)
+
+    @classmethod
+    def pre_add(cls, self, settings, using):
         assert self.objectSid is None
-        if master is not None:
-            self.sAMAccountName = getattr(master, "sAMAccountName", None)
         if self.sAMAccountName is None:
             self.sAMAccountName = self.uid
 
@@ -37,7 +39,7 @@ class adUserMixin(object):
         self.primary_group = None
 
     @classmethod
-    def post_add(cls, self, settings, using, master):
+    def post_add(cls, self, settings, using):
         # AD sets this automagically
         using = self._alias
         self._db_values[using]["primaryGroupID"] = [ 513, ]

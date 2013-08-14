@@ -29,10 +29,11 @@ class sambaAccountMixin(object):
         self.sambaPwdLastSet = datetime.datetime.now()
 
     @classmethod
-    def pre_add(cls, self, settings, using, master):
-        assert self.sambaSID is None
-        if master is not None:
-            self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
+    def setup_from_master(cls, self, master):
+        self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
+
+    @classmethod
+    def pre_add(cls, self, settings, using):
         if self.sambaSID is None:
             rid_base = settings['SAMBA_ACCOUNT_RID_BASE']
             assert rid_base % 2 == 0
@@ -68,10 +69,11 @@ class sambaGroupMixin(object):
         self.sambaGroupType = 2
 
     @classmethod
-    def pre_add(cls, self, settings, using, master):
-        assert self.sambaSID is None
-        if master is not None:
-            self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
+    def setup_from_master(cls, self, master):
+        self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
+
+    @classmethod
+    def pre_add(cls, self, settings, using):
         if self.sambaSID is None:
             rid_base = settings['SAMBA_GROUP_RID_BASE']
             assert rid_base % 2 == 0

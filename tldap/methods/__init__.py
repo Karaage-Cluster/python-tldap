@@ -37,8 +37,9 @@ class baseMixin(tldap.base.LDAPobject):
         pass
 
     def pre_create(self, master):
-        # need a better way to do this
-        self.master = master
+        # depreciated
+        if master is not None:
+            self.setup_from_master(master)
 
     def post_create(self, master):
         # depreciated
@@ -46,19 +47,24 @@ class baseMixin(tldap.base.LDAPobject):
 
     def pre_save(self):
         # depreciated
-        self.master = None
+        pass
+
+    def setup_from_master(self, master):
+        for mixin in self.mixin_list:
+            if hasattr(mixin, 'setup_from_master'):
+                mixin.setup_from_master(self, master)
 
     def _add(self, using):
         settings = tldap.connections[using].settings_dict
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_add'):
-                mixin.pre_add(self, settings, using, self.master)
+                mixin.pre_add(self, settings, using)
             if hasattr(mixin, 'pre_save'):
                 mixin.pre_save(self, settings, using)
         super(baseMixin, self)._add(using)
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_add'):
-                mixin.post_add(self, settings, using, self.master)
+                mixin.post_add(self, settings, using)
             if hasattr(mixin, 'post_save'):
                 mixin.post_save(self, settings, using)
 

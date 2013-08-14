@@ -55,11 +55,12 @@ class accountMixin(object):
         self.loginShell = '/bin/bash'
 
     @classmethod
-    def pre_add(cls, self, settings, using, master):
-        assert self.uidNumber is None
-        if master is not None:
-            self.uidNumber = master.uidNumber
-        else:
+    def setup_from_master(cls, self, master):
+        self.uidNumber = master.uidNumber
+
+    @classmethod
+    def pre_add(cls, self, settings, using):
+        if self.uidNumber is None:
             cls.set_free_uidNumber(self, settings, using)
         if self.unixHomeDirectory is None and self.uid is not None:
             self.unixHomeDirectory =  '/home/%s' % self.uid
@@ -111,11 +112,12 @@ class groupMixin(object):
         return u"%s"%self.cn
 
     @classmethod
-    def pre_add(cls, self, settings, using, master):
-        assert self.gidNumber is None
-        if master is not None:
-            self.gidNumber = master.gidNumber
-        else:
+    def setup_from_master(cls, self, master):
+        self.gidNumber = master.gidNumber
+
+    @classmethod
+    def pre_add(cls, self, settings, using):
+        if self.gidNumber is None:
             cls.set_free_gidNumber(self, settings, using)
 
     @classmethod
