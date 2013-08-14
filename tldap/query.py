@@ -36,13 +36,13 @@ class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
     """
-    def __init__(self, cls, alias):
+    def __init__(self, cls, using):
         assert cls is not None
 
         self._from_cls = None
         self._cls = cls
         self._dn = None
-        self._alias = alias
+        self._alias = using
         self._query = None
         self._base_dn = None
         self._iter = None
@@ -570,13 +570,13 @@ class QuerySet(object):
             clone._query = clone._query & q
         return clone
 
-    def using(self, alias):
+    def using(self, using):
         """
         Selects which database this QuerySet should excecute it's query
         against.
         """
         clone = self._clone()
-        clone._alias = alias
+        clone._alias = using
         return clone
 
     def base_dn(self, base_dn):

@@ -317,18 +317,7 @@ class LDAPobject(object):
     def delete(self, using=None):
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
-        c = tldap.connections[using]
-
-        # what to do if transaction is reversed
-        old_values = self._db_values[using]
-
-        def onfailure():
-            self._db_values[using] = old_values
-
-        # delete it
-        c.delete(self._dn, onfailure)
-        del self._db_values[using]
-
+        self._delete(using)
     delete.alters_data = True
 
     def _get_moddict(self, default_object_class, default_object_class_db):
@@ -628,6 +617,21 @@ class LDAPobject(object):
             setattr(self, new_key, v)
 
     _rename.alters_data = True
+
+    def _delete(self, using):
+        # what database should we be using?
+        c = tldap.connections[using]
+
+        # what to do if transaction is reversed
+        old_values = self._db_values[using]
+
+        def onfailure():
+            self._db_values[using] = old_values
+
+        # delete it
+        c.delete(self._dn, onfailure)
+        del self._db_values[using]
+    _delete.alters_data = True
 
     def unparse(self, ldif_writer):
         # objectClass = attribute + class meta setup

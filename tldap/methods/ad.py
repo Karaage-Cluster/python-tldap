@@ -25,7 +25,7 @@ class adUserMixin(object):
         self.userAccountControl = 512
 
     @classmethod
-    def pre_create(cls, self, master):
+    def pre_add(cls, self, settings, using, master):
         assert self.objectSid is None
         if master is not None:
             self.sAMAccountName = getattr(master, "sAMAccountName", None)
@@ -37,7 +37,7 @@ class adUserMixin(object):
         self.primary_group = None
 
     @classmethod
-    def post_create(cls, self, master):
+    def post_add(cls, self, settings, using, master):
         # AD sets this automagically
         using = self._alias
         self._db_values[using]["primaryGroupID"] = [ 513, ]
@@ -72,6 +72,6 @@ class adGroupMixin(object):
         return u"ADG:%s"%(self.displayName or self.cn)
 
     @classmethod
-    def pre_save(cls, self):
+    def pre_save(cls, self, settings, using):
         if self.displayName is None:
             self.displayName = self.cn

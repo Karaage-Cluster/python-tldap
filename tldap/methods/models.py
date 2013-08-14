@@ -18,7 +18,8 @@
 from django.db import models
 
 
-class counters(models.Model):
+class Counters(models.Model):
+    scheme = models.CharField(max_length=20, db_index=True)
     name = models.CharField(max_length=20, db_index=True)
     count = models.IntegerField()
 
@@ -26,8 +27,9 @@ class counters(models.Model):
         db_table = 'tldap_counters'
 
     @classmethod
-    def get_and_increment(cls, name, default, test):
-        entry, c = cls.objects.select_for_update().get_or_create(name=name, defaults={'count': default})
+    def get_and_increment(cls, scheme, name, default, test):
+        entry, c = cls.objects.select_for_update().get_or_create(
+                scheme=scheme, name=name, defaults={'count': default})
 
         while not test(entry.count):
             entry.count = entry.count + 1

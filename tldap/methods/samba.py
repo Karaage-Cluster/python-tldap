@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-import django.conf
 import smbpasswd
 import datetime
 
@@ -26,19 +25,20 @@ class sambaAccountMixin(object):
 
     @classmethod
     def set_defaults(cls, self):
-        self.sambaDomainName = django.conf.settings.SAMBA_DOMAIN_NAME
         self.sambaAcctFlags = '[ U         ]'
         self.sambaPwdLastSet = datetime.datetime.now()
 
     @classmethod
-    def pre_create(cls, self, master):
+    def pre_add(cls, self, settings, using, master):
         assert self.sambaSID is None
         if master is not None:
             self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
         if self.sambaSID is None:
-            rid_base = django.conf.settings.SAMBA_ACCOUNT_RID_BASE
+            rid_base = settings['SAMBA_ACCOUNT_RID_BASE']
             assert rid_base % 2 == 0
-            self.sambaSID = "S-1-5-" + django.conf.settings.SAMBA_DOMAIN_SID + "-" + str(int(self.uidNumber)*2 + rid_base)
+            self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] + "-" + str(int(self.uidNumber)*2 + rid_base)
+        if self.sambaDomainName is None:
+            self.sambaDomainName = settings['SAMBA_DOMAIN_NAME']
 
     @classmethod
     def lock(cls, self):
@@ -68,16 +68,16 @@ class sambaGroupMixin(object):
         self.sambaGroupType = 2
 
     @classmethod
-    def pre_create(cls, self, master):
+    def pre_add(cls, self, settings, using, master):
         assert self.sambaSID is None
         if master is not None:
             self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
         if self.sambaSID is None:
-            rid_base = django.conf.settings.SAMBA_GROUP_RID_BASE
+            rid_base = settings['SAMBA_GROUP_RID_BASE']
             assert rid_base % 2 == 0
-            self.sambaSID = "S-1-5-" + django.conf.settings.SAMBA_DOMAIN_SID + "-" + str(int(self.gidNumber)*2 + 1 + rid_base)
+            self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] + "-" + str(int(self.gidNumber)*2 + 1 + rid_base)
 
     @classmethod
-    def pre_save(cls, self):
+    def pre_save(cls, settings, using, self):
         if self.displayName is None:
             self.displayName = self.cn

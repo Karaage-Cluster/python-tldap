@@ -1,3 +1,11 @@
+django-tldap (0.2.8-2) UNRELEASED; urgency=low
+
+  * Update referenced backend names.
+  * Rewrite method functions.
+  * Fix creating gid and uid for different servers.
+
+ -- Brian May <bam@debian.org>  Wed, 14 Aug 2013 13:51:00 +1000
+
 django-tldap (0.2.8-1) unstable; urgency=low
 
   * Rename backends.

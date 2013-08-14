@@ -31,17 +31,20 @@ class personMixin(object):
         return tldap.connections[using].check_password(self.dn, password)
 
     @classmethod
-    def pre_save(cls, self):
+    def pre_save(cls, self, settings, using):
         self.displayName = '%s %s' % (self.givenName, self.sn)
         self.cn = self.displayName
 
 
 class accountMixin(object):
     @classmethod
-    def set_free_uidNumber(cls, self):
+    def set_free_uidNumber(cls, self, settings, using):
         model = self.__class__
-        self.uidNumber =  tldap.methods.models.counters.get_and_increment("uidNumber", 10000,
-                lambda n: len(model.objects.filter(uidNumber = n)) == 0)
+        scheme = settings.get('NUMBER_SCHEME', 'default')
+        first = settings.get('UID_FIRST', 10000)
+        self.uidNumber =  tldap.methods.models.Counters.get_and_increment(
+                scheme, "uidNumber", first,
+                lambda n: len(model.objects.using(using).filter(uidNumber = n)) == 0)
 
     @classmethod
     def __unicode__(cls, self):
@@ -52,21 +55,21 @@ class accountMixin(object):
         self.loginShell = '/bin/bash'
 
     @classmethod
-    def pre_create(cls, self, master):
+    def pre_add(cls, self, settings, using, master):
         assert self.uidNumber is None
         if master is not None:
             self.uidNumber = master.uidNumber
         else:
-            cls.set_free_uidNumber(self)
+            cls.set_free_uidNumber(self, settings, using)
         if self.unixHomeDirectory is None and self.uid is not None:
             self.unixHomeDirectory =  '/home/%s' % self.uid
 
     @classmethod
-    def pre_save(cls, self):
+    def pre_save(cls, self, settings, using):
         self.gecos = '%s %s' % (self.givenName, self.sn)
 
     @classmethod
-    def pre_delete(cls, self):
+    def pre_delete(cls, self, settings, using):
         self.manager_of.clear()
 
     @classmethod
@@ -95,25 +98,28 @@ class groupMixin(object):
     # Note standard posixGroup objectClass has no displayName attribute
 
     @classmethod
-    def set_free_gidNumber(cls, self):
+    def set_free_gidNumber(cls, self, settings, using):
         model = self.__class__
-        self.gidNumber =  tldap.methods.models.counters.get_and_increment("gidNumber", 10000,
-                lambda n: len(model.objects.filter(gidNumber = n)) == 0)
+        scheme = settings.get('NUMBER_SCHEME', 'default')
+        first = settings.get('GID_FIRST', 10000)
+        self.gidNumber =  tldap.methods.models.Counters.get_and_increment(
+                scheme, "gidNumber", first,
+                lambda n: len(model.objects.using(using).filter(gidNumber = n)) == 0)
 
     @classmethod
     def __unicode__(cls, self):
         return u"%s"%self.cn
 
     @classmethod
-    def pre_create(cls, self, master):
+    def pre_add(cls, self, settings, using, master):
         assert self.gidNumber is None
         if master is not None:
             self.gidNumber = master.gidNumber
         else:
-            cls.set_free_gidNumber(self)
+            cls.set_free_gidNumber(self, settings, using)
 
     @classmethod
-    def pre_save(cls, self):
+    def pre_save(cls, self, settings, using):
         if self.description is None:
             self.description = self.cn
 

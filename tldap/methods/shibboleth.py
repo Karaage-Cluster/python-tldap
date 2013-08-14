@@ -33,7 +33,7 @@ class shibbolethMixin(object):
         return base64.urlsafe_b64encode(sha(uid + entityID + salt).digest())[:-1]
 
     @classmethod
-    def pre_create(cls, self, master):
+    def pre_add(cls, self, settings, using, master):
         assert self.auEduPersonSharedToken is None
         self.auEduPersonSharedToken = cls._generate_shared_token(self)
 
