@@ -16,6 +16,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import tldap.base
+import warnings
 
 
 class baseMixin(tldap.base.LDAPobject):
@@ -34,18 +35,29 @@ class baseMixin(tldap.base.LDAPobject):
 
     def set_defaults(self):
         # depreciated
-        pass
+        warnings.warn(
+            "The use of set_defaults() has been deprecated.",
+            DeprecationWarning)
 
     def pre_create(self, master):
-        # depreciated
+        warnings.warn(
+            "The use of pre_create() has been deprecated. "
+            "Use setup_from_master() if required instead.",
+            DeprecationWarning)
         if master is not None:
             self.setup_from_master(master)
 
     def post_create(self, master):
         # depreciated
+        warnings.warn(
+            "The use of pre_create() has been deprecated.",
+            DeprecationWarning)
         pass
 
     def pre_save(self):
+        warnings.warn(
+            "The use of pre_save() has been deprecated.",
+            DeprecationWarning)
         # depreciated
         pass
 
