@@ -64,12 +64,19 @@ class baseMixin(tldap.base.LDAPobject):
         pass
 
     def setup_from_master(self, master):
+        self._master = master
         for mixin in self.mixin_list:
             if hasattr(mixin, 'setup_from_master'):
                 mixin.setup_from_master(self, master)
 
     def _add(self, using):
         for mixin in self.mixin_list:
+            if hasattr(mixin, 'pre_create'):
+                warnings.warn(
+                    "The use of pre_create() in mixin has been deprecated. "
+                    "Use pre_add() instead. ",
+                    DeprecationWarning)
+                mixin.pre_create(self, self._master)
             if hasattr(mixin, 'pre_add'):
                 mixin.pre_add(self, using)
             if hasattr(mixin, 'pre_save'):
@@ -80,6 +87,12 @@ class baseMixin(tldap.base.LDAPobject):
                 mixin.post_add(self, using)
             if hasattr(mixin, 'post_save'):
                 mixin.post_save(self, using)
+            if hasattr(mixin, 'post_create'):
+                warnings.warn(
+                    "The use of post_create() in mixin has been deprecated. "
+                    "Use post_add() instead. ",
+                    DeprecationWarning)
+                mixin.post_create(self, self._master)
 
     def _modify(self, using):
         for mixin in self.mixin_list:

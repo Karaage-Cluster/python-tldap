@@ -572,7 +572,7 @@ class QuerySet(object):
             clone._query = clone._query & q
         return clone
 
-    def using(self, using, settings):
+    def using(self, using, settings=None):
         """
         Selects which database this QuerySet should excecute it's query
         against.
