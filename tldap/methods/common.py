@@ -41,7 +41,7 @@ class accountMixin(object):
     def set_free_uidNumber(cls, self, using):
         model = self.__class__
         settings = self._settings
-        scheme = settings.get('NUMBER_SCHEME', 'default')
+        scheme = settings.get('NUMBER_SCHEME', using)
         first = settings.get('UID_FIRST', 10000)
         self.uidNumber =  tldap.methods.models.Counters.get_and_increment(
                 scheme, "uidNumber", first,
@@ -105,7 +105,7 @@ class groupMixin(object):
     def set_free_gidNumber(cls, self, using):
         model = self.__class__
         settings = self._settings
-        scheme = settings.get('NUMBER_SCHEME', 'default')
+        scheme = settings.get('NUMBER_SCHEME', using)
         first = settings.get('GID_FIRST', 10000)
         self.gidNumber =  tldap.methods.models.Counters.get_and_increment(
                 scheme, "gidNumber", first,
