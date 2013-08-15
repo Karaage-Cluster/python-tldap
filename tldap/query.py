@@ -515,7 +515,7 @@ class QuerySet(object):
         and returning the created object.
         """
         obj = self._cls(**kwargs)
-        obj.save(force_add=True, using=self._alias, settings=self._settings)
+        obj.save(force_add=True, using=self._alias)
         return obj
 
     def get_or_create(self, **kwargs):
@@ -533,7 +533,7 @@ class QuerySet(object):
             params = dict(kwargs)
             params.update(defaults)
             obj = self._cls(**params)
-            obj.save(force_add=True, using=self._alias, settings=self._settings)
+            obj.save(force_add=True, using=self._alias)
             return obj, True
 
     def none(self):
