@@ -28,12 +28,13 @@ class shibbolethMixin(object):
     @classmethod
     def _generate_shared_token(cls, self):
         uid = self.uid
-        entityID = django.conf.settings.SHIBBOLETH_URL
-        salt = django.conf.settings.SHIBBOLETH_SALT
+        settings = self._settings
+        entityID = settings['SHIBBOLETH_URL']
+        salt = settings['SHIBBOLETH_SALT']
         return base64.urlsafe_b64encode(sha(uid + entityID + salt).digest())[:-1]
 
     @classmethod
-    def pre_add(cls, self, settings, using):
+    def pre_add(cls, self, using):
         assert self.auEduPersonSharedToken is None
         self.auEduPersonSharedToken = cls._generate_shared_token(self)
 

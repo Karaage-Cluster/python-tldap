@@ -31,20 +31,23 @@ class personMixin(object):
         return tldap.connections[using].check_password(self.dn, password)
 
     @classmethod
-    def pre_save(cls, self, settings, using):
+    def pre_save(cls, self, using):
         self.displayName = '%s %s' % (self.givenName, self.sn)
         self.cn = self.displayName
 
 
 class accountMixin(object):
     @classmethod
-    def set_free_uidNumber(cls, self, settings, using):
+    def set_free_uidNumber(cls, self, using):
         model = self.__class__
+        settings = self._settings
         scheme = settings.get('NUMBER_SCHEME', 'default')
         first = settings.get('UID_FIRST', 10000)
         self.uidNumber =  tldap.methods.models.Counters.get_and_increment(
                 scheme, "uidNumber", first,
-                lambda n: len(model.objects.using(using).filter(uidNumber = n)) == 0)
+                lambda n: len(
+                    model.objects.using(using, settings)
+                    .filter(uidNumber = n)) == 0)
 
     @classmethod
     def __unicode__(cls, self):
@@ -59,18 +62,18 @@ class accountMixin(object):
         self.uidNumber = master.uidNumber
 
     @classmethod
-    def pre_add(cls, self, settings, using):
+    def pre_add(cls, self, using):
         if self.uidNumber is None:
-            cls.set_free_uidNumber(self, settings, using)
+            cls.set_free_uidNumber(self, using)
         if self.unixHomeDirectory is None and self.uid is not None:
             self.unixHomeDirectory =  '/home/%s' % self.uid
 
     @classmethod
-    def pre_save(cls, self, settings, using):
+    def pre_save(cls, self, using):
         self.gecos = '%s %s' % (self.givenName, self.sn)
 
     @classmethod
-    def pre_delete(cls, self, settings, using):
+    def pre_delete(cls, self, using):
         self.manager_of.clear()
 
     @classmethod
@@ -99,13 +102,16 @@ class groupMixin(object):
     # Note standard posixGroup objectClass has no displayName attribute
 
     @classmethod
-    def set_free_gidNumber(cls, self, settings, using):
+    def set_free_gidNumber(cls, self, using):
         model = self.__class__
+        settings = self._settings
         scheme = settings.get('NUMBER_SCHEME', 'default')
         first = settings.get('GID_FIRST', 10000)
         self.gidNumber =  tldap.methods.models.Counters.get_and_increment(
                 scheme, "gidNumber", first,
-                lambda n: len(model.objects.using(using).filter(gidNumber = n)) == 0)
+                lambda n: len(
+                    model.objects.using(using, settings)
+                    .filter(gidNumber = n)) == 0)
 
     @classmethod
     def __unicode__(cls, self):
@@ -116,12 +122,12 @@ class groupMixin(object):
         self.gidNumber = master.gidNumber
 
     @classmethod
-    def pre_add(cls, self, settings, using):
+    def pre_add(cls, self, using):
         if self.gidNumber is None:
-            cls.set_free_gidNumber(self, settings, using)
+            cls.set_free_gidNumber(self, using)
 
     @classmethod
-    def pre_save(cls, self, settings, using):
+    def pre_save(cls, self, using):
         if self.description is None:
             self.description = self.cn
 

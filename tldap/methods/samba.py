@@ -33,7 +33,8 @@ class sambaAccountMixin(object):
         self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
 
     @classmethod
-    def pre_add(cls, self, settings, using):
+    def pre_add(cls, self, using):
+        settings = self._settings
         if self.sambaSID is None:
             rid_base = settings['SAMBA_ACCOUNT_RID_BASE']
             assert rid_base % 2 == 0
@@ -73,13 +74,14 @@ class sambaGroupMixin(object):
         self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
 
     @classmethod
-    def pre_add(cls, self, settings, using):
+    def pre_add(cls, self, using):
+        settings = self._settings
         if self.sambaSID is None:
             rid_base = settings['SAMBA_GROUP_RID_BASE']
             assert rid_base % 2 == 0
             self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] + "-" + str(int(self.gidNumber)*2 + 1 + rid_base)
 
     @classmethod
-    def pre_save(cls, settings, using, self):
+    def pre_save(cls, using, self):
         if self.displayName is None:
             self.displayName = self.cn

@@ -24,6 +24,8 @@ class baseMixin(tldap.base.LDAPobject):
 
     def __init__(self, **kwargs):
         super(baseMixin, self).__init__(**kwargs)
+        # We must have our settings.
+        assert self._settings is not None
         for mixin in self.mixin_list:
             if hasattr(mixin, 'set_defaults'):
                 mixin.set_defaults(self)
@@ -67,42 +69,39 @@ class baseMixin(tldap.base.LDAPobject):
                 mixin.setup_from_master(self, master)
 
     def _add(self, using):
-        settings = tldap.connections[using].settings_dict
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_add'):
-                mixin.pre_add(self, settings, using)
+                mixin.pre_add(self, using)
             if hasattr(mixin, 'pre_save'):
-                mixin.pre_save(self, settings, using)
+                mixin.pre_save(self, using)
         super(baseMixin, self)._add(using)
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_add'):
-                mixin.post_add(self, settings, using)
+                mixin.post_add(self, using)
             if hasattr(mixin, 'post_save'):
-                mixin.post_save(self, settings, using)
+                mixin.post_save(self, using)
 
     def _modify(self, using):
-        settings = tldap.connections[using].settings_dict
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_modify'):
-                mixin.pre_modify(self, settings, using)
+                mixin.pre_modify(self, using)
             if hasattr(mixin, 'pre_save'):
-                mixin.pre_save(self, settings, using)
+                mixin.pre_save(self, using)
         super(baseMixin, self)._modify(using)
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_modify'):
-                mixin.post_modify(self, settings, using)
+                mixin.post_modify(self, using)
             if hasattr(mixin, 'post_save'):
-                mixin.post_save(self, settings, using)
+                mixin.post_save(self, using)
 
     def pre_delete(self):
         # depreciated
         pass
 
     def _delete(self, using):
-        settings = tldap.connections[using].settings_dict
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_delete'):
-                mixin.pre_delete(self, settings, using)
+                mixin.pre_delete(self, using)
         super(baseMixin, self)._delete(using)
 
 

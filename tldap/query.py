@@ -36,13 +36,14 @@ class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
     """
-    def __init__(self, cls, using):
+    def __init__(self, cls, using, settings):
         assert cls is not None
 
         self._from_cls = None
         self._cls = cls
         self._dn = None
         self._alias = using
+        self._settings = settings
         self._query = None
         self._base_dn = None
         self._iter = None
@@ -146,6 +147,7 @@ class QuerySet(object):
     def __and__(self, other):
         assert isinstance(other, QuerySet)
         assert self._alias == other._alias
+        assert self._settings == other._settings
         self._merge_sanity_check(other)
         if self._query is None:
             return other._clone()
@@ -158,6 +160,7 @@ class QuerySet(object):
     def __or__(self, other):
         assert isinstance(other, QuerySet)
         assert self._alias == other._alias
+        assert self._settings == other._settings
         self._merge_sanity_check(other)
         combined = self._clone()
         if self._query is None:
@@ -437,7 +440,6 @@ class QuerySet(object):
         An iterator over the results from applying this QuerySet to the
         database.
         """
-
         # get search parameters
         alias, connection, base_dn, scope, search_filter, field_names = (
             self._get_search_params())
@@ -464,7 +466,10 @@ class QuerySet(object):
                     continue
 
                 # create new object
-                o = self._cls()
+                o = self._cls(
+                        using = alias,
+                        settings = self._settings,
+                )
 
                 # set dn manually
                 setattr(o, '_dn', i[0])
@@ -479,9 +484,6 @@ class QuerySet(object):
                 # save raw db values for latter use
                 o._db_values[alias] = (
                     tldap.helpers.CaseInsensitiveDict(i[1]))
-
-                # save database alias for latter use
-                o._alias = alias
 
                 # give caller this result
                 yield o
@@ -513,7 +515,7 @@ class QuerySet(object):
         and returning the created object.
         """
         obj = self._cls(**kwargs)
-        obj.save(force_add=True, using=self._alias)
+        obj.save(force_add=True, using=self._alias, settings=self._settings)
         return obj
 
     def get_or_create(self, **kwargs):
@@ -531,7 +533,7 @@ class QuerySet(object):
             params = dict(kwargs)
             params.update(defaults)
             obj = self._cls(**params)
-            obj.save(force_add=True, using=self._alias)
+            obj.save(force_add=True, using=self._alias, settings=self._settings)
             return obj, True
 
     def none(self):
@@ -570,13 +572,14 @@ class QuerySet(object):
             clone._query = clone._query & q
         return clone
 
-    def using(self, using):
+    def using(self, using, settings):
         """
         Selects which database this QuerySet should excecute it's query
         against.
         """
         clone = self._clone()
         clone._alias = using
+        clone._settings = settings
         return clone
 
     def base_dn(self, base_dn):
@@ -600,7 +603,7 @@ class QuerySet(object):
     def _clone(self, klass=None):
         if klass is None:
             klass = self.__class__
-        qs = klass(self._cls, self._alias)
+        qs = klass(self._cls, self._alias, self._settings)
         if self._query is not None:
             qs._query = self._clone_query(self._query)
         else:
@@ -631,8 +634,8 @@ class QuerySet(object):
 
 
 class EmptyQuerySet(QuerySet):
-    def __init__(self, cls, alias):
-        super(EmptyQuerySet, self).__init__(cls, alias)
+    def __init__(self, cls, alias, settings):
+        super(EmptyQuerySet, self).__init__(cls, alias, settings)
         self._result_cache = []
 
     def __and__(self, other):

@@ -41,14 +41,16 @@ class Manager(object):
     def __init__(self):
         self._cls = None
         self._alias = None
+        self._settings = None
 
     def contribute_to_class(self, cls, name):
         self._cls = cls
         setattr(cls, name, ManagerDescriptor(self))
 
-    def db_manager(self, using):
+    def db_manager(self, using, settings):
         obj = copy.copy(self)
         obj._alias = using
+        obj._settings = settings
         return obj
 
     #######################
@@ -56,13 +58,13 @@ class Manager(object):
     #######################
 
     def get_empty_query_set(self):
-        return tldap.query.EmptyQuerySet(self._cls, self._alias)
+        return tldap.query.EmptyQuerySet(self._cls, self._alias, self._settings)
 
     def get_query_set(self):
         """Returns a new QuerySet object.  Subclasses can override this method
         to easily customize the behavior of the Manager.
         """
-        return tldap.query.QuerySet(self._cls, self._alias)
+        return tldap.query.QuerySet(self._cls, self._alias, self._settings)
 
     def none(self):
         return self.get_empty_query_set()
@@ -150,7 +152,9 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 kwargs = {linked_key: v}
                 query = query | (
                     super(LinkManager, self).get_query_set().filter(**kwargs))
-            return query.using(self._this_instance._alias)
+            return query.using(
+                    self._this_instance._alias,
+                    self._this_instance._settings)
 
         def _add(self, p_instance, p_key, f_instance, f_key):
             p_value = getattr(p_instance, p_key)
