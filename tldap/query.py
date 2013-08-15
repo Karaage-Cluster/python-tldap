@@ -514,7 +514,7 @@ class QuerySet(object):
         Creates a new object with the given kwargs, saving it to the database
         and returning the created object.
         """
-        obj = self._cls(**kwargs)
+        obj = self._cls(settings=self._settings, **kwargs)
         obj.save(force_add=True, using=self._alias)
         return obj
 
@@ -532,7 +532,7 @@ class QuerySet(object):
         except self._cls.DoesNotExist:
             params = dict(kwargs)
             params.update(defaults)
-            obj = self._cls(**params)
+            obj = self._cls(settings=self._settings, **params)
             obj.save(force_add=True, using=self._alias)
             return obj, True
 
