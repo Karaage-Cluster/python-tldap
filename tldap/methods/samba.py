@@ -24,17 +24,16 @@ class sambaAccountMixin(object):
         return u"%s"%(self.displayName or self.cn)
 
     @classmethod
-    def set_defaults(cls, self):
-        self.sambaAcctFlags = '[ U         ]'
-        self.sambaPwdLastSet = datetime.datetime.now()
-
-    @classmethod
     def setup_from_master(cls, self, master):
         self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
 
     @classmethod
     def pre_add(cls, self, using):
         settings = self._settings
+        if self.sambaAcctFlags is None:
+            self.sambaAcctFlags = '[ U         ]'
+        if self.sambaPwdLastSet is None:
+            self.sambaPwdLastSet = datetime.datetime.now()
         if self.sambaSID is None:
             rid_base = settings['SAMBA_ACCOUNT_RID_BASE']
             assert rid_base % 2 == 0
@@ -66,16 +65,14 @@ class sambaGroupMixin(object):
         return u"SG:%s"%(self.displayName or self.cn)
 
     @classmethod
-    def set_defaults(cls, self):
-        self.sambaGroupType = 2
-
-    @classmethod
     def setup_from_master(cls, self, master):
         self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
 
     @classmethod
     def pre_add(cls, self, using):
         settings = self._settings
+        if self.sambaGroupType is None:
+            self.sambaGroupType = 2
         if self.sambaSID is None:
             rid_base = settings['SAMBA_GROUP_RID_BASE']
             assert rid_base % 2 == 0

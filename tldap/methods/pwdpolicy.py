@@ -19,10 +19,6 @@ import tldap.methods.ldap_passwd
 
 class pwdPolicyMixin(object):
     @classmethod
-    def set_defaults(cls, self):
-        self.pwdAttribute = 'userPassword'
-
-    @classmethod
     def pre_save(cls, self, using):
         if self.pwdAttribute is None:
             self.pwdAttribute = 'userPassword'

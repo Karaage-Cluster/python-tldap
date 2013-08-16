@@ -21,16 +21,14 @@ class adUserMixin(object):
         return u"ADU:%s"%(self.displayName or self.cn)
 
     @classmethod
-    def set_defaults(cls, self):
-        self.userAccountControl = 512
-
-    @classmethod
     def setup_from_master(cls, self, master):
         self.sAMAccountName = getattr(master, "sAMAccountName", None)
 
     @classmethod
     def pre_add(cls, self, using):
         assert self.objectSid is None
+        if self.userAccountControl is None:
+            self.userAccountControl = 512
         if self.sAMAccountName is None:
             self.sAMAccountName = self.uid
 

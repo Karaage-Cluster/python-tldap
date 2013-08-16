@@ -54,15 +54,13 @@ class accountMixin(object):
         return u"%s"%(self.displayName or self.cn)
 
     @classmethod
-    def set_defaults(cls, self):
-        self.loginShell = '/bin/bash'
-
-    @classmethod
     def setup_from_master(cls, self, master):
         self.uidNumber = master.uidNumber
 
     @classmethod
     def pre_add(cls, self, using):
+        if self.loginShell is None:
+            self.loginShell = '/bin/bash'
         if self.uidNumber is None:
             cls.set_free_uidNumber(self, using)
         if self.unixHomeDirectory is None and self.uid is not None:

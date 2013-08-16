@@ -26,9 +26,6 @@ class baseMixin(tldap.base.LDAPobject):
         super(baseMixin, self).__init__(**kwargs)
         # We must have our settings.
         assert self._settings is not None
-        for mixin in self.mixin_list:
-            if hasattr(mixin, 'set_defaults'):
-                mixin.set_defaults(self)
 
     def change_password(self, password):
         for mixin in self.mixin_list:
