@@ -22,5 +22,13 @@ import tldap.fields
 
 # Directory Server
 
-class Meow(tldap.base.LDAPobject):
-    nsAccountLock = tldap.fields.CharField()
+class passwordObject(tldap.base.LDAPobject):
+    pwdpolicysubentry = tldap.fields.CharField()
+    passwordExpirationTim = tldap.fields.CharField()
+    passwordExpWarne = tldap.fields.CharField()
+    passwordRetryCoun = tldap.fields.CharField()
+    retryCountResetTime = tldap.fields.CharField()
+    accountUnlockTime = tldap.fields.CharField()
+    passwordHistory = tldap.fields.CharField()
+    passwordAllowChangeTime = tldap.fields.CharField()
+    passwordGraceUserTime = tldap.fields.CharField()
