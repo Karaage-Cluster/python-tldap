@@ -17,6 +17,7 @@
 
 import tldap
 import tldap.methods.models
+import tldap.methods.ldap_passwd
 import datetime
 
 
@@ -34,6 +35,11 @@ class personMixin(object):
     def pre_save(cls, self, using):
         self.displayName = '%s %s' % (self.givenName, self.sn)
         self.cn = self.displayName
+
+    @classmethod
+    def change_password(cls, self, password):
+        up = tldap.methods.ldap_passwd.UserPassword()
+        self.userPassword = up.encodePassword(password, "ssha")
 
 
 class accountMixin(object):

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-import tldap.methods.ldap_passwd
 
 class pwdPolicyMixin(object):
     @classmethod
@@ -34,11 +33,3 @@ class pwdPolicyMixin(object):
     @classmethod
     def unlock(cls, self):
         self.pwdAccountLockedTime=None
-
-    @classmethod
-    def change_password(cls, self, password):
-        up = tldap.methods.ldap_passwd.UserPassword()
-        self.userPassword = up.encodePassword(password, "ssha")
-
-
-
