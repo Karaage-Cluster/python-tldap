@@ -72,6 +72,9 @@ class Manager(object):
     def all(self):
         return self.get_query_set()
 
+    def iterator(self):
+        return self.get_query_set().iterator()
+
     def get(self, *args, **kwargs):
         return self.get_query_set().get(*args, **kwargs)
 
