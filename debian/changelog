@@ -1,8 +1,9 @@
-django-tldap (0.2.9-1) UNRELEASED; urgency=low
+django-tldap (0.2.9-1) unstable; urgency=low
 
   * Update referenced backend names.
   * Rewrite method functions.
   * Fix creating gid and uid for different servers.
+  * Updates to 389 support.
 
  -- Brian May <bam@debian.org>  Wed, 14 Aug 2013 13:51:00 +1000
 
