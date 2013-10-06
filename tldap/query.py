@@ -178,7 +178,7 @@ class QuerySet(object):
         """
         A field could be found for this term, try to get filter string for it.
         """
-        assert isinstance(value, str)
+        assert isinstance(value, str) or isinstance(value,unicode)
         if operation is None:
             return ldap.filter.filter_format(
                 "(%s=%s)", [name, value])
