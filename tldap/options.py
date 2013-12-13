@@ -16,6 +16,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import warnings
 import django.utils.translation
 import tldap.helpers
 
@@ -30,7 +31,7 @@ DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
 
 class Options(object):
     def __init__(self, meta, app_label=None):
-        self.module_name, self.verbose_name = None, None
+        self.model_name, self.verbose_name = None, None
         self.verbose_name_plural = None
         self.object_name, self.app_label = None, app_label
         self.meta = meta
@@ -45,7 +46,7 @@ class Options(object):
         setattr(cls, name, self)
 
         self.object_name = cls.__name__
-        self.module_name = self.object_name.lower()
+        self.model_name = self.object_name.lower()
         self.verbose_name = get_verbose_name(self.object_name)
 
         if self.meta:
@@ -79,6 +80,16 @@ class Options(object):
                 self.verbose_name, 's')
 
         del self.meta
+
+    @property
+    def module_name(self):
+        """
+        This property has been deprecated in favor of `model_name`. refs django #19689
+        """
+        warnings.warn(
+            "Options.module_name has been deprecated in favor of model_name",
+            PendingDeprecationWarning, stacklevel=2)
+        return self.model_name
 
     def add_field(self, field):
         self._fields[field.name] = field
