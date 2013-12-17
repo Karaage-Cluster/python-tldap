@@ -69,7 +69,7 @@ class adUserMixin(object):
 class adGroupMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"ADG:%s"%(self.displayName or self.cn)
+        return u"%s"%(self.displayName or self.cn)
 
     @classmethod
     def pre_save(cls, self, using):

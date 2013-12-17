@@ -81,7 +81,7 @@ class group(tldap.base.LDAPobject):
         pk = 'cn'
 
     def __unicode__(self):
-        return u"G:%s" % self.cn
+        return u"%s" % self.cn
 
     def save(self, *args, **kwargs):
         if self.gidNumber is None:
