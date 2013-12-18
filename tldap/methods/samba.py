@@ -79,6 +79,6 @@ class sambaGroupMixin(object):
             self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] + "-" + str(int(self.gidNumber)*2 + 1 + rid_base)
 
     @classmethod
-    def pre_save(cls, using, self):
+    def pre_save(cls, self, using):
         if self.displayName is None:
             self.displayName = self.cn
