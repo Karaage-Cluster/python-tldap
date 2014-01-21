@@ -30,7 +30,7 @@ if not hasattr(django.conf.settings, 'LDAP'):
     django.conf.settings.LDAP = {}
 
 # ok to use django settings
-if not django.conf.settings.LDAP:
+if not django.conf.settings.LDAP and hasattr(django.conf.settings, 'LDAP_URL'):
     django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS] = {
         'ENGINE': 'tldap.backend.fake_transactions',
         'URI': django.conf.settings.LDAP_URL,
@@ -47,10 +47,6 @@ if not django.conf.settings.LDAP:
     if django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"]:
         django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = (
             django.conf.settings.LDAP_TLS_CA)
-
-if DEFAULT_LDAP_ALIAS not in django.conf.settings.LDAP:
-    raise RuntimeError(
-        "You must define a '%s' ldap database" % DEFAULT_LDAP_ALIAS)
 
 connections = tldap.utils.ConnectionHandler(django.conf.settings.LDAP)
 
