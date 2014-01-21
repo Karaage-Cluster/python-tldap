@@ -1,3 +1,10 @@
+django-tldap (0.2.11-1) unstable; urgency=low
+
+  * Fix bug in samba specific function.
+  * Works with no LDAP servers configured.
+
+ -- Brian May <bam@debian.org>  Tue, 21 Jan 2014 12:46:54 +1100
+
 django-tldap (0.2.10-1) unstable; urgency=low
 
   * Bug fixes.
