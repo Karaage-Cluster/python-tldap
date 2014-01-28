@@ -17,7 +17,10 @@ class Q(django.utils.tree.Node):
     def _combine(self, other, conn):
         if not isinstance(other, Q):
             raise TypeError(other)
+        if len(self.children) < 1:
+            self.connector = conn
         obj = type(self)()
+        obj.connector = conn
         obj.add(self, conn)
         obj.add(other, conn)
         return obj
