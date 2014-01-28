@@ -19,7 +19,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.test.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import unittest
 
@@ -31,7 +31,7 @@ import tldap.modlist
 
 import tldap.test.data
 import tldap.test.slapd
-import tldap.test.schemas
+import schemas as test_schemas
 
 import ldap
 
@@ -490,7 +490,7 @@ class ModelTest(unittest.TestCase):
 
         c = tldap.connection
 
-        person = tldap.test.schemas.person
+        person = test_schemas.person
         DoesNotExist = person.DoesNotExist
         AlreadyExists = person.AlreadyExists
         get = person.objects.get
@@ -843,8 +843,8 @@ class ModelTest(unittest.TestCase):
         organizationalUnit.objects.create(
             dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
-        person = tldap.test.schemas.person
-        group = tldap.test.schemas.group
+        person = test_schemas.person
+        group = test_schemas.group
 
         kwargs = {
             'givenName': "Tux",
@@ -1033,8 +1033,8 @@ class UserAPITest(unittest.TestCase):
         self.server = server
         tldap.connection.reset()
 
-        self.group = tldap.test.schemas.group
-        self.account = tldap.test.schemas.account
+        self.group = test_schemas.group
+        self.account = test_schemas.account
 
     def tearDown(self):
         self.server.stop()
@@ -1159,8 +1159,8 @@ class GroupAPITest(unittest.TestCase):
         self.server = server
         tldap.connection.reset()
 
-        self.group = tldap.test.schemas.group
-        self.account = tldap.test.schemas.account
+        self.group = test_schemas.group
+        self.account = test_schemas.account
 
     def tearDown(self):
         self.server.stop()
