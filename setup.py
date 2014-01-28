@@ -93,10 +93,10 @@ scripts = [
 
 setup(
     name = "python-tldap",
-    version = "0.1",
+    version = "0.2.12",
     author = 'Brian May',
     author_email = 'brian@microcomaustralia.com.au',
-    description = 'Fake LDAP Transacations',
+    description = 'High level python LDAP Library',
     packages = packages,
     cmdclass = cmdclasses,
     data_files = data_files,

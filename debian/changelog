@@ -1,4 +1,4 @@
-django-tldap (0.2.11-2) unstable; urgency=low
+django-tldap (0.2.12-1) unstable; urgency=low
 
   * Use dh_python2 for packaging.
 
