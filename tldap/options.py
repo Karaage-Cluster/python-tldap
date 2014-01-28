@@ -30,10 +30,10 @@ DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
 
 
 class Options(object):
-    def __init__(self, meta, app_label=None):
+    def __init__(self, meta):
         self.model_name, self.verbose_name = None, None
         self.verbose_name_plural = None
-        self.object_name, self.app_label = None, app_label
+        self.object_name = None
         self.meta = meta
         self._fields = tldap.helpers.CaseInsensitiveDict()
         self.object_classes = set()

@@ -48,17 +48,8 @@ class LDAPmeta(type):
         meta = attr_meta
         base_meta = getattr(new_class, '_meta', None)
 
-        # get the app_label for this model
-        if getattr(meta, 'app_label', None) is None:
-            # Figure out the app_label by looking one level up.
-            # For 'django.contrib.sites.models', this would be 'sites'.
-            model_module = sys.modules[new_class.__module__]
-            kwargs = {"app_label": model_module.__name__.split('.')[-2]}
-        else:
-            kwargs = {}
-
         # add the _meta and objectClass to new class
-        new_class.add_to_class('_meta', tldap.options.Options(meta, **kwargs))
+        new_class.add_to_class('_meta', tldap.options.Options(meta))
         new_class.add_to_class('objectClass', default_object_class_field)
 
         # inherit certain attributes from parent
