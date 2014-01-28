@@ -2,16 +2,27 @@ Source: django-tldap
 Section: python
 Priority: optional
 Maintainer: Brian May <bam@debian.org>
-Build-Depends: debhelper (>=7.0.0), python (>= 2.6.6-3), cdbs (>= 0.4.90)
+Build-Depends: debhelper (>=8.1.0), python (>= 2.6.6-3~)
 Standards-Version: 3.9.3
 X-Python-Version: >= 2.6
 
-Package: django-tldap
+Package: python-tldap
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python-django (>= 1.2.1), python-ldap (>= 2.2)
+Replaces: python-django-filter-doc (<< 0.2.11-2)
+Breaks: python-django-filter-doc (<< 0.2.11-2)
 Description: High level python LDAP Library
  TLDAP is a high level LDAP library for Python that users django-db like models
  to define LDAP schemas that can then be used in an easy way from Python code.
  It also supports fake LDAP transactions, to try and ensure LDAP database
  remains in a consistent state, even if there are errors that cause the
  transaction to fail.
+
+Package: django-tldap
+Depends: python-tldap, ${misc:Depends}
+Architecture: all
+Priority: extra
+Section: oldlibs
+Description: High level python LDAP Library (transitional package)
+ This is a dummy package to aid switching to python-tldap.
+
