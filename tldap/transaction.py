@@ -57,7 +57,9 @@ def enter_transaction_management(using=None):
     when no current block is running).
     """
     if using is None:
-        using = tldap.DEFAULT_LDAP_ALIAS
+        for connection in tldap.connections:
+            connection.enter_transaction_management()
+        return
     connection = tldap.connections[using]
     connection.enter_transaction_management()
 
@@ -69,7 +71,9 @@ def leave_transaction_management(using=None):
     those from outside. (Commits are on connection level.)
     """
     if using is None:
-        using = tldap.DEFAULT_LDAP_ALIAS
+        for connection in tldap.connections:
+            connection.leave_transaction_management()
+        return
     connection = tldap.connections[using]
     connection.leave_transaction_management()
 
@@ -80,7 +84,11 @@ def is_dirty(using=None):
     happen.
     """
     if using is None:
-        using = tldap.DEFAULT_LDAP_ALIAS
+        dirty = False
+        for connection in tldap.connections:
+            if connection.is_dirty():
+                dirty = True
+        return dirty
     connection = tldap.connections[using]
     return connection.is_dirty()
 
@@ -90,7 +98,11 @@ def is_managed(using=None):
     Checks whether the transaction manager is in manual or in auto state.
     """
     if using is None:
-        using = tldap.DEFAULT_LDAP_ALIAS
+        managed = False
+        for connection in tldap.connections:
+            if connection.is_managed():
+                managed = True
+        return managed
     connection = tldap.connections[using]
     return connection.is_managed()
 
@@ -100,7 +112,9 @@ def commit(using=None):
     Does the commit itself and resets the dirty flag.
     """
     if using is None:
-        using = tldap.DEFAULT_LDAP_ALIAS
+        for connection in tldap.connections:
+            connection.commit()
+        return
     connection = tldap.connections[using]
     connection.commit()
 
@@ -110,7 +124,9 @@ def rollback(using=None):
     This function does the rollback itself and resets the dirty flag.
     """
     if using is None:
-        using = tldap.DEFAULT_LDAP_ALIAS
+        for connection in tldap.connections:
+            connection.rollback()
+        return
     connection = tldap.connections[using]
     connection.rollback()
 
