@@ -57,7 +57,8 @@ def enter_transaction_management(using=None):
     when no current block is running).
     """
     if using is None:
-        for connection in tldap.connections:
+        for using in tldap.connections:
+            connection = tldap.connections[using]
             connection.enter_transaction_management()
         return
     connection = tldap.connections[using]
@@ -71,7 +72,8 @@ def leave_transaction_management(using=None):
     those from outside. (Commits are on connection level.)
     """
     if using is None:
-        for connection in tldap.connections:
+        for using in tldap.connections:
+            connection = tldap.connections[using]
             connection.leave_transaction_management()
         return
     connection = tldap.connections[using]
@@ -85,7 +87,8 @@ def is_dirty(using=None):
     """
     if using is None:
         dirty = False
-        for connection in tldap.connections:
+        for using in tldap.connections:
+            connection = tldap.connections[using]
             if connection.is_dirty():
                 dirty = True
         return dirty
@@ -99,7 +102,8 @@ def is_managed(using=None):
     """
     if using is None:
         managed = False
-        for connection in tldap.connections:
+        for using in tldap.connections:
+            connection = tldap.connections[using]
             if connection.is_managed():
                 managed = True
         return managed
@@ -112,7 +116,8 @@ def commit(using=None):
     Does the commit itself and resets the dirty flag.
     """
     if using is None:
-        for connection in tldap.connections:
+        for using in tldap.connections:
+            connection = tldap.connections[using]
             connection.commit()
         return
     connection = tldap.connections[using]
@@ -124,7 +129,8 @@ def rollback(using=None):
     This function does the rollback itself and resets the dirty flag.
     """
     if using is None:
-        for connection in tldap.connections:
+        for using in tldap.connections:
+            connection = tldap.connections[using]
             connection.rollback()
         return
     connection = tldap.connections[using]
