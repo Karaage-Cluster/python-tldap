@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Contains the options class, which represents a list of options associated with
+a tldap object. """
+
 import re
 import warnings
 import django.utils.translation
@@ -30,6 +33,7 @@ DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
 
 
 class Options(object):
+    """ Contains a list of options associated with a tldap object. """
     def __init__(self, meta):
         self.model_name, self.verbose_name = None, None
         self.verbose_name_plural = None

@@ -28,6 +28,7 @@ class FieldError(Exception):
 
 class ObjectDoesNotExist(Exception):
     "The requested object does not exist"
+    pass
 
 
 class MultipleObjectsReturned(Exception):

@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" This module provides the LDAP functions with transaction support disabled,
+with a subset of the functions from the real ldap module. """
+
 import ldap
 
 # hardcoded settings for this module
@@ -34,6 +37,7 @@ def debug(*argv):
 # wrapper class
 
 class LDAPwrapper(object):
+    """ The LDAP connection class. """
 
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict

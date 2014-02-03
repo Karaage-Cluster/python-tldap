@@ -14,18 +14,20 @@ def modifyModlist(
     """
     Build differential modify list for calling LDAPObject.modify()/modify_s()
 
-    old_entry
+    :param old_entry:
             Dictionary holding the old entry
-    new_entry
+    :param new_entry:
             Dictionary holding what the new entry should be
-    ignore_attr_types
+    :param ignore_attr_types:
             List of attribute type names to be ignored completely
-    ignore_oldexistent
+    :param ignore_oldexistent:
             If non-zero attribute type names which are in old_entry
             but are not found in new_entry at all are not deleted.
             This is handy for situations where your application
             sets attribute value to '' for deleting an attribute.
             In most cases leave zero.
+
+    :return: List of tuples suitable for :py:meth:`ldap:ldap.LDAPObject.modify`.
 
     This function is the same as :py:func:`ldap:ldap.modlist.modifyModlist`
     except for the following changes:

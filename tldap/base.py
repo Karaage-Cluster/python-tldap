@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Contains base class used for tldap objects. """
+
 import tldap
 import tldap.options
 import tldap.exceptions
@@ -32,6 +34,8 @@ default_object_class_field = tldap.fields.CharField(required=True,
 
 
 class LDAPmeta(type):
+    """ The meta class used for tldap objects. """
+
     def __new__(cls, name, bases, attrs):
         super_new = super(LDAPmeta, cls).__new__
         parents = [b for b in bases if isinstance(b, LDAPmeta)]
@@ -155,7 +159,12 @@ def subclass_exception(name, parents, module):
 
 
 class LDAPobject(object):
+    """ The base class used for tldap objects. """
     __metaclass__ = LDAPmeta
+
+    schema_list = []
+    """ Class variable to be overriden for class that provides a list of
+    schemas to be used. """
 
     @property
     def dn(self):
@@ -217,6 +226,13 @@ class LDAPobject(object):
             self._base_dn = self._meta.base_dn
 
     def _rdn_to_dn(self, name, using):
+        """ Convert the rdn to a fully qualified DN for the specified LDAP connection.
+
+        :param self: rdn belongs to this tldap object.
+        :param name: rdn to convert.
+        :param using: specify the connection we want to use for fully qualified DN.
+        :return: fully qualified DN.
+        """
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
@@ -244,9 +260,10 @@ class LDAPobject(object):
         Saves the current instance. Override this in a subclass if you want to
         control the saving process.
 
-        The 'force_insert' and 'force_update' parameters can be used to insist
-        that the "save" must be an SQL insert or update (or equivalent for
-        non-SQL backends), respectively. Normally, they should not be set.
+        :param self: object to save.
+        :param force_add: Assume object doesn't already exist and must be created.
+        :param force_modify: Assume oobject already exists and must be updated.
+        :param using: Alias to connection to write to.
         """
 
         # what database should we be using?
@@ -275,6 +292,11 @@ class LDAPobject(object):
     save.alters_data = True
 
     def delete(self, using=None):
+        """ Delete this object from the LDAP server.
+
+        :param self: object to delete.
+        :param using: connection to delete it from.
+        """
         # what database should we be using?
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
         self._delete(using)
@@ -453,6 +475,10 @@ class LDAPobject(object):
         Rename this entry. Use like object.rename(uid="new") or
         object.rename(cn="new"). Can pass a list in using, as all
         connections must be renamed at once.
+
+        :param self: object to rename.
+        :param using: database to act on.
+        :param kwargs: Contains new rdn of object.
         """
 
         # extract key and value from kwargs
@@ -594,6 +620,11 @@ class LDAPobject(object):
     _delete.alters_data = True
 
     def unparse(self, ldif_writer):
+        """ Translate object into ldif.
+
+        :param self: object to translate.
+        :param ldif_writer: ldif_writer to write translation to.
+        """
         # objectClass = attribute + class meta setup
         default_object_class = getattr(self, "objectClass", [])
         default_object_class_db = list(self._meta.object_classes)

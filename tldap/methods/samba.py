@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Methods specific to Samba attributes. Not applicable for Samba 4 AD
+support. """
+
 import smbpasswd
 import datetime
 

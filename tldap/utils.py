@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Contains ConnectionHandler which represents a list of connections. """
+
 import sys
 
 DEFAULT_LDAP_ALIAS = "default"
@@ -26,6 +28,8 @@ def load_backend(backend_name):
 
 
 class ConnectionHandler(object):
+    """ Contains a list of known LDAP connections. """
+
     def __init__(self, databases):
         self.databases = databases
         self._connections = {}
@@ -45,4 +49,5 @@ class ConnectionHandler(object):
         return iter(self.databases)
 
     def all(self):
+        """ Return list of all connections. """
         return [self[alias] for alias in self]

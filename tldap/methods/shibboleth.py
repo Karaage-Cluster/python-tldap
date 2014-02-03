@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Methods for Shibboleth specific attributes. """
+
 import django.conf
 import base64
 

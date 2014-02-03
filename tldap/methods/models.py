@@ -15,10 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" DB model for a counter to keep track of next uidNumber and gidNumber to use
+for new LDAP objects. """
+
 from django.db import models
 
 
 class Counters(models.Model):
+    """ Keep track of next uidNumber and gidNumber to use for new LDAP objects. """
+
     scheme = models.CharField(max_length=20, db_index=True)
     name = models.CharField(max_length=20, db_index=True)
     count = models.IntegerField()

@@ -15,14 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Holds global stuff for tldap.
+
+Q
+    Shortcut to :py:class:`tldap.query_utils.Q`, allows combining query terms.
+
+DEFAULT_LDAP_ALIAS
+    Alias for default LDAP connection.
+"""
+
+
 from tldap.query_utils import Q
 import tldap.utils
 from tldap.utils import DEFAULT_LDAP_ALIAS
 
 import django.conf
-
-connections = None
-connection = None
 
 # For backwards compatibility - Port any old database settings over to
 # the new values.
@@ -49,14 +57,15 @@ if not django.conf.settings.LDAP and hasattr(django.conf.settings, 'LDAP_URL'):
             django.conf.settings.LDAP_TLS_CA)
 
 connections = tldap.utils.ConnectionHandler(django.conf.settings.LDAP)
+"""An object containing a list of all LDAP connections."""
 
 
 class DefaultConnectionProxy(object):
     """
     Proxy for accessing the default DatabaseWrapper object's attributes. If you
     need to access the DatabaseWrapper object itself, use
-    connections[DEFAULT_LDAP_ALIAS] instead.
-  """
+    :py:data:`tldap.connections[DEFAULT_LDAP_ALIAS] <tldap.connections>` instead.
+    """
     def __getattr__(self, item):
         return getattr(connections[DEFAULT_LDAP_ALIAS], item)
 
@@ -64,3 +73,4 @@ class DefaultConnectionProxy(object):
         return setattr(connections[DEFAULT_LDAP_ALIAS], name, value)
 
 connection = DefaultConnectionProxy()
+""" The default LDAP connection. """

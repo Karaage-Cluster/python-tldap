@@ -15,12 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" tldap.methods is a set of classes to assist manipulating attributes in a
+generic way. """
+
 import tldap.base
 import warnings
 
 
 class baseMixin(tldap.base.LDAPobject):
+    """ Base class, all objects should inherit from this instead of
+    :py:class:`tldap.base.LDAPobject`. """
+
     mixin_list = []
+    """ Class variable to be overriden for class that provides a list of mixins supported. """
 
     def __init__(self, **kwargs):
         super(baseMixin, self).__init__(**kwargs)

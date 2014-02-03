@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Methods specific for Directory Server 389. """
+
 import tldap.methods.ldap_passwd
 
 class passwordObjectMixin(object):

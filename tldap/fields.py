@@ -15,12 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" LDAP field types. """
+
 import tldap.exceptions
 import datetime
 import struct
 
 
 class Field(object):
+    """ The base field type. """
+
     def __init__(self, max_instances=1, required=False):
         self._max_instances = max_instances
         self._required = required
@@ -150,6 +154,8 @@ class Field(object):
 
 
 class BinaryField(Field):
+    """ Field contains a binary value that can not be interpreted in anyway. """
+
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
         assert value is None or isinstance(value, str)
@@ -178,6 +184,8 @@ class BinaryField(Field):
 
 
 class CharField(Field):
+    """ Field contains a UTF8 character string. """
+
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
         if isinstance(value, unicode):
@@ -207,6 +215,8 @@ class CharField(Field):
 
 
 class UnicodeField(Field):
+    """ Field contains a UTF16 character string. """
+
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
         value = value.encode("utf_16le")
@@ -235,6 +245,8 @@ class UnicodeField(Field):
 
 
 class IntegerField(Field):
+    """ Field contains an integer value. """
+
     def value_to_python(self, value):
         """
         Converts the input single value into the expected Python data type,
@@ -277,6 +289,8 @@ class IntegerField(Field):
 
 
 class DaysSinceEpochField(Field):
+    """ Field is an integer containing number of days since epoch. """
+
     def value_to_python(self, value):
         """
         Converts the input single value into the expected Python data type,
@@ -332,6 +346,8 @@ class DaysSinceEpochField(Field):
 
 
 class SecondsSinceEpochField(Field):
+    """ Field is an integer containing number of seconds since epoch. """
+
     def value_to_python(self, value):
         """
         Converts the input single value into the expected Python data type,
@@ -385,6 +401,7 @@ class SecondsSinceEpochField(Field):
 
 
 class SidField(Field):
+    """ Field is a binary representation of a Microsoft SID. """
 
     def value_to_python(self, value):
         """

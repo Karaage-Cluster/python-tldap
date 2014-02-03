@@ -15,29 +15,45 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" The default manager's and linkdescriptors used for tldap objects.
+
+Terminology:
+
+primary key
+    is the key that is not changed.
+f / foriegn
+    is the object containing the primary key.
+f_key
+    is this key, i.e. the primary key in the foriegn object.
+f_key
+    is always a single value.
+
+foriegn key
+    is the referenced key.
+p / primary
+    is the object containing the foriegn key.
+p_value
+    is this key, i.e. the foriegn key in the primary object.
+
+this
+    is the object being operated on.
+linked
+    is the object being referenced for this operation.
+
+if p_value_is_list is true then p_value must be a list.
+if p_value_is_list is false then p_value must be a single value.
+"""
+
 import tldap
 import tldap.query
 import django.utils.importlib
 import copy
 
-# Terminology:
-#
-# primary key is the key that is not changed.
-# f / foriegn is the object containing the primary key.
-# f_key is this key, i.e. the primary key in the foriegn object.
-# f_key is always a single value.
-#
-# foriegn key is the referenced key.
-# p / primary is the object containing the foriegn key.
-# p_value is this key, i.e. the foriegn key in the primary object.
-# if p_value_is_list is true then p_value must be a list.
-# if p_value_is_list is false then p_value must be a single value.
-#
-# this is the object being operated on.
-# linked is the object being referenced for this operation.
 
 
 class Manager(object):
+    """ The base manager class. """
+
     def __init__(self):
         self._cls = None
         self._alias = None
@@ -370,6 +386,8 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
 
 
 class LinkDescriptor(object):
+    """ Base class for any field that links to another object. """
+
     def __init__(self, this_key, linked_cls, linked_key,
                  linked_is_p, p_value_is_list, related_name=None):
         self._this_key = this_key
@@ -437,6 +455,9 @@ class LinkDescriptor(object):
 
 
 class ManyToManyDescriptor(LinkDescriptor):
+    """ Field for this object that has an attribute containing a list of
+    references to linked objects. """
+
     def __init__(self, **kwargs):
         super(ManyToManyDescriptor, self).__init__(
             p_value_is_list=True, **kwargs)
@@ -460,6 +481,8 @@ class ManyToManyDescriptor(LinkDescriptor):
 
 
 class ManyToOneDescriptor(LinkDescriptor):
+    """ Linked object has an attribute that can contain only one member, that
+    refers to this object. This field links to the linked object. """
     def __init__(self, **kwargs):
         super(ManyToOneDescriptor, self).__init__(
             linked_is_p=False, p_value_is_list=False, **kwargs)
@@ -478,6 +501,8 @@ class ManyToOneDescriptor(LinkDescriptor):
 
 
 class OneToManyDescriptor(LinkDescriptor):
+    """ This object has an attribute, represented by this field, that can
+    contain only one member, that refers to linked object. """
     def __init__(self, **kwargs):
         super(OneToManyDescriptor, self).__init__(
             linked_is_p=True, p_value_is_list=False, **kwargs)
@@ -496,6 +521,7 @@ class OneToManyDescriptor(LinkDescriptor):
 
 
 class AliasDescriptor(object):
+    """ This field is an alias to another field. """
     def __init__(self, linked_key):
         self._linked_key = linked_key
 
@@ -572,6 +598,7 @@ def _create_ad_group_link_manager(superclass, linked_is_p, p_value_is_list):
 
 
 class AdGroupLinkDescriptor(ManyToManyDescriptor):
+    """ This field represents a link from an AD account to an AD group. """
     def __init__(self, **kwargs):
         super(AdGroupLinkDescriptor, self).__init__(
             this_key="dn", linked_key="member", linked_is_p=True, **kwargs)
@@ -618,6 +645,7 @@ class AdGroupLinkDescriptor(ManyToManyDescriptor):
 
 
 class AdAccountLinkDescriptor(ManyToManyDescriptor):
+    """ This field represents a link from an AD group to an AD account. """
     def __init__(self, **kwargs):
         super(AdAccountLinkDescriptor, self).__init__(
             this_key="member", linked_key="dn", linked_is_p=False, **kwargs)
@@ -656,6 +684,8 @@ def _create_ad_primary_group_link_manager(superclass,
 
 
 class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
+    """ This field represents a link from a user to a primary AD group. Update
+    operations not guaranteed to work, due to AD rules."""
 
     def __init__(self, domain_sid, **kwargs):
         self.domain_sid = domain_sid
@@ -686,6 +716,8 @@ class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
 
 
 class AdPrimaryGroupLinkDescriptor(ManyToOneDescriptor):
+    """ This field represents a link from a primary AD group to a user. Update
+    operations operations not guaranteed to work, due to AD rules."""
 
     def __init__(self, domain_sid, **kwargs):
         self.domain_sid = domain_sid

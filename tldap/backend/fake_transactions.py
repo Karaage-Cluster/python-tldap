@@ -16,20 +16,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 """ This module provides the LDAP functions with transaction support faked,
-with a subset of the functions from the real ldap module.  Note that the async
-and sync functions are identical. When transactions are not enabled they will
-behave like the sync functions and return the same information.
-
-The current state is simulated in cache, so that functions to retrieve
-the current data should work as expected.
-
-.. warning::
-
-    DON'T use more then one object/connection per database; if you have
-    multiple LDAPObject values for the one database things could get confused
-    because each one will keep track of changes seperately - if this is an issue
-    the caching functionality could be split into a seperate class.
-"""
+with a subset of the functions from the real ldap module. """
 
 import ldap
 import ldap.dn
@@ -57,6 +44,7 @@ def raise_testfailure(place):
 # wrapper class
 
 class LDAPwrapper(object):
+    """ The LDAP connection class. """
 
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" openldap pwdPolicy specific schemas. """
 
 class pwdPolicyMixin(object):
     @classmethod
