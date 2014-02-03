@@ -2,4 +2,10 @@
 # -*- makefile -*-
 
 %:
-	dh $@ --with python2
+	dh $@ --with python2,sphinxdoc
+
+.PHONY: override_dh_auto_build
+override_dh_auto_build:
+	PYTHONPATH=. sphinx-build -b html -d docs/.build/.doctrees -N docs docs/.build/html
+	dh_auto_build
+

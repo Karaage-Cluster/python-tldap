@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Used to perform LDAP queries. """
+
 # Used to control how many objects are worked with at once in some cases (e.g.
 # when deleting objects).
 ITER_CHUNK_SIZE = 100
@@ -634,6 +636,9 @@ class QuerySet(object):
 
 
 class EmptyQuerySet(QuerySet):
+    """
+    Represents an empty query set with no results.
+    """
     def __init__(self, cls, alias, settings):
         super(EmptyQuerySet, self).__init__(cls, alias, settings)
         self._result_cache = []

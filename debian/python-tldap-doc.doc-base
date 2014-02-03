@@ -1,0 +1,9 @@
+Document: TLDAP
+Title: TLDAP Documentation
+Author: Brian May
+Abstract: This documents TLDAP for programmers.
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python-tldap-doc/html/index.html
+Files: /usr/share/doc/python-tldap-doc/html/*.html

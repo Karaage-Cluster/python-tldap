@@ -23,10 +23,13 @@ behave like the sync functions and return the same information.
 The current state is simulated in cache, so that functions to retrieve
 the current data should work as expected.
 
-WARNING: DON'T use more then one object/connection per database; if you have
-multiple LDAPObject values for the one database things could get confused
-because each one will keep track of changes seperately - if this is an issue
-the caching functionality could be split into a seperate class."""
+.. warning::
+
+    DON'T use more then one object/connection per database; if you have
+    multiple LDAPObject values for the one database things could get confused
+    because each one will keep track of changes seperately - if this is an issue
+    the caching functionality could be split into a seperate class.
+"""
 
 import ldap
 import ldap.dn

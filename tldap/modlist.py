@@ -1,13 +1,5 @@
 """
-ldap.modlist - create add/modify modlist's
-
-See http://www.python-ldap.org/ for details.
-
-$Id: modlist.py,v 1.17 2009/07/26 11:09:58 stroeder Exp $
-
-Python compability note:
-This module is known to work with Python 2.0+ but should work
-with Python 1.5.2 as well.
+This module contains a ``modifyModlist`` function adopted from :py:mod:`ldap:ldap.modlist`.
 """
 
 import string
@@ -34,6 +26,12 @@ def modifyModlist(
             This is handy for situations where your application
             sets attribute value to '' for deleting an attribute.
             In most cases leave zero.
+
+    This function is the same as :py:func:`ldap:ldap.modlist.modifyModlist`
+    except for the following changes:
+
+    * MOD_DELETE/MOD_DELETE used in preference to MOD_REPLACE when updating
+      an existing value.
     """
     ignore_attr_types = list_dict(map(string.lower, (ignore_attr_types or [])))
     modlist = []

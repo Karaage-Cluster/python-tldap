@@ -3,8 +3,8 @@ import django.utils.tree
 
 class Q(django.utils.tree.Node):
     """
-    Encapsulates filters as objects that can then be combined logically (using
-    & and |).
+    Encapsulates filters as objects that can then be combined logically
+    (using ``&`` and ``|``).
     """
     # Connection types
     AND = 'AND'

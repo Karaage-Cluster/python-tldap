@@ -3,6 +3,7 @@ Section: python
 Priority: optional
 Maintainer: Brian May <bam@debian.org>
 Build-Depends: debhelper (>=8.1.0), python (>= 2.6.6-3~)
+Build-Depends-Indep: python-sphinx (>= 1.0.7+dfsg-1~)
 Standards-Version: 3.9.5
 X-Python-Version: >= 2.6
 
@@ -15,6 +16,18 @@ Description: High level python LDAP Library
  It also supports fake LDAP transactions, to try and ensure LDAP database
  remains in a consistent state, even if there are errors that cause the
  transaction to fail.
+
+Package: python-tldap-doc
+Architecture: all
+Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Description: High level python LDAP Library
+ TLDAP is a high level LDAP library for Python that users django-db like models
+ to define LDAP schemas that can then be used in an easy way from Python code.
+ It also supports fake LDAP transactions, to try and ensure LDAP database
+ remains in a consistent state, even if there are errors that cause the
+ transaction to fail.
+ .
+ This package contains the documentation.
 
 Package: django-tldap
 Depends: python-tldap, ${misc:Depends}
