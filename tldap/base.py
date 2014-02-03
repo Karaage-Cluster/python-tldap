@@ -216,8 +216,7 @@ class LDAPobject(object):
         if self._dn is None and self._base_dn is None:
             self._base_dn = self._meta.base_dn
 
-
-    def rdn_to_dn(self, name, using):
+    def _rdn_to_dn(self, name, using):
         field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
@@ -254,7 +253,7 @@ class LDAPobject(object):
         using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
 
         if self._dn is None and self._meta.pk is not None:
-            self._dn = self.rdn_to_dn(self._meta.pk, using)
+            self._dn = self._rdn_to_dn(self._meta.pk, using)
 
         if self._dn is None:
             raise tldap.exceptions.ValidationError(
