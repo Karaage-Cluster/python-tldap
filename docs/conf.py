@@ -39,7 +39,7 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['ldap', 'ldap.filter', 'ldap.modlist', 'ldap.dn']
+MOCK_MODULES = ['ldap', 'ldap.filter', 'ldap.modlist', 'ldap.dn', 'smbpasswd']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
