@@ -216,37 +216,6 @@ class LDAPobject(object):
         if self._dn is None and self._base_dn is None:
             self._base_dn = self._meta.base_dn
 
-    def load_db_values(self, using=None):
-        """
-        Kludge to load DB values from other databases. Required for multiple DB
-        use.
-        """
-        # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
-        c = tldap.connections[using]
-
-        if using in self._db_values:
-            return
-
-        # what fields should we get?
-        field_names = self._meta.get_all_field_names()
-
-        # get values
-        db_values = list(
-            c.search(self._dn, ldap.SCOPE_BASE, attrlist=field_names))
-        num = len(db_values)
-        if num == 0:
-            raise self.DoesNotExist(
-                "%s matching query does not exist." % self._meta.object_name)
-        elif num > 1:
-            raise self.model.MultipleObjectsReturned(
-                "get() returned more than one %s -- it returned %s!" %
-                (self._meta.object_name, num))
-
-        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(
-            db_values[0][1])
-
-    load_db_values.alters_data = True
 
     def rdn_to_dn(self, name, using):
         field = self._meta.get_field_by_name(name)
