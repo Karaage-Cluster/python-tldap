@@ -1,3 +1,11 @@
+django-tldap (0.2.13-1) unstable; urgency=low
+
+  * Initial documentation.
+  * Make transactions operate on all connections by default.
+  * Remove obsolete functions.
+
+ -- Brian May <bam@debian.org>  Wed, 05 Feb 2014 09:09:55 +1100
+
 django-tldap (0.2.12-1) unstable; urgency=low
 
   * Use dh_python2 for packaging.

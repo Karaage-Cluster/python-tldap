@@ -20,6 +20,7 @@ Description: High level python LDAP Library
 Package: python-tldap-doc
 Architecture: all
 Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Section: doc
 Description: High level python LDAP Library
  TLDAP is a high level LDAP library for Python that users django-db like models
  to define LDAP schemas that can then be used in an easy way from Python code.
