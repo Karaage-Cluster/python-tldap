@@ -12,4 +12,4 @@ override_dh_auto_build:
 .PHONY: override_dh_clean
 override_dh_clean:
 	dh_clean
-	rm -rf docs/.build
+	rm -rf docs/.build docs/_build
