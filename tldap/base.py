@@ -190,7 +190,7 @@ class LDAPobject(object):
             yield i, getattr(self, i)
 
     def __init__(self, using=None, settings=None, **kwargs):
-        self._db_values = {}
+        self._db_values = None
         self._alias = using
         self._settings = settings
         self._dn = None
@@ -255,7 +255,7 @@ class LDAPobject(object):
 
         return new_dn
 
-    def save(self, force_add=False, force_modify=False, using=None):
+    def save(self, force_add=False, force_modify=False):
         """
         Saves the current instance. Override this in a subclass if you want to
         control the saving process.
@@ -263,11 +263,17 @@ class LDAPobject(object):
         :param self: object to save.
         :param force_add: Assume object doesn't already exist and must be created.
         :param force_modify: Assume oobject already exists and must be updated.
-        :param using: Alias to connection to write to.
         """
 
         # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+        using = self._alias
+        if using is None:
+            # If we use the DEFAULT_LDAP_ALIAS, then we must do an add
+            # operation, we cannot be doing a modify.
+            assert self._db_values is None
+            force_add = True
+            using = tldap.DEFAULT_LDAP_ALIAS
+        assert using is not None
 
         if self._dn is None and self._meta.pk is not None:
             self._dn = self._rdn_to_dn(self._meta.pk, using)
@@ -283,23 +289,20 @@ class LDAPobject(object):
         if force_add:
             self._add(using)
         elif force_modify:
-            self._modify(using)
-        elif using in self._db_values:
-            self._modify(using)
+            self._modify()
+        elif self._db_values is not None:
+            self._modify()
         else:
             self._add(using)
 
     save.alters_data = True
 
-    def delete(self, using=None):
+    def delete(self):
         """ Delete this object from the LDAP server.
 
         :param self: object to delete.
-        :param using: connection to delete it from.
         """
-        # what database should we be using?
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
-        self._delete(using)
+        self._delete()
     delete.alters_data = True
 
     def _get_moddict(self, default_object_class, default_object_class_db):
@@ -383,7 +386,8 @@ class LDAPobject(object):
 
         # what to do if transaction is reversed
         def onfailure():
-            del self._db_values[using]
+            self._alias = None
+            self._db_values = None
 
         # do it
         try:
@@ -393,15 +397,17 @@ class LDAPobject(object):
                 "Object with dn %r already exists doing add" % (self._dn,))
 
         # save new values
-        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(moddict)
+        self._alias = using
+        self._db_values = tldap.helpers.CaseInsensitiveDict(moddict)
 
     _add.alters_data = True
 
-    def _modify(self, using):
-        assert(using in self._db_values)
+    def _modify(self):
         fields = self._meta.fields
 
         # what database should we be using?
+        using = self._alias
+        assert using is not None
         c = tldap.connections[using]
 
         # objectClass = attribute + class meta setup
@@ -416,7 +422,7 @@ class LDAPobject(object):
         fields = self._meta.fields
         for field in fields:
             name = field.name
-            modold[name] = self._db_values[using].get(name, [])
+            modold[name] = self._db_values.get(name, [])
 
         # generate moddict values
         moddict = self._get_moddict(default_object_class,
@@ -442,10 +448,10 @@ class LDAPobject(object):
             moddict[field] = value
 
         # what to do if transaction is reversed
-        old_values = self._db_values[using]
+        old_values = self._db_values
 
         def onfailure():
-            self._db_values[using] = old_values
+            self._db_values = old_values
 
         # do it
         if len(modlist) > 0:
@@ -466,18 +472,17 @@ class LDAPobject(object):
                     (self._dn,))
 
         # save new values
-        self._db_values[using] = tldap.helpers.CaseInsensitiveDict(moddict)
+        self._db_values = tldap.helpers.CaseInsensitiveDict(moddict)
 
     _modify.alters_data = True
 
-    def rename(self, using=None, **kwargs):
+    def rename(self, **kwargs):
         """
         Rename this entry. Use like object.rename(uid="new") or
         object.rename(cn="new"). Can pass a list in using, as all
         connections must be renamed at once.
 
         :param self: object to rename.
-        :param using: database to act on.
         :param kwargs: Contains new rdn of object.
         """
 
@@ -497,25 +502,16 @@ class LDAPobject(object):
         split_new_rdn = [[(name, value, 1)]]
         new_rdn = ldap.dn.dn2str(split_new_rdn)
 
-        # replace cache, any connections not
-        # renamed get discarded.
-        old_cache = self._db_values
-        self._db_values = {}
-
         # set using if not already set
-        using = using or self._alias or tldap.DEFAULT_LDAP_ALIAS
+        using = self._alias
+        assert using is not None
 
         # turn using into a list if it isn't
         if not isinstance(using, list):
             using = [using]
 
         # what database should we be using?
-        for u in using:
-            self._db_values[u] = old_cache[u]
-            self._rename(new_rdn, u)
-
-        # old cache no longer needed
-        old_cache = None
+        self._rename(new_rdn)
 
         # construct new dn
         split_dn = ldap.dn.str2dn(self._dn)
@@ -526,97 +522,92 @@ class LDAPobject(object):
 
     rename.alters_data = True
 
-    def _rename(self, new_rdn, using):
+    def _rename(self, new_rdn):
         """
         Low level rename to new_rdn for the using connection.  Works with and
         without cached information for the connection. Doesn't update the
         dn unless operation is reversed during a commit.
         """
+        using = self._alias
+        assert using is not None
         c = tldap.connections[using]
 
         # what to do if transaction is reversed
-        if using in self._db_values:
-            # we need to reset cached data and the dn
-            old_dn = self._dn
-            old_values = self._db_values[using]
+        # we need to reset cached data and the dn
+        old_dn = self._dn
+        old_values = self._db_values
 
-            def onfailure():
-                self._dn = old_dn
-                self._db_values[using] = old_values
-        else:
-            # no cached data, reset the dn however
-            old_dn = self._dn
-
-            def onfailure():
-                self._dn = old_dn
+        def onfailure():
+            self._dn = old_dn
+            self._db_values = old_values
 
         # do the rename
         c.rename(self._dn, new_rdn, onfailure)
 
-        # do we have cached data to update?
-        if using in self._db_values:
-            # get old rdn values
-            split_old_dn = ldap.dn.str2dn(self._dn)
-            old_key, old_value, _ = split_old_dn[0][0]
+        # get old rdn values
+        split_old_dn = ldap.dn.str2dn(self._dn)
+        old_key, old_value, _ = split_old_dn[0][0]
 
-            # get new rdn values
-            split_new_rdn = ldap.dn.str2dn(new_rdn)
-            new_key, new_value, _ = split_new_rdn[0][0]
+        # get new rdn values
+        split_new_rdn = ldap.dn.str2dn(new_rdn)
+        new_key, new_value, _ = split_new_rdn[0][0]
 
-            # make a copy before modifications
-            self._db_values[using] = copy.deepcopy(self._db_values[using])
+        # make a copy before modifications
+        self._db_values = copy.deepcopy(self._db_values)
 
-            # delete old rdn attribute in object
-            old_key = self._meta.get_field_name(old_key)
-            field = self._meta.get_field_by_name(old_key)
-            v = getattr(self, old_key, [])
-            old_value = field.value_to_python(old_value)
-            if v is None:
-                pass
-            elif isinstance(v, list):
-                if old_value in v:
-                    v.remove(old_value)
-            elif old_value == v:
-                v = None
-            if v is None:
-                del self._db_values[using][old_key]
-            elif isinstance(v, list) and len(v) == 0:
-                del self._db_values[using][old_key]
-            else:
-                self._db_values[using][old_key] = field.to_db(v)
-            setattr(self, old_key, v)
+        # delete old rdn attribute in object
+        old_key = self._meta.get_field_name(old_key)
+        field = self._meta.get_field_by_name(old_key)
+        v = getattr(self, old_key, [])
+        old_value = field.value_to_python(old_value)
+        if v is None:
+            pass
+        elif isinstance(v, list):
+            if old_value in v:
+                v.remove(old_value)
+        elif old_value == v:
+            v = None
+        if v is None:
+            del self._db_values[old_key]
+        elif isinstance(v, list) and len(v) == 0:
+            del self._db_values[old_key]
+        else:
+            self._db_values[old_key] = field.to_db(v)
+        setattr(self, old_key, v)
 
-            # update new rdn attribute in object
-            new_key = self._meta.get_field_name(new_key)
-            field = self._meta.get_field_by_name(new_key)
-            v = getattr(self, new_key, None)
-            new_value = field.value_to_python(new_value)
-            if v is None:
-                v = new_value
-            elif isinstance(v, list):
-                if new_value not in v:
-                    v.append(new_value)
-            elif v != new_value:
-                # we can't add a value to a string
-                assert False
-            self._db_values[using][new_key] = field.to_db(v)
-            setattr(self, new_key, v)
+        # update new rdn attribute in object
+        new_key = self._meta.get_field_name(new_key)
+        field = self._meta.get_field_by_name(new_key)
+        v = getattr(self, new_key, None)
+        new_value = field.value_to_python(new_value)
+        if v is None:
+            v = new_value
+        elif isinstance(v, list):
+            if new_value not in v:
+                v.append(new_value)
+        elif v != new_value:
+            # we can't add a value to a string
+            assert False
+        self._db_values[new_key] = field.to_db(v)
+        setattr(self, new_key, v)
 
     _rename.alters_data = True
 
-    def _delete(self, using):
+    def _delete(self):
         # what database should we be using?
+        using = self._alias
+        assert using is not None
         c = tldap.connections[using]
 
         # what to do if transaction is reversed
-        old_values = self._db_values[using]
+        old_values = self._db_values
 
         def onfailure():
-            self._db_values[using] = old_values
+            self._db_values = old_values
 
         # delete it
         c.delete(self._dn, onfailure)
-        del self._db_values[using]
+        self._db_values = None
     _delete.alters_data = True
 
     def unparse(self, ldif_writer):

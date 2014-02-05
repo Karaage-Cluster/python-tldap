@@ -484,7 +484,7 @@ class QuerySet(object):
                     setattr(o, name, value)
 
                 # save raw db values for latter use
-                o._db_values[alias] = (
+                o._db_values = (
                     tldap.helpers.CaseInsensitiveDict(i[1]))
 
                 # give caller this result
@@ -516,8 +516,8 @@ class QuerySet(object):
         Creates a new object with the given kwargs, saving it to the database
         and returning the created object.
         """
-        obj = self._cls(settings=self._settings, **kwargs)
-        obj.save(force_add=True, using=self._alias)
+        obj = self._cls(settings=self._settings, using=self._alias, **kwargs)
+        obj.save(force_add=True)
         return obj
 
     def get_or_create(self, **kwargs):
@@ -534,8 +534,8 @@ class QuerySet(object):
         except self._cls.DoesNotExist:
             params = dict(kwargs)
             params.update(defaults)
-            obj = self._cls(settings=self._settings, **params)
-            obj.save(force_add=True, using=self._alias)
+            obj = self._cls(settings=self._settings, using=self._alias, **params)
+            obj.save(force_add=True)
             return obj, True
 
     def none(self):

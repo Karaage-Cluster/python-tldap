@@ -73,7 +73,8 @@ class baseMixin(tldap.base.LDAPobject):
             if hasattr(mixin, 'setup_from_master'):
                 mixin.setup_from_master(self, master)
 
-    def _add(self, using):
+    def _add(self):
+        using = self._alias
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_create'):
                 warnings.warn(
@@ -85,7 +86,7 @@ class baseMixin(tldap.base.LDAPobject):
                 mixin.pre_add(self, using)
             if hasattr(mixin, 'pre_save'):
                 mixin.pre_save(self, using)
-        super(baseMixin, self)._add(using)
+        super(baseMixin, self)._add()
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_add'):
                 mixin.post_add(self, using)
@@ -98,13 +99,14 @@ class baseMixin(tldap.base.LDAPobject):
                     DeprecationWarning)
                 mixin.post_create(self, self._master)
 
-    def _modify(self, using):
+    def _modify(self):
+        using = self._alias
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_modify'):
                 mixin.pre_modify(self, using)
             if hasattr(mixin, 'pre_save'):
                 mixin.pre_save(self, using)
-        super(baseMixin, self)._modify(using)
+        super(baseMixin, self)._modify()
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_modify'):
                 mixin.post_modify(self, using)
@@ -115,11 +117,12 @@ class baseMixin(tldap.base.LDAPobject):
         # depreciated
         pass
 
-    def _delete(self, using):
+    def _delete(self):
+        using = self._alias
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_delete'):
                 mixin.pre_delete(self, using)
-        super(baseMixin, self)._delete(using)
+        super(baseMixin, self)._delete()
 
 
     def lock(self):
