@@ -469,12 +469,10 @@ class QuerySet(object):
 
                 # create new object
                 o = self._cls(
+                        dn = i[0],
                         using = alias,
                         settings = self._settings,
                 )
-
-                # set dn manually
-                setattr(o, '_dn', i[0])
 
                 # set the other fields
                 for field in fields:
