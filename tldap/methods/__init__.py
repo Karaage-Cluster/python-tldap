@@ -34,6 +34,32 @@ class baseMixin(tldap.base.LDAPobject):
         # We must have our settings.
         assert self._settings is not None
 
+    @classmethod
+    def get_default_base_dn(cls, using, settings):
+        """ Get the default base_dn for this *class*.
+
+        :param cls: This class.
+        :param using: The LDAP database alias.
+        :param settings: A set of parameters.
+        :return: Fully qualified base dn. May be None if unsuccessful.
+
+        This class will lookup the base_dn in settings if the base method
+        couldn't get a result.
+        """
+
+        # Call superclass, and try to get base. Was it successful?
+        base_dn = super(baseMixin, cls).get_default_base_dn(using, settings)
+
+        # If no, was it provided as a setting?
+        if base_dn is None and settings is not None:
+            key = cls._meta.base_dn_setting
+            assert key in settings
+            if key in settings:
+                base_dn = settings[key]
+
+        # If we still haven't got it, we failed.
+        return base_dn
+
     def change_password(self, password):
         for mixin in self.mixin_list:
             if hasattr(mixin, 'change_password'):

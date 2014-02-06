@@ -56,31 +56,40 @@ class Manager(object):
 
     def __init__(self):
         self._cls = None
-        self._alias = None
+        self._alias = tldap.DEFAULT_LDAP_ALIAS
         self._settings = None
+        self._base_dn = None
+        # base_dn = None means lookup automatically at query time from class
 
     def contribute_to_class(self, cls, name):
         self._cls = cls
         setattr(cls, name, ManagerDescriptor(self))
 
-    def db_manager(self, using, settings):
+    def db_manager(self, using=None, settings=None, base_dn=None):
         obj = copy.copy(self)
-        obj._alias = using
-        obj._settings = settings
+        if using is not None:
+            obj._alias = using
+        if settings is not None:
+            obj._settings = settings
+        if base_dn is not None:
+            obj._base_dn = base_dn
         return obj
+
 
     #######################
     # PROXIES TO QUERYSET #
     #######################
 
     def get_empty_query_set(self):
-        return tldap.query.EmptyQuerySet(self._cls, self._alias, self._settings)
+        return tldap.query.EmptyQuerySet(self._cls, self._alias,
+                self._settings, self._base_dn)
 
     def get_query_set(self):
         """Returns a new QuerySet object.  Subclasses can override this method
         to easily customize the behavior of the Manager.
         """
-        return tldap.query.QuerySet(self._cls, self._alias, self._settings)
+        return tldap.query.QuerySet(self._cls, self._alias,
+                self._settings, self._base_dn)
 
     def none(self):
         return self.get_empty_query_set()
@@ -147,7 +156,14 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
             self._linked_cls = linked_cls
             self._linked_key = linked_key
 
+            # we want queries to use the same LDAP connection for this_instance
+            self._alias = this_instance._alias
+            self._settings = this_instance._settings
+            # we want queries to be based on the linked_cls type
             self._cls = linked_cls
+            self._base_dn = None
+#!            # queries should be in the base_dn applicable for linked_cls
+#!            self._base_dn = linked_cls.get_default_base_dn(self._alias, self._settings)
 
         def f_to_p(self, value):
             return value

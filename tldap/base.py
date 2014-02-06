@@ -228,6 +228,26 @@ class LDAPobject(object):
         if self._dn is None and self._base_dn is None:
             self._base_dn = self._meta.base_dn
 
+    @classmethod
+    def get_default_base_dn(cls, using, settings):
+        """ Get the default base_dn for this *class*.
+
+        :param cls: This class.
+        :param using: The LDAP database alias.
+        :param settings: A set of parameters that may be useful in derived classes.
+        :return: Fully qualified base dn. May be None if unsuccessful.
+        """
+
+        assert using is not None
+        base_dn = cls._meta.base_dn
+        if base_dn is None:
+            key = cls._meta.base_dn_setting
+            if key is not None:
+                connection = tldap.connections[using]
+                if key in connection.settings_dict:
+                    base_dn = connection.settings_dict[key]
+        return base_dn
+
     def _rdn_to_dn(self, name):
         """ Convert the rdn to a fully qualified DN for the specified LDAP connection.
 
@@ -245,12 +265,12 @@ class LDAPobject(object):
                 "Cannot use %s in dn as it is a list" % name)
         value = field.value_to_db(value)
 
-        base_dn = self._base_dn or self._meta.base_dn
+        base_dn = self._base_dn
         if base_dn is None:
             using = self._alias
             assert using is not None
-            c = tldap.connections[using]
-            base_dn = c.settings_dict[self._meta.base_dn_setting]
+            base_dn = self.get_default_base_dn(using, self._settings)
+        assert base_dn is not None
 
         split_base = ldap.dn.str2dn(base_dn)
         split_new_dn = [[(name, value, 1)]] + split_base

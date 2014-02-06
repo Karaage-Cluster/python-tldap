@@ -38,7 +38,7 @@ class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
     """
-    def __init__(self, cls, using, settings):
+    def __init__(self, cls, using, settings, base_dn):
         assert cls is not None
 
         self._from_cls = None
@@ -47,7 +47,7 @@ class QuerySet(object):
         self._alias = using
         self._settings = settings
         self._query = None
-        self._base_dn = None
+        self._base_dn = base_dn
         self._iter = None
         self._result_cache = None
         self._limits = None
@@ -420,10 +420,9 @@ class QuerySet(object):
                 query = None
 
         # create a "list" of base_dn to search
-        base_dn = self._base_dn or self._cls._meta.base_dn
+        base_dn = self._base_dn
         if base_dn is None:
-            base_dn = (
-                connection.settings_dict[self._cls._meta.base_dn_setting])
+            base_dn = self._cls.get_default_base_dn(self._alias, self._settings)
         assert base_dn is not None
 
         # get list of field names we support
@@ -603,7 +602,7 @@ class QuerySet(object):
     def _clone(self, klass=None):
         if klass is None:
             klass = self.__class__
-        qs = klass(self._cls, self._alias, self._settings)
+        qs = klass(self._cls, self._alias, self._settings, self._base_dn)
         if self._query is not None:
             qs._query = self._clone_query(self._query)
         else:
@@ -637,8 +636,8 @@ class EmptyQuerySet(QuerySet):
     """
     Represents an empty query set with no results.
     """
-    def __init__(self, cls, alias, settings):
-        super(EmptyQuerySet, self).__init__(cls, alias, settings)
+    def __init__(self, cls, alias, settings, base_dn):
+        super(EmptyQuerySet, self).__init__(cls, alias, settings, base_dn)
         self._result_cache = []
 
     def __and__(self, other):
