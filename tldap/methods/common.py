@@ -34,7 +34,7 @@ class personMixin(object):
         return tldap.connections[using].check_password(self.dn, password)
 
     @classmethod
-    def pre_save(cls, self, using):
+    def pre_save(cls, self):
         self.displayName = '%s %s' % (self.givenName, self.sn)
         self.cn = self.displayName
 
@@ -46,7 +46,8 @@ class personMixin(object):
 
 class accountMixin(object):
     @classmethod
-    def set_free_uidNumber(cls, self, using):
+    def set_free_uidNumber(cls, self):
+        using = self._alias
         model = self.__class__
         settings = self._settings
         scheme = settings.get('NUMBER_SCHEME', using)
@@ -66,20 +67,20 @@ class accountMixin(object):
         self.uidNumber = master.uidNumber
 
     @classmethod
-    def pre_add(cls, self, using):
+    def pre_add(cls, self):
         if self.loginShell is None:
             self.loginShell = '/bin/bash'
         if self.uidNumber is None:
-            cls.set_free_uidNumber(self, using)
+            cls.set_free_uidNumber(self)
         if self.unixHomeDirectory is None and self.uid is not None:
             self.unixHomeDirectory =  '/home/%s' % self.uid
 
     @classmethod
-    def pre_save(cls, self, using):
+    def pre_save(cls, self):
         self.gecos = '%s %s' % (self.givenName, self.sn)
 
     @classmethod
-    def pre_delete(cls, self, using):
+    def pre_delete(cls, self):
         self.manager_of.clear()
 
     @classmethod
@@ -108,7 +109,8 @@ class groupMixin(object):
     # Note standard posixGroup objectClass has no displayName attribute
 
     @classmethod
-    def set_free_gidNumber(cls, self, using):
+    def set_free_gidNumber(cls, self):
+        using = self._alias
         model = self.__class__
         settings = self._settings
         scheme = settings.get('NUMBER_SCHEME', using)
@@ -128,12 +130,12 @@ class groupMixin(object):
         self.gidNumber = master.gidNumber
 
     @classmethod
-    def pre_add(cls, self, using):
+    def pre_add(cls, self):
         if self.gidNumber is None:
-            cls.set_free_gidNumber(self, using)
+            cls.set_free_gidNumber(self)
 
     @classmethod
-    def pre_save(cls, self, using):
+    def pre_save(cls, self):
         if self.description is None:
             self.description = self.cn
 

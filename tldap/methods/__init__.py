@@ -100,7 +100,6 @@ class baseMixin(tldap.base.LDAPobject):
                 mixin.setup_from_master(self, master)
 
     def _add(self):
-        using = self._alias
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_create'):
                 warnings.warn(
@@ -109,15 +108,15 @@ class baseMixin(tldap.base.LDAPobject):
                     DeprecationWarning)
                 mixin.pre_create(self, self._master)
             if hasattr(mixin, 'pre_add'):
-                mixin.pre_add(self, using)
+                mixin.pre_add(self)
             if hasattr(mixin, 'pre_save'):
-                mixin.pre_save(self, using)
+                mixin.pre_save(self)
         super(baseMixin, self)._add()
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_add'):
-                mixin.post_add(self, using)
+                mixin.post_add(self)
             if hasattr(mixin, 'post_save'):
-                mixin.post_save(self, using)
+                mixin.post_save(self)
             if hasattr(mixin, 'post_create'):
                 warnings.warn(
                     "The use of post_create() in mixin has been deprecated. "
@@ -126,28 +125,26 @@ class baseMixin(tldap.base.LDAPobject):
                 mixin.post_create(self, self._master)
 
     def _modify(self):
-        using = self._alias
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_modify'):
-                mixin.pre_modify(self, using)
+                mixin.pre_modify(self)
             if hasattr(mixin, 'pre_save'):
-                mixin.pre_save(self, using)
+                mixin.pre_save(self)
         super(baseMixin, self)._modify()
         for mixin in self.mixin_list:
             if hasattr(mixin, 'post_modify'):
-                mixin.post_modify(self, using)
+                mixin.post_modify(self)
             if hasattr(mixin, 'post_save'):
-                mixin.post_save(self, using)
+                mixin.post_save(self)
 
     def pre_delete(self):
         # depreciated
         pass
 
     def _delete(self):
-        using = self._alias
         for mixin in self.mixin_list:
             if hasattr(mixin, 'pre_delete'):
-                mixin.pre_delete(self, using)
+                mixin.pre_delete(self)
         super(baseMixin, self)._delete()
 
 

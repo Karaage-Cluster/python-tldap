@@ -31,7 +31,7 @@ class sambaAccountMixin(object):
         self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
 
     @classmethod
-    def pre_add(cls, self, using):
+    def pre_add(cls, self):
         settings = self._settings
         if self.sambaAcctFlags is None:
             self.sambaAcctFlags = '[ U         ]'
@@ -72,7 +72,7 @@ class sambaGroupMixin(object):
         self.sambaSID = getattr(master, "objectSid", None) or getattr(master, "sambaSID", None)
 
     @classmethod
-    def pre_add(cls, self, using):
+    def pre_add(cls, self):
         settings = self._settings
         if self.sambaGroupType is None:
             self.sambaGroupType = 2
@@ -82,6 +82,6 @@ class sambaGroupMixin(object):
             self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] + "-" + str(int(self.gidNumber)*2 + 1 + rid_base)
 
     @classmethod
-    def pre_save(cls, self, using):
+    def pre_save(cls, self):
         if self.displayName is None:
             self.displayName = self.cn
