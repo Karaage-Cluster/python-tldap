@@ -190,6 +190,9 @@ class LDAPobject(object):
             yield i, getattr(self, i)
 
     def __init__(self, using=None, settings=None, **kwargs):
+        if using is None:
+            using = tldap.DEFAULT_LDAP_ALIAS
+
         self._db_values = None
         self._alias = using
         self._settings = settings
@@ -225,12 +228,11 @@ class LDAPobject(object):
         if self._dn is None and self._base_dn is None:
             self._base_dn = self._meta.base_dn
 
-    def _rdn_to_dn(self, name, using):
+    def _rdn_to_dn(self, name):
         """ Convert the rdn to a fully qualified DN for the specified LDAP connection.
 
         :param self: rdn belongs to this tldap object.
         :param name: rdn to convert.
-        :param using: specify the connection we want to use for fully qualified DN.
         :return: fully qualified DN.
         """
         field = self._meta.get_field_by_name(name)
@@ -245,6 +247,8 @@ class LDAPobject(object):
 
         base_dn = self._base_dn or self._meta.base_dn
         if base_dn is None:
+            using = self._alias
+            assert using is not None
             c = tldap.connections[using]
             base_dn = c.settings_dict[self._meta.base_dn_setting]
 
@@ -267,16 +271,10 @@ class LDAPobject(object):
 
         # what database should we be using?
         using = self._alias
-        if using is None:
-            # If we use the DEFAULT_LDAP_ALIAS, then we must do an add
-            # operation, we cannot be doing a modify.
-            assert self._db_values is None
-            force_add = True
-            using = tldap.DEFAULT_LDAP_ALIAS
         assert using is not None
 
         if self._dn is None and self._meta.pk is not None:
-            self._dn = self._rdn_to_dn(self._meta.pk, using)
+            self._dn = self._rdn_to_dn(self._meta.pk)
 
         if self._dn is None:
             raise tldap.exceptions.ValidationError(
@@ -287,13 +285,13 @@ class LDAPobject(object):
                 "Cannot force both insert and updating in model saving.")
 
         if force_add:
-            self._add(using)
+            self._add()
         elif force_modify:
             self._modify()
         elif self._db_values is not None:
             self._modify()
         else:
-            self._add(using)
+            self._add()
 
     save.alters_data = True
 
@@ -368,7 +366,7 @@ class LDAPobject(object):
             moddict[name] = value
         return moddict
 
-    def _add(self, using):
+    def _add(self):
         # objectClass = attribute + class meta setup
         default_object_class = getattr(self, "objectClass", [])
         default_object_class_db = list(self._meta.object_classes)
@@ -382,6 +380,8 @@ class LDAPobject(object):
         modlist = tldap.modlist.addModlist(moddict)
 
         # what database should we be using?
+        using = self._alias
+        assert using is not None
         c = tldap.connections[using]
 
         # what to do if transaction is reversed
