@@ -377,13 +377,13 @@ class LDAPwrapper(object):
         onrollback = lambda obj: obj.add_s(dn, modlist)
         return self._process(oncommit, onrollback, onfailure)
 
-    def rename(self, dn, newrdn, onfailure=None):
+    def rename(self, dn, newrdn, new_base_dn=None, onfailure=None):
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
         """
 
-        debug("\nrename", self, dn, newrdn)
+        debug("\nrename", self, dn, newrdn, new_base_dn)
 
         # split up the parameters
         split_dn = ldap.dn.str2dn(dn)
@@ -396,14 +396,20 @@ class LDAPwrapper(object):
         # make newrdn fully qualified dn
         tmplist = []
         tmplist.append(split_newrdn[0])
-        tmplist.extend(split_dn[1:])
+        if new_base_dn is not None:
+            tmplist.extend(ldap.dn.str2dn(new_base_dn))
+            old_base_dn=ldap.dn.dn2str(split_dn[1:])
+        else:
+            tmplist.extend(split_dn[1:])
+            old_base_dn=None
         newdn = ldap.dn.dn2str(tmplist)
 
-        debug("--> rollback", self, newdn, rdn)
+        debug("--> cmmmit  ", self, dn, newrdn, new_base_dn)
+        debug("--> rollback", self, newdn, rdn, old_base_dn)
 
         # on commit carry out action; on rollback reverse rename
-        oncommit = lambda obj: obj.rename_s(dn, newrdn)
-        onrollback = lambda obj: obj.rename_s(newdn, rdn)
+        oncommit = lambda obj: obj.rename_s(dn, newrdn, new_base_dn)
+        onrollback = lambda obj: obj.rename_s(newdn, rdn, old_base_dn)
 
         return self._process(oncommit, onrollback, onfailure)
 

@@ -496,30 +496,36 @@ class LDAPobject(object):
 
     _modify.alters_data = True
 
-    def rename(self, **kwargs):
+    def rename(self, new_base_dn=None, **kwargs):
         """
         Rename this entry. Use like object.rename(uid="new") or
         object.rename(cn="new"). Can pass a list in using, as all
         connections must be renamed at once.
 
         :param self: object to rename.
+        :param new_base_dn: move entry to this parent.
         :param kwargs: Contains new rdn of object.
         """
 
         # extract key and value from kwargs
-        assert len(kwargs) == 1
-        name, value = kwargs.iteritems().next()
+        if len(kwargs) == 1:
+            name, value = kwargs.iteritems().next()
 
-        # replace pk with the real attribute
-        if name == "pk":
-            name = self._meta.pk
+            # replace pk with the real attribute
+            if name == "pk":
+                name = self._meta.pk
 
-        # get the new field and turn value into db value
-        field = self._meta.get_field_by_name(name)
-        value = field.value_to_db(value)
+            # get the new field and turn value into db value
+            field = self._meta.get_field_by_name(name)
+            value = field.value_to_db(value)
 
-        # work out the new rdn of the object
-        split_new_rdn = [[(name, value, 1)]]
+            # work out the new rdn of the object
+            split_new_rdn = [[(name, value, 1)]]
+        elif len(kwargs) == 0:
+            split_new_rdn = [ldap.dn.str2dn(self._dn)[0]]
+        else:
+            assert False
+
         new_rdn = ldap.dn.dn2str(split_new_rdn)
 
         # set using if not already set
@@ -531,7 +537,7 @@ class LDAPobject(object):
             using = [using]
 
         # what database should we be using?
-        self._rename(new_rdn)
+        self._rename(new_rdn, new_base_dn)
 
         # construct new dn
         split_dn = ldap.dn.str2dn(self._dn)
@@ -542,7 +548,7 @@ class LDAPobject(object):
 
     rename.alters_data = True
 
-    def _rename(self, new_rdn):
+    def _rename(self, new_rdn, new_base_dn):
         """
         Low level rename to new_rdn for the using connection.  Works with and
         without cached information for the connection. Doesn't update the
@@ -562,7 +568,7 @@ class LDAPobject(object):
             self._db_values = old_values
 
         # do the rename
-        c.rename(self._dn, new_rdn, onfailure)
+        c.rename(self._dn, new_rdn, new_base_dn, onfailure)
 
         # get old rdn values
         split_old_dn = ldap.dn.str2dn(self._dn)

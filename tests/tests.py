@@ -434,6 +434,53 @@ class BackendTest(unittest.TestCase):
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
                           "cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
 
+        # test move with rollback
+        self.get(c, "ou=People, dc=python-ldap,dc=org")
+        self.get(c, "ou=Groups, dc=python-ldap,dc=org")
+        self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                          "uid=tux, ou=Group, dc=python-ldap,dc=org")
+        try:
+            with tldap.transaction.commit_on_success():
+                c.rename(
+                    "uid=tux, ou=People, dc=python-ldap,dc=org", "uid=tux", "ou=Groups, dc=python-ldap,dc=org")
+                self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                                  "uid=tux, ou=People, dc=python-ldap,dc=org")
+                self.get(c, "uid=tux, ou=Groups, dc=python-ldap,dc=org")
+                c.fail()  # raises TestFailure during commit causing rollback
+                c.commit()
+        except tldap.exceptions.TestFailure:
+            pass
+        else:
+            self.fail("Exception not generated")
+        self.assertEqual(self.get(
+            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], ["Gates"])
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                          "uid=tux, ou=Groups, dc=python-ldap,dc=org")
+
+        # test move with success
+        self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        with tldap.transaction.commit_on_success():
+            c.rename(
+                "uid=tux, ou=People, dc=python-ldap,dc=org", "uid=tux", "ou=Groups, dc=python-ldap,dc=org")
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                              "uid=tux, ou=People, dc=python-ldap,dc=org")
+            self.get(c, "uid=tux, ou=Groups, dc=python-ldap,dc=org")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                          "uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.get(c, "uid=tux, ou=Groups, dc=python-ldap,dc=org")
+
+        # test move back
+        with tldap.transaction.commit_on_success():
+            c.rename(
+                "uid=tux, ou=Groups, dc=python-ldap,dc=org", "uid=tux", "ou=People, dc=python-ldap,dc=org")
+            self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+            self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                              "uid=tux, ou=Groups, dc=python-ldap,dc=org")
+        self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
+                          "uid=tux, ou=Groups, dc=python-ldap,dc=org")
+
         # test roll back on error of delete and add of same user
         try:
             with tldap.transaction.commit_on_success():
@@ -487,6 +534,8 @@ class ModelTest(unittest.TestCase):
         organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(
             dn="ou=People, dc=python-ldap,dc=org")
+        organizationalUnit.objects.create(
+            dn="ou=Groups, dc=python-ldap,dc=org")
 
         c = tldap.connection
 
@@ -701,6 +750,48 @@ class ModelTest(unittest.TestCase):
             self.assertRaises(DoesNotExist, get, uid="tuz")
         self.assertEqual(get(uid="tux").sn, "Gates")
         self.assertRaises(DoesNotExist, get, uid="tuz")
+
+        # test move with rollback
+        try:
+            with tldap.transaction.commit_on_success():
+                p = get(uid="tux")
+                p.rename("ou=Groups, dc=python-ldap,dc=org")
+                self.assertRaises(DoesNotExist, get, uid="tux")
+                c = tldap.connection
+                groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+                groups.get(uid="tux")
+                c.fail()  # raises TestFailure during commit causing rollback
+                c.commit()
+        except tldap.exceptions.TestFailure:
+            pass
+        else:
+            self.fail("Exception not generated")
+        self.assertEqual(get(uid="tux").sn, "Gates")
+        groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+        self.assertRaises(DoesNotExist, groups.get, uid="tux")
+
+        # test move with success
+        with tldap.transaction.commit_on_success():
+            p = get(uid="tux")
+            p.rename("ou=Groups, dc=python-ldap,dc=org")
+            self.assertRaises(DoesNotExist, get, uid="tux")
+            groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+            groups.get(uid="tux")
+        self.assertRaises(DoesNotExist, get, uid="tux")
+        groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+        groups.get(uid="tux")
+
+        # test move back with success
+        with tldap.transaction.commit_on_success():
+            groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+            p = groups.get(uid="tux")
+            p.rename("ou=People, dc=python-ldap,dc=org")
+            self.assertEqual(get(uid="tux").sn, "Gates")
+            groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+            self.assertRaises(DoesNotExist, groups.get, uid="tux")
+        self.assertEqual(get(uid="tux").sn, "Gates")
+        groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+        self.assertRaises(DoesNotExist, groups.get, uid="tux")
 
         # hack for testing
         for i in p._meta.fields:

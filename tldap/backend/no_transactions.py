@@ -182,13 +182,13 @@ class LDAPwrapper(object):
 
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
-    def rename(self, dn, newrdn, onfailure=None):
+    def rename(self, dn, newrdn, newsuperior=None, onfailure=None):
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
         """
 
-        return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn))
+        return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn, newsuperior))
 
     # read only stuff
 
