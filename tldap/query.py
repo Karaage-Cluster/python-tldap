@@ -420,9 +420,7 @@ class QuerySet(object):
                 query = None
 
         # create a "list" of base_dn to search
-        base_dn = self._base_dn
-        if base_dn is None:
-            base_dn = self._cls.get_default_base_dn(self._alias, self._settings)
+        base_dn = self.get_base_dn()
         assert base_dn is not None
 
         # get list of field names we support
@@ -585,6 +583,12 @@ class QuerySet(object):
         qs = self._clone()
         qs._base_dn = base_dn
         return qs
+
+    def get_base_dn(self):
+        base_dn = self._base_dn
+        if base_dn is None:
+            base_dn = self._cls.get_default_base_dn(self._alias, self._settings)
+        return base_dn
 
     def convert(self, cls):
         qs = self._clone()
