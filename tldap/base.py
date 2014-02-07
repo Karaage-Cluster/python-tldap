@@ -636,11 +636,12 @@ class LDAPobject(object):
         self._db_values = None
     _delete.alters_data = True
 
-    def unparse(self, ldif_writer):
+    def unparse(self, ldif_writer, new_dn=None, extra_fields={}):
         """ Translate object into ldif.
 
         :param self: object to translate.
         :param ldif_writer: ldif_writer to write translation to.
+        :param extra_fields: extra fields to display
         """
         # objectClass = attribute + class meta setup
         default_object_class = getattr(self, "objectClass", [])
@@ -650,6 +651,12 @@ class LDAPobject(object):
         moddict = self._get_moddict(default_object_class,
                                     default_object_class_db,
                                     )
+        moddict.update(extra_fields)
+
+        if new_dn is not None:
+            dn = new_dn
+        else:
+            dn = self.dn
 
         # do stuff
-        return ldif_writer.unparse(self.dn, moddict)
+        return ldif_writer.unparse(dn, moddict)
