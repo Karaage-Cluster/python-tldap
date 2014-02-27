@@ -1381,6 +1381,3 @@ class GroupAPITest(unittest.TestCase):
         self.failUnlessEqual(len(self.group.objects.all()), 4)
         g = self.group.objects.get(cn="Admin")
         self.failUnlessEqual(g.description, 'Admin Group')
-
-if __name__ == '__main__':
-    unittest.main()
