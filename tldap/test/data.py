@@ -1,4 +1,4 @@
-# Copyright 20012-2014 VPAC
+# Copyright 2012-2014 VPAC
 #
 # This file is part of django-placard.
 #
