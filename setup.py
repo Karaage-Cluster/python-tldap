@@ -80,6 +80,7 @@ setup(
     author = 'Brian May',
     author_email = 'brian@microcomaustralia.com.au',
     description = 'High level python LDAP Library',
+    url = "https://github.com/Karaage-Cluster/django-tldap",
     packages = packages,
     data_files = data_files,
     scripts = scripts,
