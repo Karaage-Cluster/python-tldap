@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2012-2014 VPAC
 #
 # This file is part of django-tldap.
