@@ -20,7 +20,6 @@
 from distutils.core import setup
 from distutils.command.install import INSTALL_SCHEMES
 import os
-import sys
 
 def fullsplit(path, result=None):
     """
@@ -59,21 +58,6 @@ for code_dir in [ 'tldap' ]:
         elif filenames:
             data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
-for dirpath, dirnames, filenames in os.walk("media"):
-    # Ignore dirnames that start with '.'
-    for i, dirname in enumerate(dirnames):
-        if dirname.startswith('.'): del dirnames[i]
-    data_files.append([os.path.join("/usr/share/spud",dirpath), [os.path.join(dirpath, f) for f in filenames]])
-
-# Small hack for working with bdist_wininst.
-# See http://mail.python.org/pipermail/distutils-sig/2004-August/004134.html
-if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
-    for file_info in data_files:
-        file_info[0] = '\\PURELIB\\%s' % file_info[0]
-
-scripts = [
-]
-
 setup(
     name = "python-tldap",
     version = "0.2.13",
@@ -83,5 +67,4 @@ setup(
     url = "https://github.com/Karaage-Cluster/django-tldap",
     packages = packages,
     data_files = data_files,
-    scripts = scripts,
 )
