@@ -58,9 +58,12 @@ for code_dir in [ 'tldap' ]:
         elif filenames:
             data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
+with open('VERSION.txt', 'r') as f:
+    version = f.readline().strip()
+
 setup(
     name = "django-tldap",
-    version = "0.2.13",
+    version = version,
     author = 'Brian May',
     author_email = 'brian@microcomaustralia.com.au',
     description = 'High level python LDAP Library',

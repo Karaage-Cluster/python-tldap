@@ -3,6 +3,7 @@ include README
 include COPYING
 include *.in
 include *.conf
+include *.txt
 recursive-include tldap *.py *.schemas
 recursive-include tests *.py
 recursive-include docs Makefile *.py *.rst *.inv
