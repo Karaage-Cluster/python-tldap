@@ -59,7 +59,7 @@ for code_dir in [ 'tldap' ]:
             data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 setup(
-    name = "python-tldap",
+    name = "django-tldap",
     version = "0.2.13",
     author = 'Brian May',
     author_email = 'brian@microcomaustralia.com.au',
