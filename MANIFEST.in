@@ -1,6 +1,7 @@
 include *.in
 include *.conf
 include *.txt
+include *.py
 recursive-include tldap *.py *.schemas
 recursive-include tests *.py
 recursive-include docs Makefile *.py *.rst *.inv

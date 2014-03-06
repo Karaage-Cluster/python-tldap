@@ -18,9 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
 import unittest
 
 import tldap
@@ -31,7 +28,7 @@ import tldap.modlist
 
 import tldap.test.data
 import tldap.test.slapd
-import schemas as test_schemas
+import tldap.tests.schemas as test_schemas
 
 import ldap
 

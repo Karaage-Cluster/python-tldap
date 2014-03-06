@@ -40,10 +40,10 @@ class person(tldap.base.LDAPobject):
 
     managed_by = tldap.manager.ManyToOneDescriptor(
         this_key='manager',
-        linked_cls='schemas.person', linked_key='dn')
+        linked_cls='tldap.tests.schemas.person', linked_key='dn')
     manager_of = tldap.manager.OneToManyDescriptor(
         this_key='dn',
-        linked_cls='schemas.person', linked_key='manager')
+        linked_cls='tldap.tests.schemas.person', linked_key='manager')
 
 
 class account(person):
