@@ -1,6 +1,3 @@
-include AUTHORS
-include README
-include COPYING
 include *.in
 include *.conf
 include *.txt
