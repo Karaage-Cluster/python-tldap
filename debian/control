@@ -9,7 +9,7 @@ X-Python-Version: >= 2.6
 
 Package: python-tldap
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-django (>= 1.2.1), python-ldap (>= 2.2)
+Depends: ${misc:Depends}, ${python:Depends}
 Replaces: django-tldap (<< 0.2.13)
 Breaks: django-tldap (<< 0.2.13)
 Description: High level python LDAP Library
