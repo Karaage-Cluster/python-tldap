@@ -1,0 +1,8 @@
+include AUTHORS
+include README
+include COPYING
+include *.in
+include *.conf
+recursive-include tldap *.py *.schemas
+recursive-include tests *.py
+recursive-include docs Makefile *.py *.rst *.inv
