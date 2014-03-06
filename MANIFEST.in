@@ -1,7 +1,7 @@
-include *.in
-include *.conf
 include *.txt
 include *.py
+include MANIFEST.in
+include pylint.conf
 recursive-include tldap *.py *.schemas
 recursive-include tests *.py
 recursive-include docs Makefile *.py *.rst *.inv
