@@ -28,7 +28,7 @@ setup(
     author = 'Brian May',
     author_email = 'brian@microcomaustralia.com.au',
     description = 'High level python LDAP Library',
-    licence = "GPL3+",
+    license = "GPL3+",
     packages = find_packages() + [ 'tldap.test.ldap_schemas' ],
     package_data = {
         'tldap.test.ldap_schemas': [ '*.schema', ],
