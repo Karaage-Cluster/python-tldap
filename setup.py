@@ -25,15 +25,25 @@ with open('VERSION.txt', 'r') as f:
 setup(
     name = "django-tldap",
     version = version,
+    url = 'https://github.com/Karaage-Cluster/django-tldap',
     author = 'Brian May',
     author_email = 'brian@microcomaustralia.com.au',
     description = 'High level python LDAP Library',
-    license = "GPL3+",
     packages = find_packages() + [ 'tldap.test.ldap_schemas' ],
+    license = "GPL3+",
+    long_description = open('README.rst').read(),
+    classifiers = [
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    keywords = "ldap django",
     package_data = {
         'tldap.test.ldap_schemas': [ '*.schema', ],
     },
-    url = "https://github.com/Karaage-Cluster/django-tldap",
     install_requires = [
         "django",
         "python-ldap",
