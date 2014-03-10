@@ -171,6 +171,20 @@ tldap.methods
 Often the code to manipulate attributes is the same across different projects.
 ``tldap.methods`` is the module to avoid having to repeat code accross projects.
 
+These require a mysql database for the mysql models. South migrations are
+provided.
+
+#.  Add ``tldap.methods`` to ``INSTALLED_APPS`` in the Django settings.
+
+#.  Add ``south`` to ``INSTALLED_APPS`` in the Django settings, if not already
+    configured.
+
+#.  Run the south migration.
+
+    ..  code-block:: bash
+
+        ./manage.py migrate
+
 #.  Add some imports:
 
     ..  code-block:: python
