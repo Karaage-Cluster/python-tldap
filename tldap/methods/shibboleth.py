@@ -17,7 +17,6 @@
 
 """ Methods for Shibboleth specific attributes. """
 
-import django.conf
 import base64
 
 try:
