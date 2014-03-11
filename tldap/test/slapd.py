@@ -42,6 +42,14 @@ def delete_directory_content(path):
 LOCALHOST = '127.0.0.1'
 
 
+def is_port_in_use(port, host=LOCALHOST):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((host, int(port)))
+    if result == 0:
+        return True
+    return False
+
+
 def find_available_tcp_port(host=LOCALHOST):
     s = socket.socket()
     s.bind((host, 0))
@@ -200,6 +208,8 @@ class Slapd:
             try:
                 self.configure(self._config)
                 self._test_configuration()
+                if is_port_in_use(self._port):
+                    raise Exception('Port %s is already in use' % self._port)
                 self._start_slapd()
                 self._wait_for_slapd()
                 ok = True
