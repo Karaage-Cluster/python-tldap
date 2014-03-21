@@ -72,32 +72,7 @@ except ImportError:
     _remove_dict_items(
         AVAIL_AUTHPASSWORD_SCHEMES, ['md5', 'sha1'])
 else:
-    try:
-        # random is needed for salted hashs
-        import random
-    except ImportError:
-        _remove_dict_items(
-            AVAIL_USERPASSWORD_SCHEMES, ['crypt', 'smd5', 'ssha'])
-        _remove_dict_items(
-            AVAIL_AUTHPASSWORD_SCHEMES, ['md5', 'sha1'])
-    else:
-        random.seed()
-    try:
-        import hashlib
-    except ImportError:
-        try:
-            from sha import sha
-        except ImportError:
-            _remove_dict_items(AVAIL_USERPASSWORD_SCHEMES, ['sha', 'ssha'])
-            _remove_dict_items(AVAIL_AUTHPASSWORD_SCHEMES, ['sha1'])
-    try:
-        import hashlib
-    except ImportError:
-        try:
-            from md5 import md5
-        except ImportError:
-            _remove_dict_items(AVAIL_USERPASSWORD_SCHEMES, ['md5', 'smd5'])
-            _remove_dict_items(AVAIL_AUTHPASSWORD_SCHEMES, ['md5'])
+    random.seed()
     try:
         import crypt
     except ImportError:
@@ -215,11 +190,11 @@ class Password:
             If a Unicode object is supplied it will be encoded with
             charset before being transferred to the directory.
         scheme
-                Hashing scheme to be used for encoding password.
-                Default is plain text.
+            Hashing scheme to be used for encoding password.
+            Default is plain text.
         charset
-                This character set is used to encode passwords
-                in case oldPassword and/or newPassword are Unicode objects.
+            This character set is used to encode passwords
+            in case oldPassword and/or newPassword are Unicode objects.
         """
         if not oldPassword is None and type(oldPassword) == _UnicodeType:
             oldPassword = oldPassword.encode(charset)
