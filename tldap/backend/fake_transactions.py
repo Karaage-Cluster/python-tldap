@@ -398,10 +398,10 @@ class LDAPwrapper(object):
         tmplist.append(split_newrdn[0])
         if new_base_dn is not None:
             tmplist.extend(ldap.dn.str2dn(new_base_dn))
-            old_base_dn=ldap.dn.dn2str(split_dn[1:])
+            old_base_dn = ldap.dn.dn2str(split_dn[1:])
         else:
             tmplist.extend(split_dn[1:])
-            old_base_dn=None
+            old_base_dn = None
         newdn = ldap.dn.dn2str(tmplist)
 
         debug("--> cmmmit  ", self, dn, newrdn, new_base_dn)

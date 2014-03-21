@@ -117,7 +117,7 @@ class BackendTest(unittest.TestCase):
                          (ldap.MOD_DELETE, "telephoneNumber", None)])
                 self.assertRaises(KeyError, lambda: self.get(
                     c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                        'telephoneNumber'])
+                    'telephoneNumber'])
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
         except tldap.exceptions.TestFailure:
@@ -134,7 +134,7 @@ class BackendTest(unittest.TestCase):
                 ldap.MOD_DELETE, "telephoneNumber", None)])
             self.assertRaises(KeyError, lambda: self.get(
                 c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                    'telephoneNumber'])
+                'telephoneNumber'])
         self.assertRaises(KeyError, lambda: self.get(
             c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'])
 
@@ -145,7 +145,7 @@ class BackendTest(unittest.TestCase):
                          [(ldap.MOD_ADD, "telephoneNumber", "111")])
                 self.assertEqual(self.get(
                     c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                        'telephoneNumber'],
+                    'telephoneNumber'],
                     ["111"])
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
@@ -163,10 +163,10 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(
                 ldap.TYPE_OR_VALUE_EXISTS, c.modify,
                 "uid=tux, ou=People, dc=python-ldap,dc=org", [
-                (ldap.MOD_ADD, "telephoneNumber", "111")])
+                    (ldap.MOD_ADD, "telephoneNumber", "111")])
             self.assertEqual(self.get(
                 c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                    'telephoneNumber'], ["111"])
+                'telephoneNumber'], ["111"])
         self.assertEqual(self.get(
             c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
             ["111"])
@@ -223,7 +223,7 @@ class BackendTest(unittest.TestCase):
                     ldap.MOD_REPLACE, "telephoneNumber", "222")])
                 self.assertEqual(self.get(
                     c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                        'telephoneNumber'],
+                    'telephoneNumber'],
                     ["222"])
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
@@ -241,7 +241,7 @@ class BackendTest(unittest.TestCase):
                 ldap.MOD_REPLACE, "telephoneNumber", "222")])
             self.assertEqual(self.get(
                 c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                    'telephoneNumber'],
+                'telephoneNumber'],
                 ["222"])
         self.assertEqual(self.get(
             c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
@@ -254,7 +254,7 @@ class BackendTest(unittest.TestCase):
                          (ldap.MOD_DELETE, "telephoneNumber", "222")])
                 self.assertRaises(KeyError, lambda: self.get(
                     c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                        'telephoneNumber'])
+                    'telephoneNumber'])
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
         except tldap.exceptions.TestFailure:
@@ -272,7 +272,7 @@ class BackendTest(unittest.TestCase):
             self.assertRaises(
                 ldap.NO_SUCH_ATTRIBUTE, c.modify,
                 "uid=tux, ou=People, dc=python-ldap,dc=org", [(
-                ldap.MOD_DELETE, "telephoneNumber", "222")])
+                    ldap.MOD_DELETE, "telephoneNumber", "222")])
             self.assertRaises(KeyError, lambda: self.get(
                 c,
                 "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber']
@@ -440,7 +440,8 @@ class BackendTest(unittest.TestCase):
         try:
             with tldap.transaction.commit_on_success():
                 c.rename(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org", "uid=tux", "ou=Groups, dc=python-ldap,dc=org")
+                    "uid=tux, ou=People, dc=python-ldap,dc=org",
+                    "uid=tux", "ou=Groups, dc=python-ldap,dc=org")
                 self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
                                   "uid=tux, ou=People, dc=python-ldap,dc=org")
                 self.get(c, "uid=tux, ou=Groups, dc=python-ldap,dc=org")
@@ -459,7 +460,8 @@ class BackendTest(unittest.TestCase):
         self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")
         with tldap.transaction.commit_on_success():
             c.rename(
-                "uid=tux, ou=People, dc=python-ldap,dc=org", "uid=tux", "ou=Groups, dc=python-ldap,dc=org")
+                "uid=tux, ou=People, dc=python-ldap,dc=org",
+                "uid=tux", "ou=Groups, dc=python-ldap,dc=org")
             self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
                               "uid=tux, ou=People, dc=python-ldap,dc=org")
             self.get(c, "uid=tux, ou=Groups, dc=python-ldap,dc=org")
@@ -470,7 +472,8 @@ class BackendTest(unittest.TestCase):
         # test move back
         with tldap.transaction.commit_on_success():
             c.rename(
-                "uid=tux, ou=Groups, dc=python-ldap,dc=org", "uid=tux", "ou=People, dc=python-ldap,dc=org")
+                "uid=tux, ou=Groups, dc=python-ldap,dc=org",
+                "uid=tux", "ou=People, dc=python-ldap,dc=org")
             self.get(c, "uid=tux, ou=People, dc=python-ldap,dc=org")
             self.assertRaises(ldap.NO_SUCH_OBJECT, self.get, c,
                               "uid=tux, ou=Groups, dc=python-ldap,dc=org")
@@ -755,7 +758,8 @@ class ModelTest(unittest.TestCase):
                 p.rename("ou=Groups, dc=python-ldap,dc=org")
                 self.assertRaises(DoesNotExist, get, uid="tux")
                 c = tldap.connection
-                groups = person.objects.base_dn("ou=Groups, dc=python-ldap,dc=org")
+                groups = person.objects.base_dn(
+                    "ou=Groups, dc=python-ldap,dc=org")
                 groups.get(uid="tux")
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()

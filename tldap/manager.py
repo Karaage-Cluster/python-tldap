@@ -50,7 +50,6 @@ import django.utils.importlib
 import copy
 
 
-
 class Manager(object):
     """ The base manager class. """
 
@@ -75,21 +74,20 @@ class Manager(object):
             obj._base_dn = base_dn
         return obj
 
-
     #######################
     # PROXIES TO QUERYSET #
     #######################
 
     def get_empty_query_set(self):
-        return tldap.query.EmptyQuerySet(self._cls, self._alias,
-                self._settings, self._base_dn)
+        return tldap.query.EmptyQuerySet(
+            self._cls, self._alias, self._settings, self._base_dn)
 
     def get_query_set(self):
         """Returns a new QuerySet object.  Subclasses can override this method
         to easily customize the behavior of the Manager.
         """
-        return tldap.query.QuerySet(self._cls, self._alias,
-                self._settings, self._base_dn)
+        return tldap.query.QuerySet(
+            self._cls, self._alias, self._settings, self._base_dn)
 
     def none(self):
         return self.get_empty_query_set()
@@ -162,8 +160,6 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
             # we want queries to be based on the linked_cls type
             self._cls = linked_cls
             self._base_dn = None
-#!            # queries should be in the base_dn applicable for linked_cls
-#!            self._base_dn = linked_cls.get_default_base_dn(self._alias, self._settings)
 
         def f_to_p(self, value):
             return value
@@ -188,8 +184,8 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 query = query | (
                     super(LinkManager, self).get_query_set().filter(**kwargs))
             return query.using(
-                    self._this_instance._alias,
-                    self._this_instance._settings)
+                self._this_instance._alias,
+                self._this_instance._settings)
 
         def _add(self, p_instance, p_key, f_instance, f_key):
             p_value = getattr(p_instance, p_key)
@@ -422,7 +418,7 @@ class LinkDescriptor(object):
                     "%s class member %s produces reverse member"
                     "%s in class %s that conflicts" %
                     (cls.__name__, name, self._related_name,
-                    self._linked_cls.__name__))
+                        self._linked_cls.__name__))
             setattr(self._linked_cls, self._related_name, reverse)
 
     def get_manager(self, instance):
@@ -725,9 +721,8 @@ class AdPrimaryAccountLinkDescriptor(OneToManyDescriptor):
             domain_sid=self.domain_sid)
 
     def get_translated_linked_value(self, value):
-        this_value = super(
-            AdPrimaryAccountLinkDescriptor, self).get_translated_linked_value(
-                value)
+        this_value = super(AdPrimaryAccountLinkDescriptor, self) \
+            .get_translated_linked_value(value)
         return _rid_to_sid(self.domain_sid, this_value)
 
 
@@ -759,7 +754,6 @@ class AdPrimaryGroupLinkDescriptor(ManyToOneDescriptor):
             domain_sid=self.domain_sid)
 
     def get_translated_linked_value(self, value):
-        this_value = super(
-            AdPrimaryGroupLinkDescriptor, self).get_translated_linked_value(
-                value)
+        this_value = super(AdPrimaryGroupLinkDescriptor, self) \
+            .get_translated_linked_value(value)
         return _sid_to_rid(this_value)

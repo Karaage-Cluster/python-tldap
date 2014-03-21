@@ -28,7 +28,8 @@ import string
 
 
 # Alphabet for encrypted passwords (see module crypt)
-CRYPT_ALPHABET = './0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+CRYPT_ALPHABET = './0123456789abcdefghijklmnopqrstuvwxyz' \
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # Try to determine the hash types available on the current system by
 # checking all required modules are in place.
@@ -66,15 +67,19 @@ def _remove_dict_items(l, rl):
 try:
     import base64
 except ImportError:
-    _remove_dict_items(AVAIL_USERPASSWORD_SCHEMES, ['md5', 'smd5', 'sha', 'ssha'])
-    _remove_dict_items(AVAIL_AUTHPASSWORD_SCHEMES, ['md5', 'sha1'])
+    _remove_dict_items(
+        AVAIL_USERPASSWORD_SCHEMES, ['md5', 'smd5', 'sha', 'ssha'])
+    _remove_dict_items(
+        AVAIL_AUTHPASSWORD_SCHEMES, ['md5', 'sha1'])
 else:
     try:
         # random is needed for salted hashs
         import random
     except ImportError:
-        _remove_dict_items(AVAIL_USERPASSWORD_SCHEMES, ['crypt', 'smd5', 'ssha'])
-        _remove_dict_items(AVAIL_AUTHPASSWORD_SCHEMES, ['md5', 'sha1'])
+        _remove_dict_items(
+            AVAIL_USERPASSWORD_SCHEMES, ['crypt', 'smd5', 'ssha'])
+        _remove_dict_items(
+            AVAIL_AUTHPASSWORD_SCHEMES, ['md5', 'sha1'])
     else:
         random.seed()
     try:
@@ -136,7 +141,8 @@ class Password:
                 string object with DN of entry
         charset
                 Character set for encoding passwords. Note that this might
-                differ from the character set used for the normal directory strings.
+                differ from the character set used for the normal directory
+                strings.
         """
         self._l = l
         self._dn = dn
@@ -144,12 +150,14 @@ class Password:
         self._charset = charset
         if not dn is None:
             result = self._l.search_s(
-                self._dn, ldap.SCOPE_BASE, '(objectClass=*)', [self.passwordAttributeType]
+                self._dn, ldap.SCOPE_BASE,
+                '(objectClass=*)', [self.passwordAttributeType]
             )
             if result:
                 entry_data = result[0][1]
                 self._passwordAttributeValue = entry_data.get(
-                    self.passwordAttributeType, entry_data.get(self.passwordAttributeType.lower(), [])
+                    self.passwordAttributeType,
+                    entry_data.get(self.passwordAttributeType.lower(), [])
                 )
             else:
                 self._passwordAttributeValue = []
@@ -202,7 +210,7 @@ class Password:
             Old password associated with entry.
             If a Unicode object is supplied it will be encoded with
             self._charset.
-        newPassword        
+        newPassword
             New password for entry.
             If a Unicode object is supplied it will be encoded with
             charset before being transferred to the directory.
@@ -232,7 +240,8 @@ class Password:
         self._l.modify_s(
             self._dn,
             [
-                (ldap.MOD_REPLACE, self.passwordAttributeType, newPasswordValueList)
+                (ldap.MOD_REPLACE,
+                    self.passwordAttributeType, newPasswordValueList)
             ]
         )
 
@@ -248,8 +257,8 @@ class UserPassword(Password):
     Netscape Developer Docs:
         http://developer.netscape.com/docs/technote/ldap/pass_sha.html
     """
-    passwordAttributeType='userPassword'
-    _hash_bytelen = {'md5':16, 'sha':20}
+    passwordAttributeType = 'userPassword'
+    _hash_bytelen = {'md5': 16, 'sha': 20}
 
     def __init__(self, l=None, dn=None, charset='utf-8', multiple=0):
         """
@@ -267,27 +276,31 @@ class UserPassword(Password):
         """
         scheme = scheme.lower()
         if not scheme in AVAIL_USERPASSWORD_SCHEMES.keys():
-            raise ValueError, 'Hashing scheme %s not supported for class %s.' % (
-                scheme, self.__class__.__name__
+            raise ValueError(
+                'Hashing scheme %s not supported for class %s.'
+                % (scheme, self.__class__.__name__)
             )
-            raise ValueError, 'Hashing scheme %s not supported.' % (scheme)
+            raise ValueError('Hashing scheme %s not supported.' % (scheme))
         if salt is None:
-            if scheme=='crypt':
+            if scheme == 'crypt':
                 salt = _salt(saltLen=2, saltAlphabet=CRYPT_ALPHABET)
             elif scheme in ['smd5', 'ssha']:
                 salt = _salt(saltLen=4, saltAlphabet=None)
             else:
                 salt = ''
-        if scheme=='crypt':
+        if scheme == 'crypt':
             return crypt.crypt(password, salt)
         elif scheme in ['md5', 'smd5']:
-            return base64.encodestring(md5(password.encode()+salt).digest()+salt).strip()
+            return base64.encodestring(
+                md5(password.encode()+salt).digest()+salt).strip()
         elif scheme in ['sha', 'ssha']:
-            return base64.encodestring(sha(password.encode()+salt).digest()+salt).strip()
+            return base64.encodestring(
+                sha(password.encode()+salt).digest()+salt).strip()
         else:
             return password
 
-    def _compareSinglePassword(self, testPassword, singlePasswordValue, charset='utf-8'):
+    def _compareSinglePassword(
+            self, testPassword, singlePasswordValue, charset='utf-8'):
         """
         Compare testPassword with encoded password in singlePasswordValue.
 
@@ -299,7 +312,8 @@ class UserPassword(Password):
         """
         singlePasswordValue = singlePasswordValue.strip()
         try:
-            scheme, encoded_p = singlePasswordValue[singlePasswordValue.find('{')+1:].split('}', 1)
+            scheme, encoded_p = singlePasswordValue[
+                singlePasswordValue.find('{')+1:].split('}', 1)
         except ValueError:
             scheme, encoded_p = '', singlePasswordValue
         scheme = scheme.lower()
@@ -314,7 +328,7 @@ class UserPassword(Password):
             return hashed_password == encoded_p
         elif scheme in ['crypt']:
             _, magic, salt, _ = encoded_p.split("$")
-            assert(magic=="1")
+            assert(magic == "1")
             hashed_password = '{crypt}%s' % md5crypt(testPassword, salt)
             return hashed_password == singlePasswordValue
         else:
@@ -352,7 +366,8 @@ def md5crypt(password, salt=None, magic='$1$'):
 
     if salt is None:
         salt = _salt(saltLen=8, saltAlphabet=string.letters + string.digits)
-        # /* The password first, since that is what is most unknown */ /* Then our magic string */ /* Then the raw salt
+        # /* The password first, since that is what is most unknown */ /* Then
+        # our magic string */ /* Then the raw salt
     m = md5()
     m.update(password + magic + salt)
 
@@ -399,7 +414,9 @@ def md5crypt(password, salt=None, magic='$1$'):
     itoa64 = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
     rearranged = ''
-    for a, b, c in ((0, 6, 12), (1, 7, 13), (2, 8, 14), (3, 9, 15), (4, 10, 5)):
+    for a, b, c in (
+            (0, 6, 12), (1, 7, 13),
+            (2, 8, 14), (3, 9, 15), (4, 10, 5)):
         v = ord(final[a]) << 16 | ord(final[b]) << 8 | ord(final[c])
         for i in range(4):
             rearranged += itoa64[v & 0x3f]

@@ -27,7 +27,8 @@ class baseMixin(tldap.base.LDAPobject):
     :py:class:`tldap.base.LDAPobject`. """
 
     mixin_list = []
-    """ Class variable to be overriden for class that provides a list of mixins supported. """
+    """ Class variable to be overriden for class that provides a list of mixins
+    supported. """
 
     def __init__(self, **kwargs):
         super(baseMixin, self).__init__(**kwargs)
@@ -147,7 +148,6 @@ class baseMixin(tldap.base.LDAPobject):
                 mixin.pre_delete(self)
         super(baseMixin, self)._delete()
 
-
     def lock(self):
         for mixin in self.mixin_list:
             if hasattr(mixin, 'lock'):
@@ -190,5 +190,3 @@ class baseMixin(tldap.base.LDAPobject):
         for mixin in reversed(self.mixin_list):
             if hasattr(mixin, '__unicode__'):
                 return mixin.__unicode__(self)
-
-

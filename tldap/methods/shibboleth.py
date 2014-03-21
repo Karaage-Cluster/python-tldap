@@ -24,6 +24,7 @@ try:
 except:
     from sha import sha
 
+
 class shibbolethMixin(object):
 
     @classmethod
@@ -32,7 +33,8 @@ class shibbolethMixin(object):
         settings = self._settings
         entityID = settings['SHIBBOLETH_URL']
         salt = settings['SHIBBOLETH_SALT']
-        return base64.urlsafe_b64encode(sha(uid + entityID + salt).digest())[:-1]
+        return base64.urlsafe_b64encode(
+            sha(uid + entityID + salt).digest())[:-1]
 
     @classmethod
     def pre_add(cls, self):
@@ -46,4 +48,3 @@ class shibbolethMixin(object):
     @classmethod
     def unlock(cls, self):
         self.edupersonaffiliation = 'staff'
-

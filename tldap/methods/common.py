@@ -26,7 +26,7 @@ import datetime
 class personMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"P:%s"%(self.displayName or self.cn)
+        return u"P:%s" % (self.displayName or self.cn)
 
     @classmethod
     def check_password(cls, self, password):
@@ -52,15 +52,15 @@ class accountMixin(object):
         settings = self._settings
         scheme = settings.get('NUMBER_SCHEME', using)
         first = settings.get('UID_FIRST', 10000)
-        self.uidNumber =  tldap.methods.models.Counters.get_and_increment(
-                scheme, "uidNumber", first,
-                lambda n: len(
-                    model.objects.using(using, settings)
-                    .filter(uidNumber = n)) == 0)
+        self.uidNumber = tldap.methods.models.Counters.get_and_increment(
+            scheme, "uidNumber", first,
+            lambda n: len(
+                model.objects.using(using, settings)
+                .filter(uidNumber=n)) == 0)
 
     @classmethod
     def __unicode__(cls, self):
-        return u"%s"%(self.displayName or self.cn)
+        return u"%s" % (self.displayName or self.cn)
 
     @classmethod
     def setup_from_master(cls, self, master):
@@ -73,7 +73,7 @@ class accountMixin(object):
         if self.uidNumber is None:
             cls.set_free_uidNumber(self)
         if self.unixHomeDirectory is None and self.uid is not None:
-            self.unixHomeDirectory =  '/home/%s' % self.uid
+            self.unixHomeDirectory = '/home/%s' % self.uid
 
     @classmethod
     def pre_save(cls, self):
@@ -102,7 +102,7 @@ class shadowMixin(object):
 
     @classmethod
     def change_password(cls, self, password):
-        self.shadowLastChange=datetime.datetime.now().date()
+        self.shadowLastChange = datetime.datetime.now().date()
 
 
 class groupMixin(object):
@@ -115,15 +115,15 @@ class groupMixin(object):
         settings = self._settings
         scheme = settings.get('NUMBER_SCHEME', using)
         first = settings.get('GID_FIRST', 10000)
-        self.gidNumber =  tldap.methods.models.Counters.get_and_increment(
-                scheme, "gidNumber", first,
-                lambda n: len(
-                    model.objects.using(using, settings)
-                    .filter(gidNumber = n)) == 0)
+        self.gidNumber = tldap.methods.models.Counters.get_and_increment(
+            scheme, "gidNumber", first,
+            lambda n: len(
+                model.objects.using(using, settings)
+                .filter(gidNumber=n)) == 0)
 
     @classmethod
     def __unicode__(cls, self):
-        return u"%s"%self.cn
+        return u"%s" % self.cn
 
     @classmethod
     def setup_from_master(cls, self, master):
@@ -138,5 +138,3 @@ class groupMixin(object):
     def pre_save(cls, self):
         if self.description is None:
             self.description = self.cn
-
-

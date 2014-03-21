@@ -188,7 +188,8 @@ class LDAPwrapper(object):
         result if transactions enabled.
         """
 
-        return self._do_with_retry(lambda obj: obj.rename_s(dn, newrdn, newsuperior))
+        return self._do_with_retry(
+            lambda obj: obj.rename_s(dn, newrdn, newsuperior))
 
     # read only stuff
 

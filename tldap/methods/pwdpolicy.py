@@ -17,6 +17,7 @@
 
 """ openldap pwdPolicy specific schemas. """
 
+
 class pwdPolicyMixin(object):
     @classmethod
     def pre_save(cls, self):
@@ -29,8 +30,8 @@ class pwdPolicyMixin(object):
 
     @classmethod
     def lock(cls, self):
-        self.pwdAccountLockedTime='000001010000Z'
+        self.pwdAccountLockedTime = '000001010000Z'
 
     @classmethod
     def unlock(cls, self):
-        self.pwdAccountLockedTime=None
+        self.pwdAccountLockedTime = None

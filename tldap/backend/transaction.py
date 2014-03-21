@@ -1,6 +1,7 @@
 import warnings
 warnings.warn(
-    'tldap.backend.transaction obsolete; use tldap.backend.fake_transactions instead.',
+    'tldap.backend.transaction obsolete; '
+    'use tldap.backend.fake_transactions instead.',
     DeprecationWarning
 )
 

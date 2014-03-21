@@ -17,7 +17,6 @@
 
 """ Methods specific for Directory Server 389. """
 
-import tldap.methods.ldap_passwd
 
 class passwordObjectMixin(object):
     @classmethod
@@ -26,9 +25,8 @@ class passwordObjectMixin(object):
 
     @classmethod
     def lock(cls, self):
-        print "LOCKING NOWQ"
-        self.accountUnlockTime='19700101000000Z'
+        self.accountUnlockTime = '19700101000000Z'
 
     @classmethod
     def unlock(cls, self):
-        self.accountUnlockTime=None
+        self.accountUnlockTime = None

@@ -17,10 +17,11 @@
 
 """ Methods specific for Active Directory. """
 
+
 class adUserMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"ADU:%s"%(self.displayName or self.cn)
+        return u"ADU:%s" % (self.displayName or self.cn)
 
     @classmethod
     def setup_from_master(cls, self, master):
@@ -42,7 +43,7 @@ class adUserMixin(object):
     def post_add(cls, self):
         # AD sets this automagically
         using = self._alias
-        self._db_values[using]["primaryGroupID"] = [ 513, ]
+        self._db_values[using]["primaryGroupID"] = [513, ]
 
         # set our desired primary group
         self.secondary_groups.add(self.tmp_primary_group)
@@ -71,7 +72,7 @@ class adUserMixin(object):
 class adGroupMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"%s"%(self.displayName or self.cn)
+        return u"%s" % (self.displayName or self.cn)
 
     @classmethod
     def pre_save(cls, self):

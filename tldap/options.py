@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-""" Contains the options class, which represents a list of options associated with
-a tldap object. """
+""" Contains the options class, which represents a list of options associated
+with a tldap object. """
 
 import re
 import warnings
@@ -88,7 +88,8 @@ class Options(object):
     @property
     def module_name(self):
         """
-        This property has been deprecated in favor of `model_name`. refs django #19689
+        This property has been deprecated in favor of `model_name`. refs django
+        #19689
         """
         warnings.warn(
             "Options.module_name has been deprecated in favor of model_name",

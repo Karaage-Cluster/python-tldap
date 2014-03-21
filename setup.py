@@ -23,29 +23,30 @@ with open('VERSION.txt', 'r') as f:
     version = f.readline().strip()
 
 setup(
-    name = "django-tldap",
-    version = version,
-    url = 'https://github.com/Karaage-Cluster/django-tldap',
-    author = 'Brian May',
-    author_email = 'brian@v3.org.au',
-    description = 'High level python LDAP Library',
-    packages = find_packages() + [ 'tldap.test.ldap_schemas' ],
-    license = "GPL3+",
-    long_description = open('README.rst').read(),
-    classifiers = [
+    name="django-tldap",
+    version=version,
+    url='https://github.com/Karaage-Cluster/django-tldap',
+    author='Brian May',
+    author_email='brian@v3.org.au',
+    description='High level python LDAP Library',
+    packages=find_packages() + ['tldap.test.ldap_schemas'],
+    license="GPL3+",
+    long_description=open('README.rst').read(),
+    classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Django",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+        "License :: OSI Approved :: GNU Lesser General Public "
+            "License v3 or later (LGPLv3+)",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    keywords = "ldap django",
-    package_data = {
-        'tldap.test.ldap_schemas': [ '*.schema', ],
+    keywords="ldap django",
+    package_data={
+        'tldap.test.ldap_schemas': ['*.schema', ],
     },
-    install_requires = [
+    install_requires=[
         "django",
         "python-ldap",
     ]

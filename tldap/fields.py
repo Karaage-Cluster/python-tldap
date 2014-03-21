@@ -154,7 +154,8 @@ class Field(object):
 
 
 class BinaryField(Field):
-    """ Field contains a binary value that can not be interpreted in anyway. """
+    """ Field contains a binary value that can not be interpreted in anyway.
+    """
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."

@@ -22,7 +22,8 @@ from django.db import models
 
 
 class Counters(models.Model):
-    """ Keep track of next uidNumber and gidNumber to use for new LDAP objects. """
+    """ Keep track of next uidNumber and gidNumber to use for new LDAP objects.
+    """
 
     scheme = models.CharField(max_length=20, db_index=True)
     name = models.CharField(max_length=20, db_index=True)
@@ -34,7 +35,7 @@ class Counters(models.Model):
     @classmethod
     def get_and_increment(cls, scheme, name, default, test):
         entry, c = cls.objects.select_for_update().get_or_create(
-                scheme=scheme, name=name, defaults={'count': default})
+            scheme=scheme, name=name, defaults={'count': default})
 
         while not test(entry.count):
             entry.count = entry.count + 1

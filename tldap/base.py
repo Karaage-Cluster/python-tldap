@@ -26,7 +26,6 @@ import tldap.modlist
 
 import ldap.dn
 
-import sys
 import copy
 
 default_object_class_field = tldap.fields.CharField(required=True,
@@ -234,7 +233,8 @@ class LDAPobject(object):
 
         :param cls: This class.
         :param using: The LDAP database alias.
-        :param settings: A set of parameters that may be useful in derived classes.
+        :param settings: A set of parameters that may be useful in derived
+            classes.
         :return: Fully qualified base dn. May be None if unsuccessful.
         """
 
@@ -249,7 +249,8 @@ class LDAPobject(object):
         return base_dn
 
     def _rdn_to_dn(self, name):
-        """ Convert the rdn to a fully qualified DN for the specified LDAP connection.
+        """ Convert the rdn to a fully qualified DN for the specified LDAP
+        connection.
 
         :param self: rdn belongs to this tldap object.
         :param name: rdn to convert.
@@ -285,7 +286,8 @@ class LDAPobject(object):
         control the saving process.
 
         :param self: object to save.
-        :param force_add: Assume object doesn't already exist and must be created.
+        :param force_add: Assume object doesn't already exist and must be
+            created.
         :param force_modify: Assume oobject already exists and must be updated.
         """
 

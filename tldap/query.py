@@ -180,7 +180,7 @@ class QuerySet(object):
         """
         A field could be found for this term, try to get filter string for it.
         """
-        assert isinstance(value, str) or isinstance(value,unicode)
+        assert isinstance(value, str) or isinstance(value, unicode)
         if operation is None:
             return ldap.filter.filter_format(
                 "(%s=%s)", [name, value])
@@ -466,9 +466,9 @@ class QuerySet(object):
 
                 # create new object
                 o = self._cls(
-                        dn = i[0],
-                        using = alias,
-                        settings = self._settings,
+                    dn=i[0],
+                    using=alias,
+                    settings=self._settings,
                 )
 
                 # set the other fields
@@ -529,7 +529,8 @@ class QuerySet(object):
         except self._cls.DoesNotExist:
             params = dict(kwargs)
             params.update(defaults)
-            obj = self._cls(settings=self._settings, using=self._alias, **params)
+            obj = self._cls(
+                settings=self._settings, using=self._alias, **params)
             obj.save(force_add=True)
             return obj, True
 
@@ -587,7 +588,8 @@ class QuerySet(object):
     def get_base_dn(self):
         base_dn = self._base_dn
         if base_dn is None:
-            base_dn = self._cls.get_default_base_dn(self._alias, self._settings)
+            base_dn = self._cls.get_default_base_dn(
+                self._alias, self._settings)
         return base_dn
 
     def convert(self, cls):
