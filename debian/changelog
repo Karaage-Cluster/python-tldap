@@ -1,3 +1,12 @@
+django-tldap (0.2.16-1) unstable; urgency=low
+
+  * New release.
+  * Fix PEP8 style issues.
+  * Replace ldap_passwd with passlib code.
+  * Testing: check LDAP port not already in use.
+
+ -- Brian May <bam@debian.org>  Mon, 24 Mar 2014 14:30:39 +1100
+
 django-tldap (0.2.15-1) unstable; urgency=low
 
   * Move tests to tldap.tests.
