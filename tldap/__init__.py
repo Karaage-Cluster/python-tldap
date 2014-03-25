@@ -44,17 +44,16 @@ if not django.conf.settings.LDAP and hasattr(django.conf.settings, 'LDAP_URL'):
         'URI': django.conf.settings.LDAP_URL,
         'USER': django.conf.settings.LDAP_ADMIN_USER,
         'PASSWORD': django.conf.settings.LDAP_ADMIN_PASSWORD,
-        'USE_TLS': False,
+        'START_TLS': False,
         'TLS_CA': None,
         'LDAP_ACCOUNT_BASE': django.conf.settings.LDAP_USER_BASE,
         'LDAP_GROUP_BASE': django.conf.settings.LDAP_GROUP_BASE,
     }
     if hasattr(django.conf.settings, 'LDAP_USE_TLS'):
-        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"] = (
+        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["START_TLS"] = (
             django.conf.settings.LDAP_USE_TLS)
-    if django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["USE_TLS"]:
-        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = (
-            django.conf.settings.LDAP_TLS_CA)
+    django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = (
+        django.conf.settings.LDAP_TLS_CA)
 
 connections = tldap.utils.ConnectionHandler(django.conf.settings.LDAP)
 """An object containing a list of all LDAP connections."""

@@ -18,7 +18,8 @@ For basic usage, mysql server is not required.
                   'URI': 'ldap://localhost',
                   'USER': 'cn=admin,dc=example,dc=org',
                   'PASSWORD': 'XXXXXXXX',
-                  'USE_TLS': False,
+                  'REQUIRE_TLS': False,
+                  'START_TLS': False,
                   'TLS_CA' : None,
              }
         }
@@ -153,7 +154,8 @@ Combining Schemas
                   'URI': 'ldap://localhost',
                   'USER': 'cn=admin,dc=example,dc=org',
                   'PASSWORD': 'XXXXXXXX',
-                  'USE_TLS': False,
+                  'REQUIRE_TLS': False,
+                  'START_TLS': False,
                   'TLS_CA' : None,
                   'LDAP_ACCOUNT_BASE': 'ou=People,dc=example,dc=org',
                   'LDAP_GROUP_BASE': 'ou=group,dc=example,dc=org',

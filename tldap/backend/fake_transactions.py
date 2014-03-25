@@ -81,9 +81,13 @@ class LDAPwrapper(object):
         conn = ldap.initialize(s['URI'])
         conn.protocol_version = ldap.VERSION3
 
-        if s['USE_TLS']:
+        if 'TLS_CA' in s and s['TLS_CA']:
             ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, s['TLS_CA'])
+
+        if 'REQUIRE_TLS' in s and s['REQUIRE_TLS']:
             conn.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
+
+        if 'START_TLS' in s and s['START_TLS']:
             conn.start_tls_s()
 
         if s['USER'] is not None:
