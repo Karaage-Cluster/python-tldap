@@ -23,8 +23,9 @@ import tldap.exceptions
 import tldap.manager
 import tldap.fields
 import tldap.modlist
+import tldap.dn
 
-import ldap.dn
+import ldap3.core.exceptions
 
 import copy
 
@@ -273,10 +274,10 @@ class LDAPobject(object):
             base_dn = self.get_default_base_dn(using, self._settings)
         assert base_dn is not None
 
-        split_base = ldap.dn.str2dn(base_dn)
+        split_base = tldap.dn.str2dn(base_dn)
         split_new_dn = [[(name, value, 1)]] + split_base
 
-        new_dn = ldap.dn.dn2str(split_new_dn)
+        new_dn = tldap.dn.dn2str(split_new_dn)
 
         return new_dn
 
@@ -326,7 +327,7 @@ class LDAPobject(object):
     delete.alters_data = True
 
     def _get_moddict(self, default_object_class, default_object_class_db):
-        dn0k, dn0v, _ = ldap.dn.str2dn(self._dn)[0][0]
+        dn0k, dn0v, _ = tldap.dn.str2dn(self._dn)[0][0]
 
         # get field for objectClass
         object_class_field = self._meta.get_field_by_name("objectClass")
@@ -414,7 +415,7 @@ class LDAPobject(object):
         # do it
         try:
             c.add(self._dn, modlist, onfailure)
-        except ldap.ALREADY_EXISTS:
+        except ldap3.core.exceptions.LDAPEntryAlreadyExistsResult:
             raise self.AlreadyExists(
                 "Object with dn %r already exists doing add" % (self._dn,))
 
@@ -462,11 +463,12 @@ class LDAPobject(object):
         # turn moddict into a modlist
         modlist = tldap.modlist.modifyModlist(modold, moddict)
 
+        # FIXME: recheck
         # add items in force_replace
-        force_modlist = []
+        force_modlist = {}
         for field, value in force_value.iteritems():
-            force_modlist.append((ldap.MOD_DELETE, field, None))
-            force_modlist.append((ldap.MOD_ADD, field, value))
+            force_modlist[field] = (
+                ldap3.MODIFY_REPLACE, tldap.modlist.escape_list(value))
             moddict[field] = value
 
         # what to do if transaction is reversed
@@ -479,7 +481,7 @@ class LDAPobject(object):
         if len(modlist) > 0:
             try:
                 c.modify(self._dn, modlist, onfailure)
-            except ldap.NO_SUCH_OBJECT:
+            except ldap3.core.exception.LDAPNoSuchObjectResult:
                 raise self.DoesNotExist(
                     "Object with dn %r doesn't already exist doing modify" %
                     (self._dn,))
@@ -488,7 +490,7 @@ class LDAPobject(object):
         if len(force_modlist) > 0:
             try:
                 c.modify_no_rollback(self._dn, force_modlist)
-            except ldap.NO_SUCH_OBJECT:
+            except ldap3.core.exception.LDAPNoSuchObjectResult:
                 raise self.DoesNotExist(
                     "Object with dn %r doesn't already exist doing modify" %
                     (self._dn,))
@@ -524,11 +526,11 @@ class LDAPobject(object):
             # work out the new rdn of the object
             split_new_rdn = [[(name, value, 1)]]
         elif len(kwargs) == 0:
-            split_new_rdn = [ldap.dn.str2dn(self._dn)[0]]
+            split_new_rdn = [tldap.dn.str2dn(self._dn)[0]]
         else:
             assert False
 
-        new_rdn = ldap.dn.dn2str(split_new_rdn)
+        new_rdn = tldap.dn.dn2str(split_new_rdn)
 
         # set using if not already set
         using = self._alias
@@ -542,11 +544,11 @@ class LDAPobject(object):
         self._rename(new_rdn, new_base_dn)
 
         # construct new dn
-        split_dn = ldap.dn.str2dn(self._dn)
+        split_dn = tldap.dn.str2dn(self._dn)
         tmplist = []
         tmplist.append(split_new_rdn[0])
         tmplist.extend(split_dn[1:])
-        self._dn = ldap.dn.dn2str(tmplist)
+        self._dn = tldap.dn.dn2str(tmplist)
 
     rename.alters_data = True
 
@@ -573,11 +575,11 @@ class LDAPobject(object):
         c.rename(self._dn, new_rdn, new_base_dn, onfailure)
 
         # get old rdn values
-        split_old_dn = ldap.dn.str2dn(self._dn)
+        split_old_dn = tldap.dn.str2dn(self._dn)
         old_key, old_value, _ = split_old_dn[0][0]
 
         # get new rdn values
-        split_new_rdn = ldap.dn.str2dn(new_rdn)
+        split_new_rdn = tldap.dn.str2dn(new_rdn)
         new_key, new_value, _ = split_new_rdn[0][0]
 
         # make a copy before modifications
