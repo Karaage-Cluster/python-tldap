@@ -48,7 +48,7 @@ setup(
     },
     install_requires=[
         "django",
-        "python-ldap",
+        "python3-ldap",
         "passlib",
     ]
 )

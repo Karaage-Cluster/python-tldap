@@ -18,86 +18,13 @@
 """ This module provides the LDAP functions with transaction support disabled,
 with a subset of the functions from the real ldap module. """
 
-import ldap
-
-# hardcoded settings for this module
-
-debugging = True
-delayed_connect = True
-
-
-# debugging
-
-def debug(*argv):
-    argv = [str(arg) for arg in argv]
-    if debugging:
-        print " ".join(argv)
+from .base import LDAPbase
 
 
 # wrapper class
 
-class LDAPwrapper(object):
+class LDAPwrapper(LDAPbase):
     """ The LDAP connection class. """
-
-    def __init__(self, settings_dict):
-        self.settings_dict = settings_dict
-        self._obj = None
-
-        if not delayed_connect:
-            self._reconnect()
-
-    def check_password(self, dn, password):
-        s = self.settings_dict
-        l = ldap.initialize(s['URI'])
-        try:
-            l.simple_bind_s(dn, password)
-            return True
-        except ldap.INVALID_CREDENTIALS:
-            return False
-
-    #########################
-    # Connection Management #
-    #########################
-
-    def _reconnect(self):
-        s = self.settings_dict
-        self._obj = None
-
-        debug("connecting")
-        conn = ldap.initialize(s['URI'])
-        conn.protocol_version = ldap.VERSION3
-
-        if 'TLS_CA' in s and s['TLS_CA']:
-            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, s['TLS_CA'])
-
-        if 'REQUIRE_TLS' in s and s['REQUIRE_TLS']:
-            conn.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
-
-        if 'START_TLS' in s and s['START_TLS']:
-            conn.start_tls_s()
-
-        if s['USER'] is not None:
-            debug("binding")
-            conn.simple_bind_s(s['USER'], s['PASSWORD'])
-
-        self._obj = conn
-
-    def _do_with_retry(self, fn):
-        # if no connection
-        if self._obj is None:
-            # never connected; try to connect and then run fn
-            debug("initial connection")
-            self._reconnect()
-            return fn(self._obj)
-
-        # otherwise try to run fn
-        try:
-            return fn(self._obj)
-        except ldap.SERVER_DOWN:
-            # if it fails, reconnect then retry
-            debug("SERVER_DOWN, reconnecting")
-            self._reconnect()
-            return fn(self._obj)
 
     ####################
     # Cache Management #
@@ -194,34 +121,3 @@ class LDAPwrapper(object):
 
         return self._do_with_retry(
             lambda obj: obj.rename_s(dn, newrdn, newsuperior))
-
-    # read only stuff
-
-    def search(self, base, scope, filterstr='(objectClass=*)',
-               attrlist=None, limit=None):
-        """
-        Search for entries in LDAP database.
-        """
-
-        # first results
-        if isinstance(attrlist, set):
-            attrlist = list(attrlist)
-
-        def first_results(obj):
-            msgid = obj.search_ext(base, scope, filterstr, attrlist,
-                                   sizelimit=limit or 0)
-            return (msgid,) + self._obj.result3(msgid, 0)
-
-        # get the 1st result
-        msgid, result_type, result_list, result_msgid, result_serverctrls \
-            = self._do_with_retry(first_results)
-        # process the results
-        while result_type and result_list:
-            # Loop over list of search results
-            for result_item in result_list:
-                yield result_item
-            result_type, result_list, result_msgid, result_serverctrls \
-                = self._obj.result3(msgid, 0)
-
-        # we are finished - return results, eat cake
-        return
