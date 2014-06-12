@@ -1,4 +1,6 @@
 # Copyright 2012-2014 VPAC
+# -*- coding: UTF-8 -*-
+
 #
 # This file is part of django-tldap.
 #
@@ -203,7 +205,8 @@ class CharField(Field):
         if not isinstance(value, str):
             raise tldap.exceptions.ValidationError(
                 "%r should be a string" % self.name)
-        return value.decode("utf_8")
+        value = value.decode("utf_8")
+        return value
 
     def value_validate(self, value):
         """
@@ -233,7 +236,8 @@ class UnicodeField(Field):
         if not isinstance(value, str):
             raise tldap.exceptions.ValidationError(
                 "%r should be a string" % self.name)
-        return value.decode("utf_16")
+        value = value.decode("utf_16")
+        return value
 
     def value_validate(self, value):
         """

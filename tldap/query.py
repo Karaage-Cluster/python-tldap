@@ -24,12 +24,12 @@ ITER_CHUNK_SIZE = 100
 # The maximum number of items to display in a QuerySet.__repr__
 REPR_OUTPUT_SIZE = 20
 
-import ldap
-import ldap.filter
+import ldap3
 
 import tldap
 import tldap.manager
 import tldap.helpers
+import tldap.filter
 
 import django.utils.tree
 
@@ -182,11 +182,11 @@ class QuerySet(object):
         """
         assert isinstance(value, str) or isinstance(value, unicode)
         if operation is None:
-            return ldap.filter.filter_format(
+            return tldap.filter.filter_format(
                 "(%s=%s)", [name, value])
         elif operation == "contains":
             assert value != ""
-            return ldap.filter.filter_format(
+            return tldap.filter.filter_format(
                 "(%s=*%s*)", [name, value])
         else:
             raise ValueError("Unknown search operation %s" % operation)
@@ -410,7 +410,7 @@ class QuerySet(object):
             query = query & tldap.Q(objectClass=oc)
 
         # do a SUBTREE search
-        scope = ldap.SCOPE_SUBTREE
+        scope = ldap3.SEARCH_SCOPE_WHOLE_SUBTREE
 
         # add requested query
         if self._query is not None:
@@ -455,38 +455,34 @@ class QuerySet(object):
         # repeat for every dn
         fields = self._cls._meta.fields
 
-        try:
-            # get the results
-            for i in connection.search(base_dn, scope,
-                                       search_filter, field_names,
-                                       limit=limit):
-                if start > 0:
-                    start = start - 1
-                    continue
+        # get the results
+        for i in connection.search(base_dn, scope,
+                                   search_filter, field_names,
+                                   limit=limit):
+            if start > 0:
+                start = start - 1
+                continue
 
-                # create new object
-                o = self._cls(
-                    dn=i[0],
-                    using=alias,
-                    settings=self._settings,
-                )
+            # create new object
+            o = self._cls(
+                dn=i[0],
+                using=alias,
+                settings=self._settings,
+            )
 
-                # set the other fields
-                for field in fields:
-                    name = field.name
-                    value = i[1].get(name, [])
-                    value = field.to_python(value)
-                    setattr(o, name, value)
+            # set the other fields
+            for field in fields:
+                name = field.name
+                value = i[1].get(name, [])
+                value = field.to_python(value)
+                setattr(o, name, value)
 
-                # save raw db values for latter use
-                o._db_values = (
-                    tldap.helpers.CaseInsensitiveDict(i[1]))
+            # save raw db values for latter use
+            o._db_values = (
+                tldap.helpers.CaseInsensitiveDict(i[1]))
 
-                # give caller this result
-                yield o
-        except ldap.NO_SUCH_OBJECT:
-            # return with no results
-            pass
+            # give caller this result
+            yield o
 
     def get(self, *args, **kwargs):
         """
