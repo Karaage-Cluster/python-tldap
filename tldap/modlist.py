@@ -4,14 +4,52 @@ This module contains a ``modifyModlist`` function adopted from
 """
 
 import string
-import ldap
+import ldap3
+import ldap3.utils.conv
+import tldap.helpers
 
-from ldap.modlist import list_dict, addModlist
+
+def list_dict(l, case_insensitive=0):
+    """
+    return a dictionary with all items of l being the keys of the dictionary
+
+    If argument case_insensitive is non-zero ldap.cidict.cidict will be
+    used for case-insensitive string keys
+    """
+    if case_insensitive:
+        d = tldap.helpers.CaseInsensitiveDict()
+    else:
+        d = {}
+    for i in l:
+        d[i] = None
+    return d
+
+
+def escape_list(bytes_list):
+    assert isinstance(bytes_list, list)
+    return [
+        ldap3.utils.conv.escape_bytes(bytes_value)
+        for bytes_value in bytes_list
+    ]
+
+
+def addModlist(entry, ignore_attr_types=None):
+    """Build modify list for call of method LDAPObject.add()"""
+    ignore_attr_types = list_dict(map(string.lower, (ignore_attr_types or [])))
+    modlist = {}
+    for attrtype in entry.keys():
+        if string.lower(attrtype) in ignore_attr_types:
+            # This attribute type is ignored
+            continue
+        # Eliminate empty attr value strings in list
+        attrvaluelist = filter(lambda x: x is not None, entry[attrtype])
+        if attrvaluelist:
+            modlist[attrtype] = escape_list(entry[attrtype])
+    return modlist  # addModlist()
 
 
 def modifyModlist(
-    old_entry, new_entry, ignore_attr_types=None, ignore_oldexistent=0
-):
+        old_entry, new_entry, ignore_attr_types=None, ignore_oldexistent=0):
     """
     Build differential modify list for calling LDAPObject.modify()/modify_s()
 
@@ -38,7 +76,7 @@ def modifyModlist(
       an existing value.
     """
     ignore_attr_types = list_dict(map(string.lower, (ignore_attr_types or [])))
-    modlist = []
+    modlist = {}
     attrtype_lower_map = {}
     for a in old_entry.keys():
         attrtype_lower_map[string.lower(a)] = a
@@ -57,32 +95,29 @@ def modifyModlist(
             old_value = []
         if not old_value and new_value:
             # Add a new attribute to entry
-            modlist.append((ldap.MOD_ADD, attrtype, new_value))
+            modlist[attrtype] = (ldap3.MODIFY_ADD, escape_list(new_value))
         elif old_value and new_value:
             # Replace existing attribute
-            if True:
-                old_value_dict = list_dict(old_value)
-                new_value_dict = list_dict(new_value)
-                delete_values = []
-                for v in old_value:
-                    if v not in new_value_dict:
-                        delete_values.append(v)
-                add_values = []
-                for v in new_value:
-                    if v not in old_value_dict:
-                        add_values.append(v)
-            if len(new_value) == 1:
-                if len(delete_values) > 0 or len(add_values) > 0:
-                    modlist.append((ldap.MOD_DELETE, attrtype, None))
-                    modlist.append((ldap.MOD_ADD, attrtype, new_value))
-            else:
-                if len(delete_values) > 0:
-                    modlist.append((ldap.MOD_DELETE, attrtype, delete_values))
-                if len(add_values) > 0:
-                    modlist.append((ldap.MOD_ADD, attrtype, add_values))
+            old_value_dict = list_dict(old_value)
+            new_value_dict = list_dict(new_value)
+
+            delete_values = []
+            for v in old_value:
+                if v not in new_value_dict:
+                    delete_values.append(v)
+
+            add_values = []
+            for v in new_value:
+                if v not in old_value_dict:
+                    add_values.append(v)
+
+            if len(delete_values) > 0 or len(add_values) > 0:
+                modlist[attrtype] = (
+                    ldap3.MODIFY_REPLACE, escape_list(new_value))
+
         elif old_value and not new_value:
             # Completely delete an existing attribute
-            modlist.append((ldap.MOD_DELETE, attrtype, None))
+            modlist[attrtype] = (ldap3.MODIFY_DELETE, [])
     if not ignore_oldexistent:
         # Remove all attributes of old_entry which are not present
         # in new_entry at all
@@ -91,5 +126,5 @@ def modifyModlist(
                 # This attribute type is ignored
                 continue
             attrtype = attrtype_lower_map[a]
-            modlist.append((ldap.MOD_DELETE, attrtype, None))
+            modlist[attrtype] = (ldap3.MODIFY_DELETE, [])
     return modlist  # modifyModlist()
