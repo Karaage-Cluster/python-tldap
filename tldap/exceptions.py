@@ -16,6 +16,10 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 
+class InvalidDN(Exception):
+    """ DN value is invalid and cannot be parsed. """
+
+
 class TestFailure(Exception):
     """Simulated failure for testing."""
     pass
