@@ -17,10 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from setuptools import setup, find_packages
 
 with open('VERSION.txt', 'r') as f:
     version = f.readline().strip()
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.tests.settings'
 
 setup(
     name="django-tldap",
@@ -50,5 +53,6 @@ setup(
         "django",
         "python3-ldap",
         "passlib",
-    ]
+    ],
+    test_suite="tldap.tests",
 )
