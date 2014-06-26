@@ -36,7 +36,7 @@ class DNTest(unittest.TestCase):
             'B': ['\\44\\45\\46'],
         }
         modlist = tldap.modlist.addModlist(A)
-        self.assertEquals(modlist, EXPECTED)
+        self.assertEqual(modlist, EXPECTED)
 
     def test_modifyModlist(self):
         A = {
@@ -59,4 +59,4 @@ class DNTest(unittest.TestCase):
             'Y': (ldap3.MODIFY_REPLACE, ['\\43\\43', '\\42\\42', '\\41\\41']),
         }
         modlist = tldap.modlist.modifyModlist(A, B)
-        self.assertEquals(modlist, EXPECTED)
+        self.assertEqual(modlist, EXPECTED)
