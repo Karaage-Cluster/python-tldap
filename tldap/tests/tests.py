@@ -68,12 +68,12 @@ class BackendTest(unittest.TestCase):
             'cn=Manager,dc=python-ldap,dc=org',
             'password'
         )
-        self.assertEquals(result, True)
+        self.assertEqual(result, True)
         result = tldap.connection.check_password(
             'cn=Manager,dc=python-ldap,dc=org',
             'password2'
         )
-        self.assertEquals(result, False)
+        self.assertEqual(result, False)
 
     def test_transactions(self):
         c = tldap.connection
@@ -985,7 +985,7 @@ class ModelTest(unittest.TestCase):
         p2 = person.objects.create(uid="tuz", **kwargs)
 
         p = person.objects.get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assertEquals(p.o, u"Linux Rules £")
+        self.assertEqual(p.o, u"Linux Rules £")
 
         g1 = group.objects.create(cn="group1", gidNumber=10, memberUid=["tux"])
         g2 = group.objects.create(
@@ -1175,38 +1175,38 @@ class UserAPITest(unittest.TestCase):
         tldap.connection.reset()
 
     def test_get_users(self):
-        self.failUnlessEqual(len(self.account.objects.all()), 3)
+        self.assertEqual(len(self.account.objects.all()), 3)
 
     def test_get_user(self):
         u = self.account.objects.get(uid='testuser3')
-        self.failUnlessEqual(u.mail, 't.user3@example.com')
+        self.assertEqual(u.mail, 't.user3@example.com')
 
     def test_delete_user(self):
-        self.failUnlessEqual(len(self.account.objects.all()), 3)
+        self.assertEqual(len(self.account.objects.all()), 3)
         u = self.account.objects.get(uid='testuser2')
         u.delete()
-        self.failUnlessEqual(len(self.account.objects.all()), 2)
+        self.assertEqual(len(self.account.objects.all()), 2)
 
     def test_in_ldap(self):
         self.account.objects.get(uid='testuser1')
-        self.failUnlessRaises(self.account.DoesNotExist,
-                              self.account.objects.get, cn='testuser4')
+        self.assertRaises(self.account.DoesNotExist,
+                          self.account.objects.get, cn='testuser4')
 
     def test_update_user(self):
         u = self.account.objects.get(uid='testuser1')
-        self.failUnlessEqual(u.sn, 'User')
+        self.assertEqual(u.sn, 'User')
         u.sn = "Bloggs"
         u.save()
         u = self.account.objects.get(uid='testuser1')
-        self.failUnlessEqual(u.sn, 'Bloggs')
+        self.assertEqual(u.sn, 'Bloggs')
 
     def test_update_user_no_modifications(self):
         u = self.account.objects.get(uid='testuser1')
-        self.failUnlessEqual(u.sn, 'User')
+        self.assertEqual(u.sn, 'User')
         u.sn = "User"
         u.save()
         u = self.account.objects.get(uid='testuser1')
-        self.failUnlessEqual(u.sn, 'User')
+        self.assertEqual(u.sn, 'User')
 
 #    def test_lock_unlock(self):
 #        u = self.account.objects.get(uid='testuser1')
@@ -1214,72 +1214,72 @@ class UserAPITest(unittest.TestCase):
 #        u.save()
 #
 #        u = self.account.objects.get(uid='testuser1')
-#        self.failUnlessEqual(u.is_locked(), False)
+#        self.assertEqual(u.is_locked(), False)
 #        u.lock()
 #        u.save()
 #
 #        u = self.account.objects.get(uid='testuser1')
-#        self.failUnlessEqual(u.is_locked(), True)
+#        self.assertEqual(u.is_locked(), True)
 #
 #        u.unlock()
 #        u.save()
-#        self.failUnlessEqual(u.is_locked(), False)
+#        self.assertEqual(u.is_locked(), False)
 
     def test_user_slice(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(
             tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
-        self.failUnlessEqual(users[0].uid, "testuser1")
-        self.failUnlessEqual(users[1].uid, "testuser2")
-        self.failUnlessEqual(users[2].uid, "testuser3")
-        self.failUnlessRaises(IndexError, users.__getitem__, 3)
+        self.assertEqual(users[0].uid, "testuser1")
+        self.assertEqual(users[1].uid, "testuser2")
+        self.assertEqual(users[2].uid, "testuser3")
+        self.assertRaises(IndexError, users.__getitem__, 3)
         a = iter(users[1:4])
-        self.failUnlessEqual(a.next().uid, "testuser2")
-        self.failUnlessEqual(a.next().uid, "testuser3")
-        self.failUnlessRaises(StopIteration, a.next)
+        self.assertEqual(next(a).uid, "testuser2")
+        self.assertEqual(next(a).uid, "testuser3")
+        self.assertRaises(StopIteration, lambda: next(a))
 
     def test_user_search(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='User')
-        self.failUnlessEqual(len(users), 3)
+        self.assertEqual(len(users), 3)
 
     def test_user_search_one(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(uid__contains='testuser1')
-        self.failUnlessEqual(len(users), 1)
+        self.assertEqual(len(users), 1)
 
     def test_user_search_empty(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(cn__contains='nothing')
-        self.failUnlessEqual(len(users), 0)
+        self.assertEqual(len(users), 0)
 
     def test_user_search_multi(self):
         self.account.objects.get(uid='testuser1').save()
         users = self.account.objects.filter(
             tldap.Q(cn__contains='nothing') | tldap.Q(cn__contains="user"))
-        self.failUnlessEqual(len(users), 3)
+        self.assertEqual(len(users), 3)
 
     def test_get_groups_empty(self):
         u = self.account.objects.get(uid="testuser2")
         u.secondary_groups.clear()
         groups = u.secondary_groups.all()
-        self.failUnlessEqual(len(groups), 0)
+        self.assertEqual(len(groups), 0)
         groups = self.group.objects.filter(secondary_accounts=u)
-        self.failUnlessEqual(len(groups), 0)
+        self.assertEqual(len(groups), 0)
 
     def test_get_groups_one(self):
         u = self.account.objects.get(uid="testuser2")
         groups = u.secondary_groups.all()
-        self.failUnlessEqual(len(groups), 1)
+        self.assertEqual(len(groups), 1)
         groups = self.group.objects.filter(secondary_accounts=u)
-        self.failUnlessEqual(len(groups), 1)
+        self.assertEqual(len(groups), 1)
 
     def test_get_groups_many(self):
         u = self.account.objects.get(uid="testuser1")
         groups = u.secondary_groups.all()
-        self.failUnlessEqual(len(groups), 2)
+        self.assertEqual(len(groups), 2)
         groups = self.group.objects.filter(secondary_accounts=u)
-        self.failUnlessEqual(len(groups), 2)
+        self.assertEqual(len(groups), 2)
 
 
 class GroupAPITest(unittest.TestCase):
@@ -1301,122 +1301,122 @@ class GroupAPITest(unittest.TestCase):
         tldap.connection.reset()
 
     def test_get_groups(self):
-        self.failUnlessEqual(len(self.group.objects.all()), 3)
+        self.assertEqual(len(self.group.objects.all()), 3)
 
     def test_get_group(self):
         g = self.group.objects.get(cn="systems")
-        self.failUnlessEqual(g.cn, 'systems')
+        self.assertEqual(g.cn, 'systems')
         g = self.group.objects.get(cn="empty")
-        self.failUnlessEqual(g.cn, 'empty')
+        self.assertEqual(g.cn, 'empty')
         g = self.group.objects.get(cn="full")
-        self.failUnlessEqual(g.cn, 'full')
+        self.assertEqual(g.cn, 'full')
 
     def test_delete_group(self):
         g = self.group.objects.get(cn="full")
         g.delete()
-        self.failUnlessEqual(len(self.group.objects.all()), 2)
+        self.assertEqual(len(self.group.objects.all()), 2)
 
     def test_update_group(self):
         g = self.group.objects.get(cn="empty")
-        self.failUnlessEqual(g.description, 'Empty Group')
+        self.assertEqual(g.description, 'Empty Group')
         g.description = "No Members"
         g.save()
         g = self.group.objects.get(cn="empty")
-        self.failUnlessEqual(g.description, 'No Members')
+        self.assertEqual(g.description, 'No Members')
 
     def test_update_group_no_modifications(self):
         g = self.group.objects.get(cn="empty")
-        self.failUnlessEqual(g.description, 'Empty Group')
+        self.assertEqual(g.description, 'Empty Group')
         g.description = "Empty Group"
         g.save()
         g = self.group.objects.get(cn="empty")
-        self.failUnlessEqual(g.description, 'Empty Group')
+        self.assertEqual(g.description, 'Empty Group')
 
     def test_no_group(self):
-        self.failUnlessRaises(
+        self.assertRaises(
             self.group.DoesNotExist, self.group.objects.get, cn='nosuchgroup')
 
     def test_get_members_empty(self):
         g = self.group.objects.get(cn="empty")
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 0)
+        self.assertEqual(len(members), 0)
         members = self.account.objects.filter(secondary_groups=g)
-        self.failUnlessEqual(len(members), 0)
+        self.assertEqual(len(members), 0)
 
     def test_get_members_one(self):
         g = self.group.objects.get(cn="systems")
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 1)
+        self.assertEqual(len(members), 1)
         members = self.account.objects.filter(secondary_groups=g)
-        self.failUnlessEqual(len(members), 1)
+        self.assertEqual(len(members), 1)
 
     def test_get_members_many(self):
         g = self.group.objects.get(cn="full")
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 3)
+        self.assertEqual(len(members), 3)
         members = self.account.objects.filter(secondary_groups=g)
-        self.failUnlessEqual(len(members), 3)
+        self.assertEqual(len(members), 3)
 
     def test_remove_group_member(self):
         g = self.group.objects.get(cn="full")
         u = g.secondary_accounts.get(uid="testuser2")
         g.secondary_accounts.remove(u)
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 2)
+        self.assertEqual(len(members), 2)
 
     def test_remove_group_member_one(self):
         g = self.group.objects.get(cn="systems")
         u = g.secondary_accounts.get(uid="testuser1")
         g.secondary_accounts.remove(u)
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 0)
+        self.assertEqual(len(members), 0)
 
     def test_remove_group_member_empty(self):
         g = self.group.objects.get(cn="empty")
         g.secondary_accounts.clear()
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 0)
+        self.assertEqual(len(members), 0)
 
     def test_add_member(self):
         g = self.group.objects.get(cn="systems")
         u = self.account.objects.get(uid="testuser2")
         g.secondary_accounts.add(u)
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 2)
+        self.assertEqual(len(members), 2)
 
     def test_add_member_empty(self):
         g = self.group.objects.get(cn="empty")
         u = self.account.objects.get(uid="testuser2")
         g.secondary_accounts.add(u)
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 1)
+        self.assertEqual(len(members), 1)
 
     def test_add_member_exists(self):
         g = self.group.objects.get(cn="full")
         u = self.account.objects.get(uid="testuser2")
         g.secondary_accounts.add(u)
         members = g.secondary_accounts.all()
-        self.failUnlessEqual(len(members), 3)
+        self.assertEqual(len(members), 3)
 
     def test_add_group(self):
         self.group.objects.create(cn='Admin')
-        self.failUnlessEqual(len(self.group.objects.all()), 4)
+        self.assertEqual(len(self.group.objects.all()), 4)
         g = self.group.objects.get(cn="Admin")
-        self.failUnlessEqual(g.gidNumber, 10004)
+        self.assertEqual(g.gidNumber, 10004)
 
     def test_add_group_required_attributes(self):
-        self.failUnlessRaises(
+        self.assertRaises(
             tldap.exceptions.ValidationError,
             self.group.objects.create, description='Admin Group')
 
     def test_add_group_override_generated(self):
         self.group.objects.create(cn='Admin', gidNumber=10008)
-        self.failUnlessEqual(len(self.group.objects.all()), 4)
+        self.assertEqual(len(self.group.objects.all()), 4)
         g = self.group.objects.get(cn="Admin")
-        self.failUnlessEqual(g.gidNumber, 10008)
+        self.assertEqual(g.gidNumber, 10008)
 
     def test_add_group_optional(self):
         self.group.objects.create(cn='Admin', description='Admin Group')
-        self.failUnlessEqual(len(self.group.objects.all()), 4)
+        self.assertEqual(len(self.group.objects.all()), 4)
         g = self.group.objects.get(cn="Admin")
-        self.failUnlessEqual(g.description, 'Admin Group')
+        self.assertEqual(g.description, 'Admin Group')
