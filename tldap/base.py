@@ -326,28 +326,18 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         self._delete()
     delete.alters_data = True
 
-    def _get_moddict(self, default_object_class, default_object_class_db):
+    def _get_moddict(self):
         dn0k, dn0v, _ = tldap.dn.str2dn(self._dn)[0][0]
 
-        # get field for objectClass
-        object_class_field = self._meta.get_field_by_name("objectClass")
+        # objectClass = attribute + class meta setup
+        default_object_class = getattr(self, "objectClass", [])
+        default_object_class += list(self._meta.object_classes)
 
-        # convert python value to db value or vice versa as required.
-        tmp_default_object_class = set()
-        tmp_default_object_class_db = set()
+        # remove duplicate classes
+        default_object_class = list(set(default_object_class))
 
-        if len(default_object_class) > 0:
-            tmp_default_object_class = set(default_object_class)
-            tmp_default_object_class_db = set(
-                object_class_field.to_db(default_object_class))
-
-        tmp_default_object_class = tmp_default_object_class | set(
-            object_class_field.clean(default_object_class_db))
-        tmp_default_object_class_db = tmp_default_object_class_db | set(
-            default_object_class_db)
-
-        default_object_class = list(tmp_default_object_class)
-        default_object_class_db = list(tmp_default_object_class_db)
+        for v in default_object_class:
+            assert isinstance(v, (str, six.text_type))
 
         # start with an empty dictionary
         moddict = {
@@ -371,10 +361,11 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
                     value = field.to_db(value)
             # if objectClass not given, try to set it, otherwise just convert
             # value
-            elif name == 'objectClass':
+            elif name.lower() == 'objectclass':
                 assert isinstance(value, list)
-                value = default_object_class_db
+                value = default_object_class
                 setattr(self, name, default_object_class)
+                value = field.to_db(value)
             # otherwise just convert value
             else:
                 value = field.to_db(value)
@@ -390,14 +381,8 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         return moddict
 
     def _add(self):
-        # objectClass = attribute + class meta setup
-        default_object_class = getattr(self, "objectClass", [])
-        default_object_class_db = list(self._meta.object_classes)
-
         # generate moddict values
-        moddict = self._get_moddict(default_object_class,
-                                    default_object_class_db,
-                                    )
+        moddict = self._get_moddict()
 
         # turn moddict into a modlist
         modlist = tldap.modlist.addModlist(moddict)
@@ -433,10 +418,6 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         assert using is not None
         c = tldap.connections[using]
 
-        # objectClass = attribute + class meta setup
-        default_object_class = getattr(self, "objectClass", [])
-        default_object_class_db = list(self._meta.object_classes)
-
         # dictionary of old values
         modold = {
         }
@@ -448,9 +429,7 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
             modold[name] = self._db_values.get(name, [])
 
         # generate moddict values
-        moddict = self._get_moddict(default_object_class,
-                                    default_object_class_db,
-                                    )
+        moddict = self._get_moddict()
 
         # remove items in force_replace
         force_value = {}
@@ -647,14 +626,9 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         :param ldif_writer: ldif_writer to write translation to.
         :param extra_fields: extra fields to display
         """
-        # objectClass = attribute + class meta setup
-        default_object_class = getattr(self, "objectClass", [])
-        default_object_class_db = list(self._meta.object_classes)
 
         # generate moddict values
-        moddict = self._get_moddict(default_object_class,
-                                    default_object_class_db,
-                                    )
+        moddict = self._get_moddict()
         moddict.update(extra_fields)
 
         if new_dn is not None:
