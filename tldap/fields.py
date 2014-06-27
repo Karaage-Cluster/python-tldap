@@ -22,6 +22,7 @@
 import tldap.exceptions
 import datetime
 import struct
+import six
 
 
 class Field(object):
@@ -161,7 +162,7 @@ class BinaryField(Field):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        assert value is None or isinstance(value, str)
+        assert value is None or isinstance(value, bytes)
         return value
 
     def value_to_python(self, value):
@@ -171,9 +172,9 @@ class BinaryField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
         return value
 
     def value_validate(self, value):
@@ -181,9 +182,9 @@ class BinaryField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
 
 
 class CharField(Field):
@@ -191,7 +192,7 @@ class CharField(Field):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        if isinstance(value, unicode):
+        if isinstance(value, (str, six.text_type)):
             value = value.encode("utf_8")
         return value
 
@@ -202,9 +203,9 @@ class CharField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
         value = value.decode("utf_8")
         return value
 
@@ -213,7 +214,7 @@ class CharField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if not (isinstance(value, str) or isinstance(value, unicode)):
+        if not isinstance(value, (str, six.text_type)):
             raise tldap.exceptions.ValidationError(
                 "%r should be a string" % self.name)
 
@@ -233,9 +234,9 @@ class UnicodeField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
         value = value.decode("utf_16")
         return value
 
@@ -244,7 +245,7 @@ class UnicodeField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if not (isinstance(value, str) or isinstance(value, unicode)):
+        if not isinstance(value, (str, six.text_type)):
             raise tldap.exceptions.ValidationError(
                 "%r should be a string" % self.name)
 
@@ -259,9 +260,9 @@ class IntegerField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
         if value is None:
             return value
         try:
@@ -273,7 +274,7 @@ class IntegerField(Field):
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
         assert isinstance(value, int) or isinstance(value, long)
-        return str(value)
+        return str(value).encode("utf_8")
 
     def value_validate(self, value):
         """
@@ -303,9 +304,9 @@ class DaysSinceEpochField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
 
         try:
             value = int(value)
@@ -332,7 +333,7 @@ class DaysSinceEpochField(Field):
             raise tldap.exceptions.ValidationError(
                 "%r is too big a date" % self.name)
 
-        return str(value.days)
+        return str(value.days).encode("utf_8")
 
     def value_validate(self, value):
         """
@@ -360,9 +361,9 @@ class SecondsSinceEpochField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, str):
+        if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+                "%r should be a bytes" % self.name)
 
         try:
             value = int(value)
@@ -389,7 +390,7 @@ class SecondsSinceEpochField(Field):
                 "%r is too big a date" % self.name)
 
         value = value.seconds + value.days * 24 * 3600
-        value = str(value)
+        value = str(value).encode("utf_8")
 
         return value
 
@@ -415,6 +416,10 @@ class SidField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
+        if not isinstance(value, bytes):
+            raise tldap.exceptions.ValidationError(
+                "%r should be a bytes" % self.name)
+
         l = len(value) - 8
         if l % 4 != 0:
             raise tldap.exceptions.ValidationError("Invalid sid")
