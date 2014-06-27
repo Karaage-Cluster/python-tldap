@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+import six
+
 import tldap
 import tldap.schemas.rfc as rfc
 import tldap.manager
@@ -31,11 +33,11 @@ class person(tldap.base.LDAPobject):
         pk = 'uid'
 
     def __unicode__(self):
-        return u"P:%s" % self.cn
+        return six.u("P:%s") % self.cn
 
     def save(self, *args, **kwargs):
         if self.cn is None:
-            self.cn = u"%s %s" % (self.givenName, self.sn)
+            self.cn = six.u("%s %s") % (self.givenName, self.sn)
         super(person, self).save(*args, **kwargs)
 
     managed_by = tldap.manager.ManyToOneDescriptor(
@@ -50,7 +52,7 @@ class account(person):
     schema_list = [rfc.posixAccount, rfc.shadowAccount]
 
     def __unicode__(self):
-        return u"A:%s" % self.cn
+        return six.u("A:%s") % self.cn
 
     def save(self, *args, **kwargs):
         if self.uidNumber is None:
@@ -81,7 +83,7 @@ class group(tldap.base.LDAPobject):
         pk = 'cn'
 
     def __unicode__(self):
-        return u"%s" % self.cn
+        return six.u("%s") % self.cn
 
     def save(self, *args, **kwargs):
         if self.gidNumber is None:

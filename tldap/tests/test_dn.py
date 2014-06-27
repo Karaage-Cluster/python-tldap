@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+import six
 import unittest
 import tldap.dn
 
@@ -333,11 +334,11 @@ class DNTest(unittest.TestCase):
         # 2 byte UTF8
         # UTF: 0x00A3
         # UTF8: 0xC2 0xA3
-        value = "ABC=DEF,HIJ=KIF£"
+        value = six.u("ABC=DEF,HIJ=KIF£")
         result = tldap.dn.str2dn(value)
         self.assertIsNotNone(result)
         self.assertEqual(result, [
-            [('ABC', 'DEF', 1)], [('HIJ', 'KIF£', 1)]
+            [('ABC', 'DEF', 1)], [('HIJ', six.u('KIF£'), 1)]
         ])
         result = tldap.dn.dn2str(result)
         self.assertEqual(result, value)
@@ -345,11 +346,11 @@ class DNTest(unittest.TestCase):
         # 3 byte UTF8
         # UTF: 0x0982
         # UTF8: 0xE0 0xA6 0x82
-        value = "ABC=DEFং,HIJ=KIF"
+        value = six.u("ABC=DEFং,HIJ=KIF")
         result = tldap.dn.str2dn(value)
         self.assertIsNotNone(result)
         self.assertEqual(result, [
-            [('ABC', 'DEFং', 1)], [('HIJ', 'KIF', 1)]
+            [('ABC', six.u('DEFং'), 1)], [('HIJ', 'KIF', 1)]
         ])
         result = tldap.dn.dn2str(result)
         self.assertEqual(result, value)
@@ -357,11 +358,11 @@ class DNTest(unittest.TestCase):
         # 3 byte UTF8
         # UTF: 0x4F60, 0x597D
         # UTF8: 0xE4 0xBD 0xA0, 0xE5 0xA5 0xBD
-        value = "ABC=DEF你好,HIJ=KIF"
+        value = six.u("ABC=DEF你好,HIJ=KIF")
         result = tldap.dn.str2dn(value)
         self.assertIsNotNone(result)
         self.assertEqual(result, [
-            [('ABC', 'DEF你好', 1)], [('HIJ', 'KIF', 1)]
+            [('ABC', six.u('DEF你好'), 1)], [('HIJ', 'KIF', 1)]
         ])
         result = tldap.dn.dn2str(result)
         self.assertEqual(result, value)
@@ -369,11 +370,11 @@ class DNTest(unittest.TestCase):
         # 4 byte UTF8
         # UTF: 0x10300, 0x10301, 0x10302
         # UTF8: 0xF0 0x90 0x8C 0x80, 0xF0 0x90 0x8C 0x81, 0xF0 0x90 0x8C 0x82
-        value = "ABC=DEF𐌀𐌁𐌂,HIJ=KIF"
+        value = six.u("ABC=DEF𐌀𐌁𐌂,HIJ=KIF")
         result = tldap.dn.str2dn(value)
         self.assertIsNotNone(result)
         self.assertEqual(result, [
-            [('ABC', 'DEF𐌀𐌁𐌂', 1)], [('HIJ', 'KIF', 1)]
+            [('ABC', six.u('DEF𐌀𐌁𐌂'), 1)], [('HIJ', 'KIF', 1)]
         ])
         result = tldap.dn.dn2str(result)
         self.assertEqual(result, value)

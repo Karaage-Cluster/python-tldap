@@ -19,6 +19,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+import six
 
 import tldap
 import tldap.schemas.rfc
@@ -978,21 +979,21 @@ class ModelTest(unittest.TestCase):
             'cn': "Tux Torvalds",
             'telephoneNumber': "000",
             'mail': "tuz@example.org",
-            'o': u"Linux Rules £",
+            'o': six.u("Linux Rules £"),
             'userPassword': "silly",
         }
         p1 = person.objects.create(uid="tux", **kwargs)
         p2 = person.objects.create(uid="tuz", **kwargs)
 
         p = person.objects.get(dn="uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assertEqual(p.o, u"Linux Rules £")
+        self.assertEqual(p.o, six.u("Linux Rules £"))
 
         g1 = group.objects.create(cn="group1", gidNumber=10, memberUid=["tux"])
         g2 = group.objects.create(
             cn="group2", gidNumber=11, memberUid=["tux", "tuz"])
 
         self.assertEqual(
-            person.objects.all()._get_filter(tldap.Q(uid='t\ux')),
+            person.objects.all()._get_filter(tldap.Q(uid='t\\ux')),
             "(uid=t\\5cux)")
         self.assertEqual(
             person.objects.all()._get_filter(~tldap.Q(uid='tux')),

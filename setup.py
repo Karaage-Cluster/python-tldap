@@ -53,6 +53,7 @@ setup(
         "django",
         "python3-ldap",
         "passlib",
+        "six",
     ],
     test_suite="tldap.tests",
 )
