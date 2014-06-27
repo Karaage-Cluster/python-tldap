@@ -8,6 +8,7 @@ See http://www.python-ldap.org/ for details.
 Compability:
 - Tested with Python 2.0+
 """
+import six
 
 
 def escape_filter_chars(assertion_value, escape_mode=0):
@@ -20,26 +21,38 @@ def escape_filter_chars(assertion_value, escape_mode=0):
         If 1 all NON-ASCII chars are escaped.
         If 2 all chars are escaped.
     """
-    if escape_mode:
-        r = []
-        if escape_mode == 1:
-            for c in assertion_value:
-                if c < '0' or c > 'z' or c in "\\*()":
-                    c = "\\%02x" % ord(c)
-                r.append(c)
+
+    if isinstance(assertion_value, six.text_type):
+        assertion_value = assertion_value.encode("utf_8")
+
+    s = []
+    for c in assertion_value:
+        do_escape = False
+
+        if str != bytes:  # Python 3
+            pass
+        else:  # Python 2
+            c = ord(c)
+
+        if escape_mode == 0:
+            if c == ord('\\') or c == ord('*') \
+                    or c == ord('(') or c == ord(')') \
+                    or c == ord('\x00'):
+                do_escape = True
+        elif escape_mode == 1:
+            if c < '0' or c > 'z' or c in "\\*()":
+                do_escape = True
         elif escape_mode == 2:
-            for c in assertion_value:
-                r.append("\\%02x" % ord(c))
+            do_escape = True
         else:
             raise ValueError('escape_mode must be 0, 1 or 2.')
-        s = ''.join(r)
-    else:
-        s = assertion_value.replace('\\', r'\5c')
-        s = s.replace(r'*', r'\2a')
-        s = s.replace(r'(', r'\28')
-        s = s.replace(r')', r'\29')
-        s = s.replace('\x00', r'\00')
-    return s
+
+        if do_escape:
+            s.append("\\%02x" % c)
+        else:
+            s.append(chr(c))
+
+    return ''.join(s)
 
 
 def filter_format(filter_template, assertion_values):
@@ -50,5 +63,6 @@ def filter_format(filter_template, assertion_values):
           List or tuple of assertion values. Length must match
           count of %s in filter_template.
     """
+    assert isinstance(filter_template, (str, six.text_type))
     return filter_template % (
         tuple(map(escape_filter_chars, assertion_values)))
