@@ -24,6 +24,8 @@ ITER_CHUNK_SIZE = 100
 # The maximum number of items to display in a QuerySet.__repr__
 REPR_OUTPUT_SIZE = 20
 
+import six
+
 import ldap3
 
 import tldap
@@ -621,7 +623,7 @@ class QuerySet(object):
         if self._iter:
             try:
                 for i in range(num or ITER_CHUNK_SIZE):
-                    self._result_cache.append(self._iter.next())
+                    self._result_cache.append(next(self._iter))
             except StopIteration:
                 self._iter = None
 

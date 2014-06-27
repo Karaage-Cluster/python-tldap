@@ -16,6 +16,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 """ Contains base class used for tldap objects. """
+import six
 
 import tldap
 import tldap.options
@@ -98,7 +99,7 @@ class LDAPmeta(type):
         schema_list = attrs.pop('schema_list', [])
 
         # add rest of attributes to class
-        for obj_name, obj in attrs.items():
+        for obj_name, obj in six.iteritems(attrs):
             new_class.add_to_class(obj_name, obj)
 
         # list of field names
@@ -466,7 +467,7 @@ class LDAPobject(object):
         # FIXME: recheck
         # add items in force_replace
         force_modlist = {}
-        for field, value in force_value.iteritems():
+        for field, value in six.iteritems(force_value):
             force_modlist[field] = (
                 ldap3.MODIFY_REPLACE, tldap.modlist.escape_list(value))
             moddict[field] = value
@@ -513,7 +514,7 @@ class LDAPobject(object):
 
         # extract key and value from kwargs
         if len(kwargs) == 1:
-            name, value = kwargs.iteritems().next()
+            name, value = list(six.iteritems(kwargs))[0]
 
             # replace pk with the real attribute
             if name == "pk":
