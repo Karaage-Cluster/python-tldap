@@ -159,9 +159,8 @@ def subclass_exception(name, parents, module):
     return type(name, parents, {'__module__': module})
 
 
-class LDAPobject(object):
+class LDAPobject(six.with_metaclass(LDAPmeta)):
     """ The base class used for tldap objects. """
-    __metaclass__ = LDAPmeta
 
     schema_list = []
     """ Class variable to be overriden for class that provides a list of
