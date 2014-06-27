@@ -195,7 +195,7 @@ class Slapd:
             self._log.debug("deleting existing %s", path)
             os.remove(path)
         self._log.debug("writing config to %s", path)
-        file(path, "w").writelines([line + "\n" for line in self._config])
+        open(path, "w").writelines([line + "\n" for line in self._config])
         return path
 
     def start(self):
@@ -320,7 +320,7 @@ class Slapd:
             "-H", self.get_url()] + extra_args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             env=self._env)
-        p.communicate(ldif)
+        p.communicate(ldif.encode("utf_8"))
         if p.wait() != 0:
             raise RuntimeError("ldapadd process failed")
 
