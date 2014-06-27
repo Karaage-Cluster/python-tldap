@@ -30,8 +30,8 @@ import ldap3.core.exceptions
 
 import copy
 
-default_object_class_field = tldap.fields.CharField(required=True,
-                                                    max_instances=None)
+_default_object_class_field = tldap.fields.CharField(required=True,
+                                                     max_instances=None)
 
 
 class LDAPmeta(type):
@@ -55,7 +55,7 @@ class LDAPmeta(type):
 
         # add the _meta and objectClass to new class
         new_class.add_to_class('_meta', tldap.options.Options(meta))
-        new_class.add_to_class('objectClass', default_object_class_field)
+        new_class.add_to_class('objectClass', _default_object_class_field)
 
         # inherit certain attributes from parent
         if base_meta is not None:
