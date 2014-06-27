@@ -21,7 +21,11 @@ with a subset of the functions from the real ldap module. """
 import ssl
 import ldap3
 import logging
-from urlparse import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 logger = logging.getLogger(__name__)
 
 

@@ -18,6 +18,7 @@
 """ This module provides the LDAP functions with transaction support faked,
 with a subset of the functions from the real ldap module. """
 
+import six
 import tldap.dn
 import ldap3
 import tldap.exceptions
@@ -164,9 +165,8 @@ class LDAPwrapper(LDAPbase):
         except:
             _debug("--> rollback failed")
             exc_class, exc, tb = sys.exc_info()
-            new_exc = tldap.exceptions.RollbackError(
+            raise tldap.exceptions.RollbackError(
                 "FATAL Unrecoverable rollback error: %r" % (exc))
-            raise new_exc.__class__, new_exc, tb
         finally:
             # reset everything to clean state
             _debug("--> rollback success")
@@ -225,7 +225,7 @@ class LDAPwrapper(LDAPbase):
 
         # find the how to reverse modlist (for rollback) and put result in
         # revlist. Also simulate actions on cache.
-        for mod_type, l in modlist.iteritems():
+        for mod_type, l in six.iteritems(modlist):
             mod_op, mod_vals = l
 
             reverse = None
