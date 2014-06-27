@@ -8,6 +8,8 @@ See http://www.python-ldap.org/ for details.
 Compability:
 - Tested with Python 2.0+
 """
+import six
+
 import tldap.exceptions
 
 
@@ -17,6 +19,7 @@ def escape_dn_chars(s):
     with a back-slash (see RFC 4514, section 2.4)
     """
     if s:
+        assert isinstance(s, (str, six.text_type))
         s = s.replace('\\', '\\\\')
         s = s.replace(',', '\\,')
         s = s.replace('+', '\\+')
@@ -185,190 +188,10 @@ def _descr(value, i):
 
 
 def _UTFMB(value, i):
-    (utf2, i) = _UTF2(value, i)
-    if utf2 is not None:
-        return (utf2, i)
-
-    (utf3, i) = _UTF3(value, i)
-    if utf3 is not None:
-        return (utf3, i)
-
-    (utf4, i) = _UTF4(value, i)
-    if utf4 is not None:
-        return (utf4, i)
+    if ord(value[i]) >= 0x80:
+        return(value[i], i+1)
 
     return (None, i)
-
-
-def _UTF0(value, i):
-    """ Parse remaining UTF bytes """
-    # 10xxxxx
-    start = i
-
-    if i >= len(value):
-        return (None, start)
-
-    n = ord(value[i])
-    if not (n >= 0x80 and n <= 0xBF):
-        return (None, start)
-    i = i + 1
-
-    return (value[start:i], i)
-
-
-def _UTF1(value, i):
-    """ Parse 1 byte UTF8 """
-    # 0xxxxxxx
-
-    start = i
-
-    if i >= len(value):
-        return (None, start)
-
-    n = ord(value[i])
-    if not (n >= 0x00 and n <= 0x7F):
-        return (None, start)
-    i = i + 1
-
-    return (value[start:i], i)
-
-
-def _UTF2(value, i):
-    """ Parse 2 byte UTF8 """
-    # 110xxxxx 10xxxxxx
-    # 0xC0 and 0xC1 invalid
-    start = i
-
-    if i >= len(value):
-        return (None, start)
-
-    n = ord(value[i])
-    if not (n >= 0xC2 and n <= 0xDF):
-        return (None, start)
-    i = i + 1
-
-    (utf0, i) = _UTF0(value, i)
-    if utf0 is None:
-        return (None, start)
-
-    return (value[start:i], i)
-
-
-def _UTF3(value, i):
-    """ Parse 3 byte UTF8 """
-    # 1110xxxx 10xxxxxx 10xxxxxx
-    start = i
-
-    if i >= len(value):
-        return (None, start)
-
-    n = ord(value[i])
-    i = i + 1
-
-    if n == 0xE0:
-        n = ord(value[i])
-        if not (n >= 0xA0 and n <= 0xBF):
-            return (None, start)
-        i = i + 1
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    elif (n >= 0xE1 and n <= 0xEC):
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    elif n == 0xED:
-        n = ord(value[i])
-        if not (n >= 0x80 and n <= 0x9F):
-            return (None, start)
-        i = i + 1
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    elif (n >= 0xEE and n <= 0xEF):
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    else:
-        return (None, start)
-
-    return (value[start:i], i)
-
-
-def _UTF4(value, i):
-    """ Parse 4 byte UTF8 """
-    # 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-
-    start = i
-
-    if i >= len(value):
-        return (None, start)
-
-    n = ord(value[i])
-    i = i + 1
-
-    if n == 0xF0:
-        n = ord(value[i])
-        if not (n >= 0x90 and n <= 0xBF):
-            return (None, start)
-        i = i + 1
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    elif (n >= 0xF1 and n <= 0xF3):
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    elif n == 0xF4:
-        n = ord(value[i])
-        if not (n >= 0x80 and n <= 0x8F):
-            return (None, start)
-        i = i + 1
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-        (utf0, i) = _UTF0(value, i)
-        if utf0 is None:
-            return (None, start)
-
-    else:
-        return (None, start)
-
-    return (value[start:i], i)
 
 
 # --- RFC 4514: CHARACTERS ---
@@ -700,6 +523,11 @@ def str2dn(dn, flags=0):
 
     See also the OpenLDAP man-page ldap_str2dn(3)
     """
+
+    # if python2, we need unicode string
+    if not isinstance(dn, six.text_type):
+        dn = dn.decode("utf_8")
+
     assert flags == 0
     result, i = _distinguishedName(dn, 0)
     if result is None:
@@ -715,6 +543,12 @@ def dn2str(dn):
     a single string. It's the inverse to str2dn() but will always
     return a DN in LDAPv3 format compliant to RFC 4514.
     """
+    for rdn in dn:
+        for atype, avalue, dummy in rdn:
+            assert isinstance(atype, (str, six.text_type))
+            assert isinstance(avalue, (str, six.text_type))
+            assert dummy == 1
+
     return ','.join([
         '+'.join([
             '='.join((atype, escape_dn_chars(avalue or '')))
