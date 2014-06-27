@@ -1092,6 +1092,8 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(len(r), 1)
 
         group = r[0].primary_group.get()
+        self.assertEqual(group, g1)
+        self.assertEqual(group.memberUid, g1.memberUid)
 
         group.primary_accounts.add(u)
         self.assertRaises(tldap.exceptions.ValidationError,
