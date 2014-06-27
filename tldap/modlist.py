@@ -3,7 +3,6 @@ This module contains a ``modifyModlist`` function adopted from
 :py:mod:`ldap:ldap.modlist`.
 """
 
-import string
 import ldap3
 import ldap3.utils.conv
 import tldap.helpers
@@ -35,15 +34,15 @@ def escape_list(bytes_list):
 
 def addModlist(entry, ignore_attr_types=None):
     """Build modify list for call of method LDAPObject.add()"""
-    ignore_attr_types = list_dict(map(string.lower, (ignore_attr_types or [])))
+    ignore_attr_types = list_dict(map(str.lower, (ignore_attr_types or [])))
     modlist = {}
     for attrtype in entry.keys():
-        if string.lower(attrtype) in ignore_attr_types:
+        if str.lower(attrtype) in ignore_attr_types:
             # This attribute type is ignored
             continue
-        # Eliminate empty attr value strings in list
-        attrvaluelist = filter(lambda x: x is not None, entry[attrtype])
-        if attrvaluelist:
+        for value in entry[attrtype]:
+            assert value is not None
+        if len(entry[attrtype]) > 0:
             modlist[attrtype] = escape_list(entry[attrtype])
     return modlist  # addModlist()
 
@@ -75,21 +74,21 @@ def modifyModlist(
     * MOD_DELETE/MOD_DELETE used in preference to MOD_REPLACE when updating
       an existing value.
     """
-    ignore_attr_types = list_dict(map(string.lower, (ignore_attr_types or [])))
+    ignore_attr_types = list_dict(map(str.lower, (ignore_attr_types or [])))
     modlist = {}
     attrtype_lower_map = {}
     for a in old_entry.keys():
-        attrtype_lower_map[string.lower(a)] = a
+        attrtype_lower_map[str.lower(a)] = a
     for attrtype in new_entry.keys():
-        attrtype_lower = string.lower(attrtype)
+        attrtype_lower = str.lower(attrtype)
         if attrtype_lower in ignore_attr_types:
             # This attribute type is ignored
             continue
         # Filter away null-strings
-        new_value = filter(lambda x: x is not None, new_entry[attrtype])
+        new_value = list(filter(lambda x: x is not None, new_entry[attrtype]))
         if attrtype_lower in attrtype_lower_map:
             old_value = old_entry.get(attrtype_lower_map[attrtype_lower], [])
-            old_value = filter(lambda x: x is not None, old_value)
+            old_value = list(filter(lambda x: x is not None, old_value))
             del attrtype_lower_map[attrtype_lower]
         else:
             old_value = []
