@@ -66,7 +66,7 @@ class QuerySet(object):
         data = list(self[:REPR_OUTPUT_SIZE + 1])
         if len(data) > REPR_OUTPUT_SIZE:
             data[-1] = "...(remaining elements truncated)..."
-        return unicode(data)
+        return six.text_type(data)
 
     def __len__(self):
         # Since __len__ is called quite frequently (for example, as part of
@@ -107,7 +107,7 @@ class QuerySet(object):
         """
         Retrieves an item or slice from the set of results.
         """
-        if not isinstance(k, (slice, int, long)):
+        if not isinstance(k, (slice,) + six.integer_types):
             raise TypeError
         if not isinstance(k, slice) and (k < 0):
             raise IndexError("Negative indexing is not supported.")
@@ -182,7 +182,8 @@ class QuerySet(object):
         """
         A field could be found for this term, try to get filter string for it.
         """
-        assert isinstance(value, str) or isinstance(value, unicode)
+        assert isinstance(name, (str, six.text_type))
+        assert isinstance(value, (bytes, str, six.text_type))
         if operation is None:
             return tldap.filter.filter_format(
                 "(%s=%s)", [name, value])
