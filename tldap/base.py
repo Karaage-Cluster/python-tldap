@@ -257,7 +257,6 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         :param name: rdn to convert.
         :return: fully qualified DN.
         """
-        field = self._meta.get_field_by_name(name)
         value = getattr(self, name)
         if value is None:
             raise tldap.exceptions.ValidationError(
@@ -265,7 +264,6 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         if isinstance(value, list):
             raise tldap.exceptions.ValidationError(
                 "Cannot use %s in dn as it is a list" % name)
-        value = field.value_to_db(value)
 
         base_dn = self._base_dn
         if base_dn is None:
@@ -348,35 +346,39 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         for field in fields:
             name = field.name
             value = getattr(self, name)
+
             # if dn attribute not given, try to set it, otherwise just convert
             # value
-            if name == dn0k:
+            if name.lower() == dn0k.lower():
                 if isinstance(value, list) and len(value) == 0:
                     value = [dn0v]
-                    setattr(self, name, field.clean(value))
+                    setattr(self, name, value)
                 elif value is None:
-                    value = [dn0v]
-                    setattr(self, name, field.clean(value))
+                    value = dn0v
+                    setattr(self, name, value)
+
+                # value_set, set of all values, lowercase
+                if isinstance(value, list):
+                    value_set = set(v.lower() for v in value)
                 else:
-                    value = field.to_db(value)
+                    value_set = set([value.lower()])
+
+                # dn attribute must match the dn
+                if dn0v.lower() not in value_set:
+                    raise ValueError(
+                        "value of %r is %r does not include %r from dn %r" %
+                        (name, value, dn0v, self._dn))
+
             # if objectClass not given, try to set it, otherwise just convert
             # value
             elif name.lower() == 'objectclass':
                 assert isinstance(value, list)
                 value = default_object_class
                 setattr(self, name, default_object_class)
-                value = field.to_db(value)
-            # otherwise just convert value
-            else:
-                value = field.to_db(value)
+
             # db value should always be a list
+            value = field.to_db(value)
             assert isinstance(value, list)
-            # if dn attribute given, it must match the dn
-            if name == dn0k.lower():
-                if dn0v.lower() not in set(v.lower() for v in value):
-                    raise ValueError(
-                        "value of %r is %r does not include %r from dn %r" %
-                        (name, value, dn0v, self._dn))
             moddict[name] = value
         return moddict
 
@@ -498,10 +500,6 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
             if name == "pk":
                 name = self._meta.pk
 
-            # get the new field and turn value into db value
-            field = self._meta.get_field_by_name(name)
-            value = field.value_to_db(value)
-
             # work out the new rdn of the object
             split_new_rdn = [[(name, value, 1)]]
         elif len(kwargs) == 0:
@@ -568,7 +566,6 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         old_key = self._meta.get_field_name(old_key)
         field = self._meta.get_field_by_name(old_key)
         v = getattr(self, old_key, [])
-        old_value = field.value_to_python(old_value)
         if v is None:
             pass
         elif isinstance(v, list):
@@ -588,7 +585,6 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         new_key = self._meta.get_field_name(new_key)
         field = self._meta.get_field_by_name(new_key)
         v = getattr(self, new_key, None)
-        new_value = field.value_to_python(new_value)
         if v is None:
             v = new_value
         elif isinstance(v, list):
