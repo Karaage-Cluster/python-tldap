@@ -20,7 +20,7 @@
 import base64
 
 try:
-    from hashlib import sha
+    from hashlib import sha1 as sha
 except:
     from sha import sha
 
