@@ -10,6 +10,7 @@ import time
 import subprocess
 import logging
 import tempfile
+import shutil
 import base64
 
 _log = logging.getLogger("slapd")
@@ -76,7 +77,6 @@ class Slapd:
 
     # Use /var/tmp to placate apparmour on Ubuntu:
     TEST_UTILS_DIR = os_path.abspath(os_path.split(__file__)[0])
-    PATH_TMPDIR = tempfile.mkdtemp()
     PATH_SBINDIR = "/usr/sbin"
     PATH_BINDIR = "/usr/bin"
     PATH_SCHEMA_DIR = TEST_UTILS_DIR + "/ldap_schemas/"
@@ -106,7 +106,7 @@ class Slapd:
         self._config = []
         self._proc = None
         self._port = 0
-        self._tmpdir = self.PATH_TMPDIR
+        self._tmpdir = None
         self._dn_suffix = "dc=python-ldap,dc=org"
         self._root_cn = "Manager"
         self._root_password = "password"
@@ -125,9 +125,6 @@ class Slapd:
 
     def set_root_password(self, pw):
         self._root_password = pw
-
-    def set_tmpdir(self, path):
-        self._tmpdir = path
 
     def set_slapd_debug_level(self, level):
         self._slapd_debug_level = level
@@ -154,9 +151,6 @@ class Slapd:
     def get_root_password(self):
         return self._root_password
 
-    def get_tmpdir(self):
-        return self._tmpdir
-
     def __del__(self):
         self.stop()
 
@@ -176,7 +170,8 @@ class Slapd:
         cfg.append("allow bind_v2")
 
         # Database
-        ldif_dir = mkdirs(os.path.join(self.get_tmpdir(), "ldif-data"))
+        self._tmpdir = tempfile.mkdtemp()
+        ldif_dir = mkdirs(os.path.join(self._tmpdir, "ldif-data"))
         delete_directory_content(ldif_dir)  # clear it out
         cfg.append("database ldif")
         cfg.append("directory " + quote(ldif_dir))
@@ -269,6 +264,9 @@ class Slapd:
                 #posix.kill(self._proc.pid, signal.SIGTERM)
                 #posix.kill(self._proc.pid, signal.SIGKILL)
             self.wait()
+        if self._tmpdir is not None:
+            shutil.rmtree(self._tmpdir)
+            self._tmpdir = None
 
     def restart(self):
         """
