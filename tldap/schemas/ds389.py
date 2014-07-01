@@ -1,4 +1,4 @@
-# Copyright 2012-2014 VPAC
+# Copyright 2012-2014 Brian May
 #
 # This file is part of django-tldap.
 #
