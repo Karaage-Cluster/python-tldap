@@ -1,3 +1,9 @@
+django-tldap (0.2.18-1) unstable; urgency=low
+
+  * Python3 package.
+
+ -- Brian May <bam@debian.org>  Tue, 01 Jul 2014 11:38:35 +1000
+
 django-tldap (0.2.17-1) unstable; urgency=low
 
   * Replace USE_TLS setting with REQUIRE_TLS and START_TLS settings.
