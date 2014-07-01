@@ -8,24 +8,24 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding model 'counters'
         db.create_table('tldap_counters', (
-            (u'id', self.gf('django.db.models.fields.AutoField')
+            ('id', self.gf('django.db.models.fields.AutoField')
                 (primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')
                 (max_length=20, db_index=True)),
             ('count', self.gf('django.db.models.fields.IntegerField')()),
         ))
-        db.send_create_signal(u'methods', ['counters'])
+        db.send_create_signal('methods', ['counters'])
 
     def backwards(self, orm):
         # Deleting model 'counters'
         db.delete_table('tldap_counters')
 
     models = {
-        u'methods.counters': {
+        'methods.counters': {
             'Meta': {
                 'object_name': 'counters', 'db_table': "'tldap_counters'"},
             'count': ('django.db.models.fields.IntegerField', [], {}),
-            u'id': (
+            'id': (
                 'django.db.models.fields.AutoField',
                 [], {'primary_key': 'True'}),
             'name': (

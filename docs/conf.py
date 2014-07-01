@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import six
 import sys, os
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -65,8 +66,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'django-tldap'
-copyright = u'2014, Brian May'
+project = six.u('django-tldap')
+copyright = six.u('2014, Brian May')
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -209,8 +210,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'django-tldap.tex', u'django-tldap Documentation',
-   u'Brian May', 'manual'),
+  ('index', 'django-tldap.tex', six.u('django-tldap Documentation'),
+   six.u('Brian May'), 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -239,8 +240,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-tldap', u'django-tldap Documentation',
-     [u'Brian May'], 1)
+    ('index', 'django-tldap', six.u('django-tldap Documentation'),
+     [six.u('Brian May')], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -253,8 +254,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'django-tldap', u'django-tldap Documentation',
-   u'Brian May', 'django-tldap', 'One line description of project.',
+  ('index', 'django-tldap', six.u('django-tldap Documentation'),
+   six.u('Brian May'), 'django-tldap', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -271,10 +272,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'django-tldap'
-epub_author = u'Brian May'
-epub_publisher = u'Brian May'
-epub_copyright = u'2014, Brian May'
+epub_title = six.u('django-tldap')
+epub_author = six.u('Brian May')
+epub_publisher = six.u('Brian May')
+epub_copyright = six.u('2014, Brian May')
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

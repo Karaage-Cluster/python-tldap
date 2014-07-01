@@ -17,11 +17,11 @@ class Migration(SchemaMigration):
         db.delete_column('tldap_counters', 'scheme')
 
     models = {
-        u'methods.counters': {
+        'methods.counters': {
             'Meta': {
                 'object_name': 'Counters', 'db_table': "'tldap_counters'"},
             'count': ('django.db.models.fields.IntegerField', [], {}),
-            u'id': (
+            'id': (
                 'django.db.models.fields.AutoField',
                 [], {'primary_key': 'True'}),
             'name': (
