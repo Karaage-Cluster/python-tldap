@@ -18,7 +18,7 @@
 """ Methods specific to Samba attributes. Not applicable for Samba 4 AD
 support. """
 
-import smbpasswd
+from passlib.hash import nthash, lmhash
 import datetime
 
 
@@ -59,8 +59,8 @@ class sambaAccountMixin(object):
     def change_password(cls, self, password):
         if isinstance(password, unicode):
             password = password.encode()
-        self.sambaNTPassword = smbpasswd.nthash(password)
-        self.sambaLMPassword = smbpasswd.lmhash(password)
+        self.sambaNTPassword = nthash.encrypt(password)
+        self.sambaLMPassword = lmhash.encrypt(password)
         self.sambaPwdMustChange = None
         self.sambaPwdLastSet = datetime.datetime.now()
 
