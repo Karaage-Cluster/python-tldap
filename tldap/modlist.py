@@ -4,7 +4,6 @@ This module contains a ``modifyModlist`` function adopted from
 """
 
 import ldap3
-import ldap3.utils.conv
 import tldap.helpers
 
 
@@ -24,10 +23,23 @@ def list_dict(l, case_insensitive=0):
     return d
 
 
+def escape_bytes(bytes_value):
+    if str != bytes:  # Python 3
+        if isinstance(bytes_value, str):
+            bytes_value = bytearray(bytes_value, encoding='utf-8')
+        escaped = '\\'.join([('%02x' % int(b)) for b in bytes_value])
+    else:  # Python 2
+        if isinstance(bytes_value, unicode):
+            bytes_value = bytes_value.encode('utf-8')
+        escaped = '\\'.join([('%02x' % ord(b)) for b in bytes_value])
+
+    return ('\\' + escaped) if escaped else ''
+
+
 def escape_list(bytes_list):
     assert isinstance(bytes_list, list)
     return [
-        ldap3.utils.conv.escape_bytes(bytes_value)
+        escape_bytes(bytes_value)
         for bytes_value in bytes_list
     ]
 
