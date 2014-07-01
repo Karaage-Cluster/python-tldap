@@ -17,11 +17,12 @@
 
 """ Methods specific for Active Directory. """
 
+import six
 
 class adUserMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"ADU:%s" % (self.displayName or self.cn)
+        return six.u("ADU:%s") % (self.displayName or self.cn)
 
     @classmethod
     def setup_from_master(cls, self, master):
@@ -72,7 +73,7 @@ class adUserMixin(object):
 class adGroupMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"%s" % (self.displayName or self.cn)
+        return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod
     def pre_save(cls, self):

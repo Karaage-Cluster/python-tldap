@@ -19,13 +19,14 @@
 support. """
 
 from passlib.hash import nthash, lmhash
+import six
 import datetime
 
 
 class sambaAccountMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"%s" % (self.displayName or self.cn)
+        return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod
     def setup_from_master(cls, self, master):
@@ -68,7 +69,7 @@ class sambaAccountMixin(object):
 class sambaGroupMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"%s" % (self.displayName or self.cn)
+        return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod
     def setup_from_master(cls, self, master):

@@ -17,6 +17,7 @@
 
 """ Methods for common attributes. """
 
+import six
 import tldap
 import tldap.methods.models
 import tldap.methods.ldap_passwd as ldap_passwd
@@ -26,7 +27,7 @@ import datetime
 class personMixin(object):
     @classmethod
     def __unicode__(cls, self):
-        return u"P:%s" % (self.displayName or self.cn)
+        return six.u("P:%s") % (self.displayName or self.cn)
 
     @classmethod
     def check_password(cls, self, password):
@@ -59,7 +60,7 @@ class accountMixin(object):
 
     @classmethod
     def __unicode__(cls, self):
-        return u"%s" % (self.displayName or self.cn)
+        return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod
     def setup_from_master(cls, self, master):
@@ -122,7 +123,7 @@ class groupMixin(object):
 
     @classmethod
     def __unicode__(cls, self):
-        return u"%s" % self.cn
+        return six.u("%s") % self.cn
 
     @classmethod
     def setup_from_master(cls, self, master):
