@@ -45,6 +45,7 @@ LOCALHOST = '127.0.0.1'
 def is_port_in_use(port, host=LOCALHOST):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     result = sock.connect_ex((host, int(port)))
+    sock.close()
     if result == 0:
         return True
     return False
@@ -195,7 +196,9 @@ class Slapd:
             self._log.debug("deleting existing %s", path)
             os.remove(path)
         self._log.debug("writing config to %s", path)
-        open(path, "w").writelines([line + "\n" for line in self._config])
+        f = open(path, "w")
+        f.writelines([line + "\n" for line in self._config])
+        f.close()
         return path
 
     def start(self):
