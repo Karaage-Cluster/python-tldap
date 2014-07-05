@@ -42,7 +42,8 @@ setup(
         "License :: OSI Approved :: GNU Lesser General Public "
             "License v3 or later (LGPLv3+)",
         "Operating System :: OS Independent",
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     keywords="ldap django",
