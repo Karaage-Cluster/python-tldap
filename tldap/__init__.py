@@ -32,6 +32,9 @@ from tldap.utils import DEFAULT_LDAP_ALIAS
 
 import django.conf
 
+# Avoid PEP8 Q is unused error.
+Q
+
 # For backwards compatibility - Port any old database settings over to
 # the new values.
 if not hasattr(django.conf.settings, 'LDAP'):

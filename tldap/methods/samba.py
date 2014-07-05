@@ -46,7 +46,7 @@ class sambaAccountMixin(object):
             rid_base = settings['SAMBA_ACCOUNT_RID_BASE']
             assert rid_base % 2 == 0
             self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] \
-                + "-" + str(int(self.uidNumber)*2 + rid_base)
+                + "-" + str(int(self.uidNumber) * 2 + rid_base)
         if self.sambaDomainName is None:
             self.sambaDomainName = settings['SAMBA_DOMAIN_NAME']
 
@@ -88,7 +88,7 @@ class sambaGroupMixin(object):
             rid_base = settings['SAMBA_GROUP_RID_BASE']
             assert rid_base % 2 == 0
             self.sambaSID = "S-1-5-" + settings['SAMBA_DOMAIN_SID'] \
-                + "-" + str(int(self.gidNumber)*2 + 1 + rid_base)
+                + "-" + str(int(self.gidNumber) * 2 + 1 + rid_base)
 
     @classmethod
     def pre_save(cls, self):

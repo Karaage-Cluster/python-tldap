@@ -189,7 +189,7 @@ def _descr(value, i):
 
 def _UTFMB(value, i):
     if ord(value[i]) >= 0x80:
-        return(value[i], i+1)
+        return(value[i], i + 1)
 
     return (None, i)
 
@@ -262,7 +262,7 @@ def _leadchar(value, i):
         return (None, start)
 
     if _isLUTF1(value[i]):
-        return (value[i], i+1)
+        return (value[i], i + 1)
 
     (utfmb, i) = _UTFMB(value, i)
     if utfmb is not None:
@@ -278,7 +278,7 @@ def _trailchar(value, i):
         return (None, start)
 
     if _isTUTF1(value[i]):
-        return (value[i], i+1)
+        return (value[i], i + 1)
 
     (utfmb, i) = _UTFMB(value, i)
     if utfmb is not None:
@@ -294,7 +294,7 @@ def _stringchar(value, i):
         return (None, start)
 
     if _isSUTF1(value[i]):
-        return (value[i], i+1)
+        return (value[i], i + 1)
 
     (utfmb, i) = _UTFMB(value, i)
     if utfmb is not None:
@@ -464,7 +464,7 @@ def _pair(value, i):
     if i >= len(value):
         return (None, start)
     if _isESC(value[i]) or _isspecial(value[i]):
-        return (value[i], i+1)
+        return (value[i], i + 1)
 
     (hexpair, i) = _hexpair(value, i)
     if hexpair is not None:

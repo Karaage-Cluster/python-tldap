@@ -11,14 +11,13 @@ else
 fi
 
 # NOTE (RS) Disabled because there are far too many errors to fix.
-# echo "FLAKE8"
-# echo "############################"
-# flake8 .
-# if [ ! $? -eq 0 ]
-# then
-#     RETURN=1
-# fi
-
+echo "FLAKE8"
+echo "############################"
+flake8 --ignore=F403 .
+if [ ! $? -eq 0 ]
+then
+    RETURN=1
+fi
 
 echo "TESTS - Python 2"
 echo "############################"

@@ -260,9 +260,9 @@ class Slapd:
                 import posix
                 import signal
                 posix.kill(self._proc.pid, signal.SIGHUP)
-                #time.sleep(1)
-                #posix.kill(self._proc.pid, signal.SIGTERM)
-                #posix.kill(self._proc.pid, signal.SIGKILL)
+                # time.sleep(1)
+                # posix.kill(self._proc.pid, signal.SIGTERM)
+                # posix.kill(self._proc.pid, signal.SIGKILL)
             self.wait()
         if self._tmpdir is not None:
             shutil.rmtree(self._tmpdir)
@@ -299,10 +299,11 @@ class Slapd:
             verboseflag = "-Q"
             if self._log.isEnabledFor(logging.DEBUG):
                 verboseflag = "-v"
-            p = subprocess.Popen([
-                self.PATH_SLAPTEST,
-                verboseflag,
-                "-f", config_path,
+            p = subprocess.Popen(
+                [
+                    self.PATH_SLAPTEST,
+                    verboseflag,
+                    "-f", config_path,
                 ], env=self._env)
             if p.wait() != 0:
                 raise RuntimeError("configuration test failed")

@@ -28,7 +28,7 @@ pwd_context = CryptContext(
         "ldap_md5_crypt",
     ],
     default="ldap_salted_sha1",
-    )
+)
 
 
 def check_password(password, encrypted):
