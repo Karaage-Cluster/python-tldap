@@ -41,9 +41,6 @@ class LDAPbase(object):
         self.settings_dict = settings_dict
         self._obj = None
 
-        self._reconnect()
-        assert self._obj is not None
-
     #########################
     # Connection Management #
     #########################
@@ -119,6 +116,10 @@ class LDAPbase(object):
         assert self._obj is not None
 
     def _do_with_retry(self, fn):
+        if self._obj is None:
+            self._reconnect()
+            assert self._obj is not None
+
         try:
             return fn(self._obj)
         except ldap3.core.exceptions.LDAPSessionTerminatedByServer:
