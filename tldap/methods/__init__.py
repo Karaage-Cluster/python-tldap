@@ -20,8 +20,10 @@ generic way. """
 
 import tldap.base
 import warnings
+from django.utils.encoding import python_2_unicode_compatible
 
 
+@python_2_unicode_compatible
 class baseMixin(tldap.base.LDAPobject):
     """ Base class, all objects should inherit from this instead of
     :py:class:`tldap.base.LDAPobject`. """
@@ -186,7 +188,7 @@ class baseMixin(tldap.base.LDAPobject):
 
         return locked
 
-    def __unicode__(self):
+    def __str__(self):
         for mixin in reversed(self.mixin_list):
-            if hasattr(mixin, '__unicode__'):
-                return mixin.__unicode__(self)
+            if hasattr(mixin, '__str__'):
+                return mixin.__str__(self)

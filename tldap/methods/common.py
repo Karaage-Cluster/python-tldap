@@ -18,15 +18,17 @@
 """ Methods for common attributes. """
 
 import six
+from django.utils.encoding import python_2_unicode_compatible
 import tldap
 import tldap.methods.models
 import tldap.methods.ldap_passwd as ldap_passwd
 import datetime
 
 
+@python_2_unicode_compatible
 class personMixin(object):
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("P:%s") % (self.displayName or self.cn)
 
     @classmethod
@@ -44,6 +46,7 @@ class personMixin(object):
         self.userPassword = ldap_passwd.encode_password(password)
 
 
+@python_2_unicode_compatible
 class accountMixin(object):
     @classmethod
     def set_free_uidNumber(cls, self):
@@ -59,7 +62,7 @@ class accountMixin(object):
                 .filter(uidNumber=n)) == 0)
 
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod
@@ -105,6 +108,7 @@ class shadowMixin(object):
         self.shadowLastChange = datetime.datetime.now().date()
 
 
+@python_2_unicode_compatible
 class groupMixin(object):
     # Note standard posixGroup objectClass has no displayName attribute
 
@@ -122,7 +126,7 @@ class groupMixin(object):
                 .filter(gidNumber=n)) == 0)
 
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("%s") % self.cn
 
     @classmethod

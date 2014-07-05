@@ -18,10 +18,13 @@
 """ Methods specific for Active Directory. """
 
 import six
+from django.utils.encoding import python_2_unicode_compatible
 
+
+@python_2_unicode_compatible
 class adUserMixin(object):
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("ADU:%s") % (self.displayName or self.cn)
 
     @classmethod
@@ -70,9 +73,10 @@ class adUserMixin(object):
         self.force_replace.add('unicodePwd')
 
 
+@python_2_unicode_compatible
 class adGroupMixin(object):
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod

@@ -34,8 +34,10 @@ import tldap.helpers
 import tldap.filter
 
 import django.utils.tree
+from django.utils.encoding import python_2_unicode_compatible
 
 
+@python_2_unicode_compatible
 class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
@@ -62,7 +64,7 @@ class QuerySet(object):
     # PYTHON MAGIC METHODS #
     ########################
 
-    def __unicode__(self):
+    def __str__(self):
         data = list(self[:REPR_OUTPUT_SIZE + 1])
         if len(data) > REPR_OUTPUT_SIZE:
             data[-1] = "...(remaining elements truncated)..."

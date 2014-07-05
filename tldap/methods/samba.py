@@ -19,13 +19,15 @@
 support. """
 
 from passlib.hash import nthash, lmhash
+from django.utils.encoding import python_2_unicode_compatible
 import six
 import datetime
 
 
+@python_2_unicode_compatible
 class sambaAccountMixin(object):
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod
@@ -66,9 +68,10 @@ class sambaAccountMixin(object):
         self.sambaPwdLastSet = datetime.datetime.now()
 
 
+@python_2_unicode_compatible
 class sambaGroupMixin(object):
     @classmethod
-    def __unicode__(cls, self):
+    def __str__(cls, self):
         return six.u("%s") % (self.displayName or self.cn)
 
     @classmethod

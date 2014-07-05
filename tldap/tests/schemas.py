@@ -16,6 +16,7 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import six
+from django.utils.encoding import python_2_unicode_compatible
 
 import tldap
 import tldap.schemas.rfc as rfc
@@ -24,6 +25,7 @@ import tldap.manager
 # standard objects
 
 
+@python_2_unicode_compatible
 class person(tldap.base.LDAPobject):
     schema_list = [rfc.person, rfc.organizationalPerson, rfc.inetOrgPerson]
 
@@ -32,7 +34,7 @@ class person(tldap.base.LDAPobject):
         object_classes = set(['top'])
         pk = 'uid'
 
-    def __unicode__(self):
+    def __str__(self):
         return six.u("P:%s") % self.cn
 
     def save(self, *args, **kwargs):
@@ -48,10 +50,11 @@ class person(tldap.base.LDAPobject):
         linked_cls='tldap.tests.schemas.person', linked_key='manager')
 
 
+@python_2_unicode_compatible
 class account(person):
     schema_list = [rfc.posixAccount, rfc.shadowAccount]
 
-    def __unicode__(self):
+    def __str__(self):
         return six.u("A:%s") % self.cn
 
     def save(self, *args, **kwargs):
@@ -64,6 +67,7 @@ class account(person):
         super(account, self).save(*args, **kwargs)
 
 
+@python_2_unicode_compatible
 class group(tldap.base.LDAPobject):
     schema_list = [rfc.posixGroup]
 
@@ -82,7 +86,7 @@ class group(tldap.base.LDAPobject):
         object_classes = set(['top'])
         pk = 'cn'
 
-    def __unicode__(self):
+    def __str__(self):
         return six.u("%s") % self.cn
 
     def save(self, *args, **kwargs):
