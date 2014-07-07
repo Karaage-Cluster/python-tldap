@@ -19,6 +19,7 @@
 # along with django-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+import warnings
 
 import tldap.methods.ldap_passwd as lp
 
@@ -45,7 +46,11 @@ class PasswordTest(unittest.TestCase):
             "test", "{crypt}PQl1.p7BcJRuM"))
 
     def test_password_depreciated(self):
-        up = lp.UserPassword()
+        with warnings.catch_warnings(record=True) as w:
+            up = lp.UserPassword()
+            warnings.simplefilter("always")
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
         encrypted = up.encodePassword("test", "SSHA")
         self.assertTrue(encrypted.startswith("{SSHA}"))
         self.assertTrue(up._compareSinglePassword("test", encrypted))
