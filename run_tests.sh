@@ -11,6 +11,7 @@ else
 fi
 
 # NOTE (RS) Disabled because there are far too many errors to fix.
+echo ""
 echo "FLAKE8"
 echo "############################"
 flake8 --ignore=F403 .
@@ -19,6 +20,7 @@ then
     RETURN=1
 fi
 
+echo ""
 echo "TESTS - Python 2"
 echo "############################"
 python2 ./manage.py test --settings=tldap.tests.settings -v 2 $TESTS
@@ -27,6 +29,7 @@ then
     RETURN=1
 fi
 
+echo ""
 echo "TESTS - Python 3"
 echo "############################"
 python3 ./manage.py test --settings=tldap.tests.settings -v 2 $TESTS
