@@ -45,7 +45,8 @@ def encode_password(password):
 
 class UserPassword(object):
     def __init__(self):
-        warnings.warn("ldap_passwd class depreciated; do not use")
+        warnings.warn(
+            "ldap_passwd class depreciated; do not use", DeprecationWarning)
 
     @staticmethod
     def _compareSinglePassword(password, encrypted):
