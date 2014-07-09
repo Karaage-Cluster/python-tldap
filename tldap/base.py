@@ -132,8 +132,9 @@ class LDAPmeta(type):
                     # an attribute in this class has replaced the field
                     pass
                 elif field.name in parent_field_names:
-                    if type(field) != \
-                            type(parent_field_names[field.name]):  # NOQA
+                    field_type = type(field)
+                    parent_field_type = type(parent_field_names[field.name])
+                    if field_type != parent_field_type:
                         raise tldap.exceptions.FieldError(
                             'In class %r field %r from parent clashes '
                             'with field of similar name from base class %r '
