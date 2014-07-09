@@ -132,7 +132,8 @@ class LDAPmeta(type):
                     # an attribute in this class has replaced the field
                     pass
                 elif field.name in parent_field_names:
-                    if type(field) != type(parent_field_names[field.name]):
+                    if type(field) != \
+                            type(parent_field_names[field.name]):  # NOQA
                         raise tldap.exceptions.FieldError(
                             'In class %r field %r from parent clashes '
                             'with field of similar name from base class %r '
@@ -335,7 +336,7 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         default_object_class = list(set(default_object_class))
 
         for v in default_object_class:
-            assert isinstance(v, (str, six.text_type))
+            assert isinstance(v, six.string_types)
 
         # start with an empty dictionary
         moddict = {

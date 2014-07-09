@@ -60,7 +60,7 @@ class sambaAccountMixin(object):
 
     @classmethod
     def change_password(cls, self, password):
-        if isinstance(password, unicode):
+        if isinstance(password, six.text_type):
             password = password.encode()
         self.sambaNTPassword = nthash.encrypt(password)
         self.sambaLMPassword = lmhash.encrypt(password)

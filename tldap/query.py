@@ -184,8 +184,8 @@ class QuerySet(object):
         """
         A field could be found for this term, try to get filter string for it.
         """
-        assert isinstance(name, (str, six.text_type))
-        assert isinstance(value, (bytes, str, six.text_type))
+        assert isinstance(name, six.string_types)
+        assert isinstance(value, six.string_types + (bytes,))
         if operation is None:
             return tldap.filter.filter_format(
                 "(%s=%s)", [name, value])

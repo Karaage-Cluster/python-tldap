@@ -192,7 +192,7 @@ class CharField(Field):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        if isinstance(value, (str, six.text_type)):
+        if isinstance(value, six.string_types):
             value = value.encode("utf_8")
         return value
 
@@ -214,7 +214,7 @@ class CharField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if not isinstance(value, (str, six.text_type)):
+        if not isinstance(value, six.string_types):
             raise tldap.exceptions.ValidationError(
                 "%r should be a string" % self.name)
 
@@ -245,7 +245,7 @@ class UnicodeField(Field):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        if not isinstance(value, (str, six.text_type)):
+        if not isinstance(value, six.string_types):
             raise tldap.exceptions.ValidationError(
                 "%r should be a string" % self.name)
 
@@ -273,7 +273,7 @@ class IntegerField(Field):
 
     def value_to_db(self, value):
         "returns field's single value prepared for saving into a database."
-        assert isinstance(value, int) or isinstance(value, long)
+        assert isinstance(value, six.integer_types)
         return str(value).encode("utf_8")
 
     def value_validate(self, value):
@@ -283,7 +283,7 @@ class IntegerField(Field):
         converted.  Returns the converted value. Subclasses should override
         this.
         """
-        if not isinstance(value, int) and not isinstance(value, long):
+        if not isinstance(value, six.integer_types):
             raise tldap.exceptions.ValidationError(
                 "%r should be a integer" % self.name)
 

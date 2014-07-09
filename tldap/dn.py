@@ -19,7 +19,7 @@ def escape_dn_chars(s):
     with a back-slash (see RFC 4514, section 2.4)
     """
     if s:
-        assert isinstance(s, (str, six.text_type))
+        assert isinstance(s, six.string_types)
         s = s.replace('\\', '\\\\')
         s = s.replace(',', '\\,')
         s = s.replace('+', '\\+')
@@ -545,8 +545,8 @@ def dn2str(dn):
     """
     for rdn in dn:
         for atype, avalue, dummy in rdn:
-            assert isinstance(atype, (str, six.text_type))
-            assert isinstance(avalue, (str, six.text_type))
+            assert isinstance(atype, six.string_types)
+            assert isinstance(avalue, six.string_types)
             assert dummy == 1
 
     return ','.join([

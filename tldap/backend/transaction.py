@@ -5,4 +5,4 @@ warnings.warn(
     DeprecationWarning
 )
 
-from tldap.backend.fake_transactions import *
+from tldap.backend.fake_transactions import *  # NOQA

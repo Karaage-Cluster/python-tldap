@@ -14,7 +14,7 @@ fi
 echo ""
 echo "FLAKE8"
 echo "############################"
-flake8 --ignore=F403 .
+flake8 .
 if [ ! $? -eq 0 ]
 then
     RETURN=1
