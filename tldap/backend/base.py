@@ -48,7 +48,7 @@ class LDAPbase(object):
     def check_password(self, dn, password):
         try:
             conn = self._connect(user=dn, password=password)
-            conn.close()
+            conn.unbind()
             return True
         except ldap3.LDAPInvalidCredentialsResult:
             return False
