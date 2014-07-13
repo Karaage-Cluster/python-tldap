@@ -27,8 +27,8 @@ import tldap.transaction
 import tldap.exceptions
 import tldap.modlist
 
-import tldap.test.data
 import tldap.test.slapd
+import tldap.tests.base as base
 import tldap.tests.schemas as test_schemas
 
 import ldap3
@@ -40,19 +40,7 @@ server = None
 NO_SUCH_OBJECT = ldap3.core.exceptions.LDAPNoSuchObjectResult
 
 
-class BackendTest(unittest.TestCase):
-    def setUp(self):
-        server = tldap.test.slapd.Slapd()
-        server.set_port(38911)
-        server.start()
-
-        self.server = server
-        tldap.connection.reset()
-
-    def tearDown(self):
-        self.server.stop()
-        tldap.connection.reset()
-
+class BackendTest(base.LdapTestCase, unittest.TestCase):
     def get(self, c, base):
         """
         returns ldap object for search_string
@@ -553,19 +541,7 @@ class BackendTest(unittest.TestCase):
                           "uid=tux, ou=People, dc=python-ldap,dc=org")
 
 
-class ModelTest(unittest.TestCase):
-    def setUp(self):
-        server = tldap.test.slapd.Slapd()
-        server.set_port(38911)
-        server.start()
-
-        self.server = server
-        tldap.connection.reset()
-
-    def tearDown(self):
-        self.server.stop()
-        tldap.connection.reset()
-
+class ModelTest(base.LdapTestCase, unittest.TestCase):
     def test_transactions(self):
         organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(
@@ -932,7 +908,6 @@ class ModelTest(unittest.TestCase):
             dn="cn=Tux Torvalds, ou=People, dc=python-ldap,dc=org")
         self.assertEqual(get(uid="tux").uid, "tux")
         self.assertEqual(get(uid="tux").cn, ["Tux Torvalds"])
-        return
 
         # unhack for testing
         for i in p._meta.fields:
@@ -1160,23 +1135,57 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(len(list(r)), 1)
 
 
-class UserAPITest(unittest.TestCase):
+class UserAPITest(base.LdapTestCase, unittest.TestCase):
     def setUp(self):
-        server = tldap.test.slapd.Slapd()
-        server.set_port(38911)
-        server.start()
+        super(UserAPITest, self).setUp()
 
-        server.ldapadd("\n".join(tldap.test.data.test_ldif) + "\n")
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
+        organizationalUnit.objects.create(
+            dn="ou=People, dc=python-ldap,dc=org", ou="People")
 
-        self.server = server
-        tldap.connection.reset()
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
+        organizationalUnit.objects.create(
+            dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
-        self.group = test_schemas.group
         self.account = test_schemas.account
+        self.group = test_schemas.group
 
-    def tearDown(self):
-        self.server.stop()
-        tldap.connection.reset()
+        account = self.account
+        group = self.group
+
+        u1 = account.objects.create(
+            uid="testuser1", uidNumber=1000, gidNumber=10001,
+            homeDirectory="/tmp", sn='User',
+            mail="t.user1@example.com",
+            cn="Test User 1")
+
+        u2 = account.objects.create(
+            uid="testuser2", uidNumber=1001, gidNumber=10001,
+            homeDirectory="/tmp", sn='User',
+            mail="t.user2@example.com",
+            cn="Test User 2")
+
+        u3 = account.objects.create(
+            uid="testuser3", uidNumber=1002, gidNumber=10001,
+            homeDirectory="/tmp", sn='User',
+            mail="t.user3@example.com",
+            cn="Test User 3")
+
+        g1 = group.objects.create(
+            cn="systems", gidNumber=10001,
+        )
+        g1.secondary_accounts = [u1]
+
+        g2 = group.objects.create(
+            cn="empty", gidNumber=10002,
+            description="Empty Group",
+        )
+        g2.secondary_accounts = []
+
+        g3 = group.objects.create(
+            cn="full", gidNumber=10003,
+        )
+        g3.secondary_accounts = [u1, u2, u3]
 
     def test_get_users(self):
         self.assertEqual(len(self.account.objects.all()), 3)
@@ -1286,23 +1295,57 @@ class UserAPITest(unittest.TestCase):
         self.assertEqual(len(groups), 2)
 
 
-class GroupAPITest(unittest.TestCase):
+class GroupAPITest(base.LdapTestCase, unittest.TestCase):
     def setUp(self):
-        server = tldap.test.slapd.Slapd()
-        server.set_port(38911)
-        server.start()
+        super(GroupAPITest, self).setUp()
 
-        server.ldapadd("\n".join(tldap.test.data.test_ldif) + "\n")
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
+        organizationalUnit.objects.create(
+            dn="ou=People, dc=python-ldap,dc=org", ou="People")
 
-        self.server = server
-        tldap.connection.reset()
+        organizationalUnit = tldap.schemas.rfc.organizationalUnit
+        organizationalUnit.objects.create(
+            dn="ou=Group, dc=python-ldap,dc=org", ou="Group")
 
-        self.group = test_schemas.group
         self.account = test_schemas.account
+        self.group = test_schemas.group
 
-    def tearDown(self):
-        self.server.stop()
-        tldap.connection.reset()
+        account = self.account
+        group = self.group
+
+        u1 = account.objects.create(
+            uid="testuser1", uidNumber=1000, gidNumber=10001,
+            homeDirectory="/tmp", sn='User',
+            mail="t.user1@example.com",
+            cn="Test User 1")
+
+        u2 = account.objects.create(
+            uid="testuser2", uidNumber=1001, gidNumber=10001,
+            homeDirectory="/tmp", sn='User',
+            mail="t.user2@example.com",
+            cn="Test User 2")
+
+        u3 = account.objects.create(
+            uid="testuser3", uidNumber=1002, gidNumber=10001,
+            homeDirectory="/tmp", sn='User',
+            mail="t.user3@example.com",
+            cn="Test User 3")
+
+        g1 = group.objects.create(
+            cn="systems", gidNumber=10001,
+        )
+        g1.secondary_accounts = [u1]
+
+        g2 = group.objects.create(
+            cn="empty", gidNumber=10002,
+            description="Empty Group",
+        )
+        g2.secondary_accounts = []
+
+        g3 = group.objects.create(
+            cn="full", gidNumber=10003,
+        )
+        g3.secondary_accounts = [u1, u2, u3]
 
     def test_get_groups(self):
         self.assertEqual(len(self.group.objects.all()), 3)

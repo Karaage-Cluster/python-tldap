@@ -64,6 +64,7 @@ class LDAPwrapper(LDAPbase):
         Reset transaction back to original state, discarding all
         uncompleted transactions.
         """
+        super(LDAPwrapper, self).reset()
         self._onrollback = []
 
     def _cache_get_for_dn(self, dn):

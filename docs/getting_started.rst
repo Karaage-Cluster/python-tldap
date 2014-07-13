@@ -8,7 +8,7 @@ Basic Usage
 -----------
 For basic usage, mysql server is not required.
 
-#.  Add the following to the django settings file:
+#.  (Django only) Add the following to the django settings file:
 
     ..  code-block:: python
 
@@ -23,6 +23,30 @@ For basic usage, mysql server is not required.
                   'TLS_CA' : None,
              }
         }
+
+        INSTALLED_APPS += (
+            'tldap.django'
+        )
+
+#.  (No Django) Initialize tldap with:
+
+    ..  code-block:: python
+
+        import tldap
+
+        settings = {
+             'default': {
+                  'ENGINE': 'tldap.backend.fake_transactions',
+                  'URI': 'ldap://localhost',
+                  'USER': 'cn=admin,dc=example,dc=org',
+                  'PASSWORD': 'XXXXXXXX',
+                  'REQUIRE_TLS': False,
+                  'START_TLS': False,
+                  'TLS_CA' : None,
+             }
+        }
+
+        tldap.setup(settings)
 
 #.  Methods a similar to Django methods. First some imports:
 

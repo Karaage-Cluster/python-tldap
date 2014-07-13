@@ -43,6 +43,7 @@ linked
 if p_value_is_list is true then p_value must be a list.
 if p_value_is_list is false then p_value must be a single value.
 """
+from __future__ import absolute_import
 
 import tldap
 import tldap.query

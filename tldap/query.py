@@ -17,6 +17,8 @@
 
 """ Used to perform LDAP queries. """
 
+from __future__ import absolute_import
+
 # Used to control how many objects are worked with at once in some cases (e.g.
 # when deleting objects).
 ITER_CHUNK_SIZE = 100

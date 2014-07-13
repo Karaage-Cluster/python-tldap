@@ -30,50 +30,20 @@ from tldap.query_utils import Q
 import tldap.utils
 from tldap.utils import DEFAULT_LDAP_ALIAS
 
-import django.conf
-
 # Avoid PEP8 Q is unused error.
 Q
 
-# For backwards compatibility - Port any old database settings over to
-# the new values.
-if not hasattr(django.conf.settings, 'LDAP'):
-    django.conf.settings.LDAP = {}
-
-# ok to use django settings
-if not django.conf.settings.LDAP and hasattr(django.conf.settings, 'LDAP_URL'):
-    django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS] = {
-        'ENGINE': 'tldap.backend.fake_transactions',
-        'URI': django.conf.settings.LDAP_URL,
-        'USER': django.conf.settings.LDAP_ADMIN_USER,
-        'PASSWORD': django.conf.settings.LDAP_ADMIN_PASSWORD,
-        'START_TLS': False,
-        'TLS_CA': None,
-        'LDAP_ACCOUNT_BASE': django.conf.settings.LDAP_USER_BASE,
-        'LDAP_GROUP_BASE': django.conf.settings.LDAP_GROUP_BASE,
-    }
-    if hasattr(django.conf.settings, 'LDAP_USE_TLS'):
-        django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["START_TLS"] = (
-            django.conf.settings.LDAP_USE_TLS)
-    django.conf.settings.LDAP[DEFAULT_LDAP_ALIAS]["TLS_CA"] = (
-        django.conf.settings.LDAP_TLS_CA)
-
-connections = tldap.utils.ConnectionHandler(django.conf.settings.LDAP)
+connections = None
 """An object containing a list of all LDAP connections."""
 
-
-class DefaultConnectionProxy(object):
-    """
-    Proxy for accessing the default DatabaseWrapper object's attributes. If you
-    need to access the DatabaseWrapper object itself, use
-    :py:data:`tldap.connections[DEFAULT_LDAP_ALIAS] <tldap.connections>`
-    instead.
-    """
-    def __getattr__(self, item):
-        return getattr(connections[DEFAULT_LDAP_ALIAS], item)
-
-    def __setattr__(self, name, value):
-        return setattr(connections[DEFAULT_LDAP_ALIAS], name, value)
-
-connection = DefaultConnectionProxy()
+connection = None
 """ The default LDAP connection. """
+
+
+def setup(settings):
+    """ Function used to initialize LDAP settings. """
+    global connections, connection
+    assert connections is None
+    assert connection is None
+    connections = tldap.utils.ConnectionHandler(settings)
+    connection = connections[DEFAULT_LDAP_ALIAS]

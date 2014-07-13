@@ -10,7 +10,6 @@ import time
 import subprocess
 import logging
 import tempfile
-import shutil
 import base64
 
 _log = logging.getLogger("slapd")
@@ -265,6 +264,7 @@ class Slapd:
                 # posix.kill(self._proc.pid, signal.SIGKILL)
             self.wait()
         if self._tmpdir is not None:
+            import shutil
             shutil.rmtree(self._tmpdir)
             self._tmpdir = None
 

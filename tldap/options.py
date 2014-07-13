@@ -17,6 +17,7 @@
 
 """ Contains the options class, which represents a list of options associated
 with a tldap object. """
+from __future__ import absolute_import
 
 import re
 import warnings

@@ -41,6 +41,14 @@ class LDAPbase(object):
         self.settings_dict = settings_dict
         self._obj = None
 
+    def reset(self):
+        pass
+
+    def close(self):
+        if self._obj is not None:
+            self._obj.unbind()
+            self._obj = None
+
     #########################
     # Connection Management #
     #########################

@@ -22,6 +22,9 @@ import tldap.base
 import warnings
 from django.utils.encoding import python_2_unicode_compatible
 
+# This code requires django, so initialize Django
+import tldap.django
+
 
 @python_2_unicode_compatible
 class baseMixin(tldap.base.LDAPobject):
