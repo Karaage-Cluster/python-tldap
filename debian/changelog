@@ -1,3 +1,13 @@
+python-tldap (0.3.3-1) unstable; urgency=low
+
+  * Fix typo.
+  * Remove hard dependancy on Django.
+  * Rename source project.
+  * Fix Debian copyright.
+  * Retry upload to Debian. Closes: #753482.
+
+ -- Brian May <bam@debian.org>  Mon, 14 Jul 2014 12:29:10 +1000
+
 django-tldap (0.3.2-1) unstable; urgency=low
 
   * Fix PEP8 issues.
@@ -25,7 +35,6 @@ django-tldap (0.3.1-1) unstable; urgency=low
 django-tldap (0.3.0-2) unstable; urgency=low
 
   * Minor changes to Debian packaging.
-  * First upload to Debian. Closes: #753482.
 
  -- Brian May <bam@debian.org>  Thu, 03 Jul 2014 10:44:33 +1000
 
