@@ -21,7 +21,7 @@
 import unittest
 import warnings
 
-import tldap.methods.ldap_passwd as lp
+import tldap.ldap_passwd as lp
 
 server = None
 

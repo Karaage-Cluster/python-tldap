@@ -21,7 +21,7 @@ import six
 from django.utils.encoding import python_2_unicode_compatible
 import tldap
 import tldap.methods.models
-import tldap.methods.ldap_passwd as ldap_passwd
+import tldap.ldap_passwd as ldap_passwd
 import datetime
 
 

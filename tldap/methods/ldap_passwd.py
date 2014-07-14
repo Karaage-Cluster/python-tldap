@@ -15,43 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-from passlib.context import CryptContext
+from tldap.ldap_passwd import check_password
+from tldap.ldap_passwd import encode_password
+from tldap.ldap_passwd import UserPassword
+
 import warnings
+warnings.warn(
+    "tldap.methods.ldap_passwd class depreciated; do not use",
+    DeprecationWarning)
 
-pwd_context = CryptContext(
-    schemes=[
-        "ldap_salted_sha1",
-        "ldap_md5",
-        "ldap_sha1",
-        "ldap_salted_md5",
-        "ldap_des_crypt",
-        "ldap_md5_crypt",
-    ],
-    default="ldap_salted_sha1",
-)
-
-
-def check_password(password, encrypted):
-    # some old passwords have {crypt} in lower case, and passlib wants it to be
-    # in upper case.
-    if encrypted.startswith("{crypt}"):
-        encrypted = "{CRYPT}" + encrypted[7:]
-    return pwd_context.verify(password, encrypted)
-
-
-def encode_password(password):
-    return pwd_context.encrypt(password)
-
-
-class UserPassword(object):
-    def __init__(self):
-        warnings.warn(
-            "ldap_passwd class depreciated; do not use", DeprecationWarning)
-
-    @staticmethod
-    def _compareSinglePassword(password, encrypted):
-        return check_password(password, encrypted)
-
-    @staticmethod
-    def encodePassword(password, algorithm):
-        return encode_password(password)
+check_password
+encode_password
+UserPassword
