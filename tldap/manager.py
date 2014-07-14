@@ -485,11 +485,11 @@ class ManyToManyDescriptor(LinkDescriptor):
         if self._linked_key:
             lm.clear()
             for v in value:
-                lm.add(value)
+                lm.add(v)
         else:
             lm.clear(commit=False)
             for v in value:
-                lm.add(value, commit=False)
+                lm.add(v, commit=False)
 
 
 class ManyToOneDescriptor(LinkDescriptor):
