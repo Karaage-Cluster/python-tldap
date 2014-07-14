@@ -46,4 +46,7 @@ def setup(settings):
     assert connections is None
     assert connection is None
     connections = tldap.utils.ConnectionHandler(settings)
-    connection = connections[DEFAULT_LDAP_ALIAS]
+    try:
+        connection = connections[DEFAULT_LDAP_ALIAS]
+    except KeyError:
+        connection = None
