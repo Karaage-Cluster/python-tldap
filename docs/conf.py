@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# django-tldap documentation build configuration file, created by
+# python-tldap documentation build configuration file, created by
 # sphinx-quickstart on Mon Feb  3 09:23:20 2014.
 #
 # This file is execfile()d with the current directory set to its containing
@@ -49,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = six.u('django-tldap')
+project = six.u('python-tldap')
 copyright = six.u('2014, Brian May')
 
 # The version info for the project you're documenting, acts as replacement for
@@ -175,7 +175,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'django-tldapdoc'
+htmlhelp_basename = 'python-tldapdoc'
 
 
 # -- Options for LaTeX output -------------------------------------------------
@@ -195,7 +195,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ('index', 'django-tldap.tex', six.u('django-tldap Documentation'),
+    ('index', 'python-tldap.tex', six.u('django-tldap Documentation'),
         six.u('Brian May'), 'manual'),
 ]
 
@@ -225,7 +225,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-tldap', six.u('django-tldap Documentation'),
+    ('index', 'python-tldap', six.u('django-tldap Documentation'),
         [six.u('Brian May')], 1)
 ]
 
@@ -239,8 +239,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'django-tldap', six.u('django-tldap Documentation'),
-        six.u('Brian May'), 'django-tldap', 'One line description of project.',
+    ('index', 'python-tldap', six.u('django-tldap Documentation'),
+        six.u('Brian May'), 'python-tldap', 'One line description of project.',
         'Miscellaneous'),
 ]
 
@@ -257,7 +257,7 @@ texinfo_documents = [
 # -- Options for Epub output --------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = six.u('django-tldap')
+epub_title = six.u('python-tldap')
 epub_author = six.u('Brian May')
 epub_publisher = six.u('Brian May')
 epub_copyright = six.u('2014, Brian May')

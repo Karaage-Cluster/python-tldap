@@ -1,5 +1,5 @@
 [gerrit]
 host=code.vpac.org
 port=29418
-project=django-tldap
+project=python-tldap
 defaultbranch=master
