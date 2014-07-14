@@ -1,27 +1,87 @@
-This package was debianized by Brian May.
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: python-tldap
+Upstream-Contact: Brian May <bam@debian.org>
+Source: https://github.com/Karaage-Cluster/python-tldap
 
-Upstream Author:
+Files: *
+Copyright: 2010-2014, Brian May <bam@debian.org>
+License: LGPL-3+
 
-    Brian May <brian@microcomaustralia.com.au>
+Files: debian/*
+Copyright: 2010-2014, Brian May <bam@debian.org>
+License: LGPL-3+
 
-Copyright:
+Files: tldap/test/ldap_schemas/*
+Copyright: 1998-2007 The OpenLDAP Foundation
+License: Schema
 
-    Copyright (C) 2010-2014 Brian May
+License: LGPL-3+
+ python-tldap is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published
+ by the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ python-tldap is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public License
+ along with python-tldap in the COPYING and COPYING.LESSER files.
+ If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 3 can be found in the file
+ `/usr/share/common-licenses/LGPL-3'.
 
-License:
-
-   This package is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
-
-   This package is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this package; if not, see .
-
-On Debian systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL-3'.
+License: Schema
+ This work is part of OpenLDAP Software <http://www.openldap.org/>.
+ .
+ Copyright 1998-2007 The OpenLDAP Foundation.
+ All rights reserved.
+ .
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted only as authorized by the OpenLDAP
+ Public License.
+ .
+ A copy of this license is available in the file LICENSE in the
+ top-level directory of the distribution or, alternatively, at
+ <http://www.OpenLDAP.org/license.html>.
+ .
+ The version of this file as distributed by the OpenLDAP Foundation
+ contains text claiming copyright by the Internet Society and including
+ the IETF RFC license, which does not meet Debian's Free Software
+ Guidelines.  However, apart from short and obvious comments, the text of
+ this file is purely a functional interface specification, which is not
+ subject to that license and is not copyrightable under US law.
+ .
+ The license statement is retained below so as not to remove credit, but
+ as best as we can determine, it is not applicable to the contents of
+ this file.
+ .
+ Portions Copyright (C) The Internet Society (1997-2003).
+ All Rights Reserved.
+ .
+ This document and translations of it may be copied and furnished to
+ others, and derivative works that comment on or otherwise explain it
+ or assist in its implementation may be prepared, copied, published
+ and distributed, in whole or in part, without restriction of any
+ kind, provided that the above copyright notice and this paragraph are
+ included on all such copies and derivative works.  However, this
+ document itself may not be modified in any way, such as by removing
+ the copyright notice or references to the Internet Society or other
+ Internet organizations, except as needed for the purpose of
+ developing Internet standards in which case the procedures for
+ copyrights defined in the Internet Standards process must be
+ followed, or as required to translate it into languages other than
+ English.
+ .
+ The limited permissions granted above are perpetual and will not be
+ revoked by the Internet Society or its successors or assigns.
+ .
+ This document and the information contained herein is provided on an 
+ "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+ TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+ BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+ HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+ MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
