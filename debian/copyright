@@ -35,53 +35,9 @@ License: LGPL-3+
  `/usr/share/common-licenses/LGPL-3'.
 
 License: Schema
- This work is part of OpenLDAP Software <http://www.openldap.org/>.
- .
- Copyright 1998-2007 The OpenLDAP Foundation.
- All rights reserved.
- .
- Redistribution and use in source and binary forms, with or without
- modification, are permitted only as authorized by the OpenLDAP
- Public License.
- .
- A copy of this license is available in the file LICENSE in the
- top-level directory of the distribution or, alternatively, at
- <http://www.OpenLDAP.org/license.html>.
- .
  The version of this file as distributed by the OpenLDAP Foundation
  contains text claiming copyright by the Internet Society and including
  the IETF RFC license, which does not meet Debian's Free Software
  Guidelines.  However, apart from short and obvious comments, the text of
  this file is purely a functional interface specification, which is not
  subject to that license and is not copyrightable under US law.
- .
- The license statement is retained below so as not to remove credit, but
- as best as we can determine, it is not applicable to the contents of
- this file.
- .
- Portions Copyright (C) The Internet Society (1997-2003).
- All Rights Reserved.
- .
- This document and translations of it may be copied and furnished to
- others, and derivative works that comment on or otherwise explain it
- or assist in its implementation may be prepared, copied, published
- and distributed, in whole or in part, without restriction of any
- kind, provided that the above copyright notice and this paragraph are
- included on all such copies and derivative works.  However, this
- document itself may not be modified in any way, such as by removing
- the copyright notice or references to the Internet Society or other
- Internet organizations, except as needed for the purpose of
- developing Internet standards in which case the procedures for
- copyrights defined in the Internet Standards process must be
- followed, or as required to translate it into languages other than
- English.
- .
- The limited permissions granted above are perpetual and will not be
- revoked by the Internet Society or its successors or assigns.
- .
- This document and the information contained herein is provided on an 
- "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
- TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
- BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
- HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
- MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
