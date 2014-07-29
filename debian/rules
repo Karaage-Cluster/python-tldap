@@ -16,8 +16,8 @@ override_dh_clean:
 	dh_clean
 	rm -rf docs/.build docs/_build
 
-# Required for squeeze/python3.2 compatability.
-# "python3 setup.py test" doesn't work with python3.2
 .PHONY: override_dh_auto_test
 override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	./run_tests.sh
+endif
