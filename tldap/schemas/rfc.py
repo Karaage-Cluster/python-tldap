@@ -180,3 +180,17 @@ class posixGroup(tldap.base.LDAPobject):
 
     class Meta:
         object_classes = set(['posixGroup'])
+
+
+class groupOfNames(tldap.base.LDAPobject):
+    member = tldap.fields.CharField(max_instances=None, required=True)
+    cn = tldap.fields.CharField(required=True)
+    businessCategory = tldap.fields.CharField()
+    seeAlso = tldap.fields.CharField()
+    owner = tldap.fields.CharField()
+    ou = tldap.fields.CharField()
+    o = tldap.fields.CharField()
+    description = tldap.fields.CharField()
+
+    class Meta:
+        object_classes = set(['groupOfNames'])
