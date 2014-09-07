@@ -323,6 +323,7 @@ class LDAPwrapper(LDAPbase):
         delete_attribute('entryCSN')
         delete_attribute('createTimestamp')
         delete_attribute('creatorsName')
+        delete_attribute('hasSubordinates')
         # turn into modlist list.
         modlist = tldap.modlist.addModlist(result)
 
