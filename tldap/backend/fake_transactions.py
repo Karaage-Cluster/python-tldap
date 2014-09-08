@@ -324,6 +324,8 @@ class LDAPwrapper(LDAPbase):
         delete_attribute('createTimestamp')
         delete_attribute('creatorsName')
         delete_attribute('hasSubordinates')
+        delete_attribute('pwdFailureTime')
+        delete_attribute('pwdChangedTime')
         # turn into modlist list.
         modlist = tldap.modlist.addModlist(result)
 
