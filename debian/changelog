@@ -1,3 +1,10 @@
+python-tldap (0.3.7-1) unstable; urgency=low
+
+  * Add more read only attributes.
+  * Add Django 1.7 migration.
+
+ -- Brian May <bam@debian.org>  Tue, 09 Sep 2014 10:55:51 +1000
+
 python-tldap (0.3.6-1) unstable; urgency=low
 
   * Rename migrations to south_migrations.
