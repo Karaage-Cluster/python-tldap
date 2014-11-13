@@ -20,6 +20,7 @@
 
 import unittest
 import ldap3
+from distutils.version import LooseVersion
 
 import tldap.modlist
 
@@ -31,10 +32,17 @@ class DNTest(unittest.TestCase):
             'A': ['ABC'],
             'B': ['DEF'],
         }
-        EXPECTED = {
-            'A': ['\\41\\42\\43'],
-            'B': ['\\44\\45\\46'],
-        }
+        if LooseVersion(getattr(ldap3, '__version__', "0")) \
+                < LooseVersion("0.9.6"):
+            EXPECTED = {
+                'A': ['\\41\\42\\43'],
+                'B': ['\\44\\45\\46'],
+            }
+        else:
+            EXPECTED = {
+                'A': ['ABC'],
+                'B': ['DEF'],
+            }
         modlist = tldap.modlist.addModlist(A)
         self.assertEqual(modlist, EXPECTED)
 
@@ -53,10 +61,19 @@ class DNTest(unittest.TestCase):
             'X': ['CC', 'BB', 'AA'],
             'Y': ['CC', 'BB', 'AA'],
         }
-        EXPECTED = {
-            'B': (ldap3.MODIFY_DELETE, []),
-            'C': (ldap3.MODIFY_ADD, ['\\48\\49\\4a']),
-            'Y': (ldap3.MODIFY_REPLACE, ['\\43\\43', '\\42\\42', '\\41\\41']),
-        }
+        if LooseVersion(getattr(ldap3, '__version__', "0")) \
+                < LooseVersion("0.9.6"):
+            EXPECTED = {
+                'B': (ldap3.MODIFY_DELETE, []),
+                'C': (ldap3.MODIFY_ADD, ['\\48\\49\\4a']),
+                'Y': (ldap3.MODIFY_REPLACE, [
+                    '\\43\\43', '\\42\\42', '\\41\\41']),
+            }
+        else:
+            EXPECTED = {
+                'B': (ldap3.MODIFY_DELETE, []),
+                'C': (ldap3.MODIFY_ADD, ['HIJ']),
+                'Y': (ldap3.MODIFY_REPLACE, ['CC', 'BB', 'AA']),
+            }
         modlist = tldap.modlist.modifyModlist(A, B)
         self.assertEqual(modlist, EXPECTED)
