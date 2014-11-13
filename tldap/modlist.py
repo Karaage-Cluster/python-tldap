@@ -41,12 +41,18 @@ def list_dict(l, case_insensitive=0):
     return d
 
 
-def escape_list(bytes_list):
-    assert isinstance(bytes_list, list)
-    return [
-        ldap3.utils.conv.escape_bytes(bytes_value)
-        for bytes_value in bytes_list
-    ]
+from distutils.version import LooseVersion
+if LooseVersion(getattr(ldap3, '__version__', "0")) < LooseVersion("0.9.6"):
+    def escape_list(bytes_list):
+        assert isinstance(bytes_list, list)
+        return [
+            ldap3.utils.conv.escape_bytes(bytes_value)
+            for bytes_value in bytes_list
+        ]
+else:
+    def escape_list(bytes_list):
+        assert isinstance(bytes_list, list)
+        return bytes_list
 
 
 def addModlist(entry, ignore_attr_types=None):
