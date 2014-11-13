@@ -47,7 +47,7 @@ from __future__ import absolute_import
 
 import tldap
 import tldap.query
-import django.utils.importlib
+import importlib
 import copy
 
 
@@ -137,7 +137,7 @@ class ManagerDescriptor(object):
 def _lookup(cls):
     if isinstance(cls, str):
         module_name, _, name = cls.rpartition(".")
-        module = django.utils.importlib.import_module(module_name)
+        module = importlib.import_module(module_name)
         try:
             cls = getattr(module, name)
         except AttributeError:
