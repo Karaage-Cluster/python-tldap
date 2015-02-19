@@ -1,6 +1,7 @@
 python-tldap (0.3.9-1) unstable; urgency=medium
 
   * Various bug fixes.
+  * python3-ldap renamed to ldap3 in pypi.
 
  -- Brian May <bam@debian.org>  Thu, 19 Feb 2015 11:40:53 +1100
 
