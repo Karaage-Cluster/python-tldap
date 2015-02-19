@@ -141,7 +141,7 @@ class QuerySet(object):
             if k.start is not None:
                 start = int(k.start)
             else:
-                start = None
+                start = 0
             if k.stop is not None:
                 stop = int(k.stop)
             else:
