@@ -424,7 +424,7 @@ class SidField(Field):
         if l % 4 != 0:
             raise tldap.exceptions.ValidationError("Invalid sid")
 
-        l = l / 4
+        l = l // 4
 
         array = struct.unpack('<bbbbbbbb' + 'I' * l, value)
 
