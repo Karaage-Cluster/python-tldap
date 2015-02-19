@@ -109,11 +109,11 @@ class inetOrgPerson(tldap.base.LDAPobject):
     roomNumber = tldap.fields.CharField()
     secretary = tldap.fields.CharField()
     uid = tldap.fields.CharField()
-    userCertificate = tldap.fields.CharField()
+    userCertificate = tldap.fields.BinaryField()
     x500uniqueIdentifier = tldap.fields.CharField()
     preferredLanguage = tldap.fields.CharField()
-    userSMIMECertificate = tldap.fields.CharField()
-    userPKCS12 = tldap.fields.CharField()
+    userSMIMECertificate = tldap.fields.BinaryField()
+    userPKCS12 = tldap.fields.BinaryField()
 
     class Meta:
         object_classes = set(['inetOrgPerson'])
