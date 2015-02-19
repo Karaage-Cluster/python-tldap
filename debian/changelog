@@ -1,3 +1,9 @@
+python-tldap (0.3.9-1) unstable; urgency=medium
+
+  * Various bug fixes.
+
+ -- Brian May <bam@debian.org>  Thu, 19 Feb 2015 11:40:53 +1100
+
 python-tldap (0.3.8-1) unstable; urgency=low
 
   * Works with python3-ldap 0.9.6.2.
