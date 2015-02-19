@@ -165,6 +165,9 @@ class LDAPbase(object):
 
         # Loop over list of search results
         for result_item in result_list:
+            # skip searchResRef for now
+            if result_item['type'] != "searchResEntry":
+                continue
             dn = result_item['dn']
             attributes = result_item['raw_attributes']
             # did we already retrieve this from cache?
