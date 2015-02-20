@@ -88,21 +88,22 @@ class LDAPbase(object):
         if 'START_TLS' in settings and settings['START_TLS']:
             start_tls = True
 
-        s = ldap3.Server(host, port=port, use_ssl=use_ssl)
+        tls = None
+        if use_ssl or start_tls:
+            tls = ldap3.Tls()
+            if 'TLS_CA' in settings and settings['TLS_CA']:
+                tls.ca_certs_file = settings['TLS_CA']
+
+            if 'REQUIRE_TLS' in settings and settings['REQUIRE_TLS']:
+                tls.validate = ssl.CERT_REQUIRED
+
+        s = ldap3.Server(host, port=port, use_ssl=use_ssl, tls=tls)
         c = ldap3.Connection(
             s,  # client_strategy=ldap3.STRATEGY_SYNC_RESTARTABLE,
             user=user, password=password, authentication=ldap3.AUTH_SIMPLE)
         c.strategy.restartable_sleep_time = 0
         c.strategy.restartable_tries = 1
         c.raise_exceptions = True
-
-        if use_ssl or start_tls:
-            c.tls = ldap3.Tls()
-            if 'TLS_CA' in settings and settings['TLS_CA']:
-                c.tls.ca_certs_file = settings['TLS_CA']
-
-            if 'REQUIRE_TLS' in settings and settings['REQUIRE_TLS']:
-                c.tls.validate = ssl.CERT_REQUIRED
 
         c.open()
 
