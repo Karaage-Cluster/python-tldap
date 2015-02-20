@@ -1,3 +1,10 @@
+python-tldap (0.3.10-1) unstable; urgency=medium
+
+  * Fix TLS configuration. Will break existing setups if validation fails.
+  * python3-ldap renamed to ldap3 upstream.
+
+ -- Brian May <bam@debian.org>  Fri, 20 Feb 2015 11:06:51 +1100
+
 python-tldap (0.3.9-1) unstable; urgency=medium
 
   * Various bug fixes.
