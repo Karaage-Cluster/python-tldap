@@ -5,9 +5,9 @@ Maintainer: Brian May <bam@debian.org>
 Build-Depends: debhelper (>= 8.1.0), dh-python, slapd, ldap-utils,
  python-flake8,
  python-all (>= 2.6.6-3~), python-setuptools, python-six,
- python-passlib, python-ldap3, python-django (>= 1.2.1),
+ python-passlib, python-ldap3 (>= 0.9.7.1), python-django (>= 1.2.1),
  python3-all, python3-setuptools, python3-six,
- python3-passlib, python3-ldap3, python3-django
+ python3-passlib, python3-ldap3 (>= 0.9.7.1), python3-django
 Build-Depends-Indep: python3-sphinx (>= 1.0.7+dfsg-1~)
 Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
