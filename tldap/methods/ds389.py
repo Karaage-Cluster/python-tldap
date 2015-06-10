@@ -30,7 +30,9 @@ class passwordObjectMixin(object):
 
     @classmethod
     def lock(cls, self):
-        self.nsRoleDN = self._settings.get("LOCKED_ROLE", None)
+        role = self._settings.get("LOCKED_ROLE", None)
+        if role is not None:
+            self.nsRoleDN = role
         self.accountUnlockTime = '19700101000000Z'
 
     @classmethod
