@@ -32,3 +32,4 @@ class passwordObject(tldap.base.LDAPobject):
     passwordHistory = tldap.fields.CharField()
     passwordAllowChangeTime = tldap.fields.CharField()
     passwordGraceUserTime = tldap.fields.CharField()
+    nsRoleDN = tldap.fields.CharField()
