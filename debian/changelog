@@ -1,3 +1,10 @@
+python-tldap (0.3.11-1) unstable; urgency=medium
+
+  * Fix ds389 account locking/unlocking.
+  * Define new LOCKED_ROLE setting for ds389.
+
+ -- Brian May <bam@debian.org>  Thu, 11 Jun 2015 11:05:00 +1000
+
 python-tldap (0.3.10-1) unstable; urgency=medium
 
   * Fix TLS configuration. Will break existing setups if validation fails.
