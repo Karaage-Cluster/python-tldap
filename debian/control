@@ -11,9 +11,9 @@ Build-Depends: debhelper (>= 8.1.0), dh-python, slapd, ldap-utils,
 Build-Depends-Indep: python3-sphinx (>= 1.0.7+dfsg-1~)
 Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
-Homepage: https://github.com/Karaage-Cluster/python-tldap
-Vcs-Git: git://github.com/Karaage-Cluster/python-tldap
-Vcs-Browser: https://github.com/Karaage-Cluster/python-tldap
+Homepage: https://github.com/brianmay/python-tldap
+Vcs-Git: git://github.com/brianmay/python-tldap
+Vcs-Browser: https://github.com/brianmay/python-tldap
 
 Package: python-tldap
 Architecture: all
