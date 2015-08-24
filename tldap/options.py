@@ -24,9 +24,11 @@ import warnings
 import django.utils.translation
 import tldap.helpers
 
-get_verbose_name = lambda class_name: re.sub(
-    '(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1',
-    class_name).lower().strip()
+
+def get_verbose_name(class_name):
+    re.sub(
+        '(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1',
+        class_name).lower().strip()
 
 DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
                  'object_classes', 'search_classes', 'base_dn',

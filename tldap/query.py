@@ -19,13 +19,6 @@
 
 from __future__ import absolute_import
 
-# Used to control how many objects are worked with at once in some cases (e.g.
-# when deleting objects).
-ITER_CHUNK_SIZE = 100
-
-# The maximum number of items to display in a QuerySet.__repr__
-REPR_OUTPUT_SIZE = 20
-
 import six
 
 import ldap3
@@ -37,6 +30,13 @@ import tldap.filter
 
 import django.utils.tree
 from django.utils.encoding import python_2_unicode_compatible
+
+# Used to control how many objects are worked with at once in some cases (e.g.
+# when deleting objects).
+ITER_CHUNK_SIZE = 100
+
+# The maximum number of items to display in a QuerySet.__repr__
+REPR_OUTPUT_SIZE = 20
 
 
 @python_2_unicode_compatible

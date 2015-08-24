@@ -22,8 +22,7 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'docs.settings'
 sys.path.insert(0, os.path.abspath('..'))
 
-import tldap
-tldap
+import tldap  # NOQA
 
 # -- General configuration ----------------------------------------------------
 
