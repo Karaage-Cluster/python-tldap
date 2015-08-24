@@ -1,3 +1,10 @@
+python-tldap (0.3.12-1) unstable; urgency=medium
+
+  * Fix FTBFS issues. #796756.
+  * Update git repository location.
+
+ -- Brian May <bam@debian.org>  Mon, 24 Aug 2015 20:38:56 +1000
+
 python-tldap (0.3.11-1) unstable; urgency=medium
 
   * Fix ds389 account locking/unlocking.
