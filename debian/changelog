@@ -1,3 +1,9 @@
+python-tldap (0.3.13-1) unstable; urgency=medium
+
+  * Fix FTBFS issues. Closes: #801943
+
+ -- Brian May <bam@debian.org>  Sun, 18 Oct 2015 13:50:59 +1100
+
 python-tldap (0.3.12-1) unstable; urgency=medium
 
   * Fix FTBFS issues. #796756.
