@@ -60,7 +60,7 @@ def addModlist(entry, ignore_attr_types=None):
     ignore_attr_types = list_dict(map(str.lower, (ignore_attr_types or [])))
     modlist = {}
     for attrtype in entry.keys():
-        if str.lower(attrtype) in ignore_attr_types:
+        if attrtype.lower() in ignore_attr_types:
             # This attribute type is ignored
             continue
         for value in entry[attrtype]:
@@ -101,9 +101,9 @@ def modifyModlist(
     modlist = {}
     attrtype_lower_map = {}
     for a in old_entry.keys():
-        attrtype_lower_map[str.lower(a)] = a
+        attrtype_lower_map[a.lower()] = a
     for attrtype in new_entry.keys():
-        attrtype_lower = str.lower(attrtype)
+        attrtype_lower = attrtype.lower()
         if attrtype_lower in ignore_attr_types:
             # This attribute type is ignored
             continue
