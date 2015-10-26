@@ -1,3 +1,9 @@
+python-tldap (0.3.13-2) unstable; urgency=medium
+
+  * Ensure tests run for Python3.4 and Python3.5.
+
+ -- Brian May <bam@debian.org>  Mon, 26 Oct 2015 13:13:29 +1100
+
 python-tldap (0.3.13-1) unstable; urgency=medium
 
   * Fix FTBFS issues. Closes: #801943
