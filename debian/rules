@@ -18,6 +18,5 @@ override_dh_clean:
 
 .PHONY: override_dh_auto_test
 override_dh_auto_test:
-ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	./run_tests.sh
-endif
+	flake8 .
+	dh_auto_test -- --system=custom --test-args="{interpreter} setup.py test"
