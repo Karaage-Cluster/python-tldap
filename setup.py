@@ -18,7 +18,7 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open('VERSION.txt', 'r') as f:
     version = f.readline().strip()
@@ -32,7 +32,10 @@ setup(
     author='Brian May',
     author_email='brian@v3.org.au',
     description='High level python LDAP Library',
-    packages=find_packages() + ['tldap.test.ldap_schemas'],
+    packages=[
+        'tldap', 'tldap.test', 'tldap.backend',
+        'tldap.methods', 'tldap.tests', 'tldap.schemas',
+        'tldap.methods.south_migrations', 'tldap.methods.migrations'],
     license="GPL3+",
     long_description=open('README.rst').read(),
     classifiers=[
