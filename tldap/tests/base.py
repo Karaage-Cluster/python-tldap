@@ -16,6 +16,7 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 import tldap
+import unittest
 
 LDAP = {
     'default': {
@@ -33,7 +34,7 @@ LDAP = {
 tldap.setup(LDAP)
 
 
-class LdapTestCase(object):
+class LdapTestCase(unittest.TestCase):
 
     def setUp(self):
         super(LdapTestCase, self).setUp()

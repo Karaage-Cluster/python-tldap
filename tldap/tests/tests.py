@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
 import six
 
 import tldap
@@ -40,7 +39,7 @@ server = None
 NO_SUCH_OBJECT = ldap3.core.exceptions.LDAPNoSuchObjectResult
 
 
-class BackendTest(base.LdapTestCase, unittest.TestCase):
+class BackendTest(base.LdapTestCase):
     def get(self, c, base):
         """
         returns ldap object for search_string
@@ -541,7 +540,7 @@ class BackendTest(base.LdapTestCase, unittest.TestCase):
                           "uid=tux, ou=People, dc=python-ldap,dc=org")
 
 
-class ModelTest(base.LdapTestCase, unittest.TestCase):
+class ModelTest(base.LdapTestCase):
     def test_transactions(self):
         organizationalUnit = tldap.schemas.rfc.organizationalUnit
         organizationalUnit.objects.create(
@@ -1135,7 +1134,7 @@ class ModelTest(base.LdapTestCase, unittest.TestCase):
         self.assertEqual(len(list(r)), 1)
 
 
-class UserAPITest(base.LdapTestCase, unittest.TestCase):
+class UserAPITest(base.LdapTestCase):
     def setUp(self):
         super(UserAPITest, self).setUp()
 
@@ -1295,7 +1294,7 @@ class UserAPITest(base.LdapTestCase, unittest.TestCase):
         self.assertEqual(len(groups), 2)
 
 
-class GroupAPITest(base.LdapTestCase, unittest.TestCase):
+class GroupAPITest(base.LdapTestCase):
     def setUp(self):
         super(GroupAPITest, self).setUp()
 
