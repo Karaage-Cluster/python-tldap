@@ -110,7 +110,11 @@ class LDAPbase(object):
         if start_tls:
             c.start_tls()
 
-        c.bind()
+        try:
+            c.bind()
+        except:
+            c.unbind()
+            raise
 
         return c
 
