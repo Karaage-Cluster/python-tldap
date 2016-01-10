@@ -36,17 +36,40 @@ Q
 connections = None
 """An object containing a list of all LDAP connections."""
 
-connection = None
-""" The default LDAP connection. """
-
 
 def setup(settings):
     """ Function used to initialize LDAP settings. """
     global connections, connection
     assert connections is None
-    assert connection is None
     connections = tldap.utils.ConnectionHandler(settings)
-    try:
-        connection = connections[DEFAULT_LDAP_ALIAS]
-    except KeyError:
-        connection = None
+
+
+# DatabaseWrapper.__init__() takes a dictionary, not a settings module, so
+# we manually create the dictionary from the settings, passing only the
+# settings that the database backends care about. Note that TIME_ZONE is used
+# by the PostgreSQL backends.
+# We load all these up for backwards compatibility, you should use
+# connections['default'] instead.
+class DefaultConnectionProxy(object):
+    """
+    Proxy for accessing the default DatabaseWrapper object's attributes. If you
+    need to access the DatabaseWrapper object itself, use
+    connections[DEFAULT_LDAP_ALIAS] instead.
+    """
+    def __getattr__(self, item):
+        return getattr(connections[DEFAULT_LDAP_ALIAS], item)
+
+    def __setattr__(self, name, value):
+        return setattr(connections[DEFAULT_LDAP_ALIAS], name, value)
+
+    def __delattr__(self, name):
+        return delattr(connections[DEFAULT_LDAP_ALIAS], name)
+
+    def __eq__(self, other):
+        return connections[DEFAULT_LDAP_ALIAS] == other
+
+    def __ne__(self, other):
+        return connections[DEFAULT_LDAP_ALIAS] != other
+
+connection = DefaultConnectionProxy()
+""" The default LDAP connection. """

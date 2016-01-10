@@ -18,6 +18,7 @@
 """ Contains ConnectionHandler which represents a list of connections. """
 
 import sys
+from threading import local
 
 DEFAULT_LDAP_ALIAS = "default"
 
@@ -32,17 +33,17 @@ class ConnectionHandler(object):
 
     def __init__(self, databases):
         self.databases = databases
-        self._connections = {}
+        self._connections = local()
 
     def __getitem__(self, alias):
-        if alias in self._connections:
-            return self._connections[alias]
+        if hasattr(self._connections, alias):
+            return getattr(self._connections, alias)
 
         db = self.databases[alias]
 
         backend = load_backend(db['ENGINE'])
         conn = backend.LDAPwrapper(db)
-        self._connections[alias] = conn
+        setattr(self._connections, alias, conn)
         return conn
 
     def __iter__(self):
