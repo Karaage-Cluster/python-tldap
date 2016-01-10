@@ -39,7 +39,6 @@ ITER_CHUNK_SIZE = 100
 REPR_OUTPUT_SIZE = 20
 
 
-@python_2_unicode_compatible
 class QuerySet(object):
     """
     Represents a lazy database lookup for a set of objects.
@@ -66,46 +65,26 @@ class QuerySet(object):
     # PYTHON MAGIC METHODS #
     ########################
 
-    def __str__(self):
+    def __repr__(self):
         data = list(self[:REPR_OUTPUT_SIZE + 1])
         if len(data) > REPR_OUTPUT_SIZE:
             data[-1] = "...(remaining elements truncated)..."
-        return six.text_type(data)
+        return repr(data)
 
     def __len__(self):
-        # Since __len__ is called quite frequently (for example, as part of
-        # list(qs), we make some effort here to be as efficient as possible
-        # whilst not messing up any existing iterators against the QuerySet.
-        if self._result_cache is None:
-            if self._iter:
-                self._result_cache = list(self._iter)
-            else:
-                self._result_cache = list(self.iterator())
-        elif self._iter:
-            self._result_cache.extend(self._iter)
+        self._fetch_all()
         return len(self._result_cache)
 
     def __iter__(self):
-        if self._result_cache is None:
-            self._iter = self.iterator()
-            self._result_cache = []
-        if self._iter:
-            return self._result_iter()
-        # Python's list iterator is better than our version when we're just
-        # iterating over the cache.
+        self._fetch_all()
         return iter(self._result_cache)
 
-    def _result_iter(self):
-        pos = 0
-        while 1:
-            upper = len(self._result_cache)
-            while pos < upper:
-                yield self._result_cache[pos]
-                pos = pos + 1
-            if not self._iter:
-                raise StopIteration
-            if len(self._result_cache) <= pos:
-                self._fill_cache()
+    def __bool__(self):
+        self._fetch_all()
+        return bool(self._result_cache)
+
+    def __nonzero__(self):      # Python 2 compatibility
+        return type(self).__bool__(self)
 
     def __getitem__(self, k):
         """
@@ -121,19 +100,6 @@ class QuerySet(object):
             raise IndexError("Negative indexing is not supported.")
 
         if self._result_cache is not None:
-            if self._iter is not None:
-                # The result cache has only been partially populated, so we may
-                # need to fill it out a bit more.
-                if isinstance(k, slice):
-                    if k.stop is not None:
-                        # Some people insist on passing in strings here.
-                        bound = int(k.stop)
-                    else:
-                        bound = None
-                else:
-                    bound = k + 1
-                if len(self._result_cache) < bound:
-                    self._fill_cache(bound - len(self._result_cache))
             return self._result_cache[k]
 
         if isinstance(k, slice):
@@ -496,10 +462,10 @@ class QuerySet(object):
         Performs the query and returns a single object matching the given
         keyword arguments.
         """
-        qs = self.filter(*args, **kwargs)
-        num = len(qs)
+        clone = self.filter(*args, **kwargs)
+        num = len(clone)
         if num == 1:
-            return qs._result_cache[0]
+            return clone._result_cache[0]
         if not num:
             raise self._cls.DoesNotExist(
                 "%s matching query does not exist." %
@@ -620,17 +586,9 @@ class QuerySet(object):
         qs._from_cls = self._from_cls
         return qs
 
-    def _fill_cache(self, num=None):
-        """
-        Fills the result cache with 'num' more entries (or until the results
-        iterator is exhausted).
-        """
-        if self._iter:
-            try:
-                for i in range(num or ITER_CHUNK_SIZE):
-                    self._result_cache.append(next(self._iter))
-            except StopIteration:
-                self._iter = None
+    def _fetch_all(self):
+        if self._result_cache is None:
+            self._result_cache = list(self.iterator())
 
     def _merge_sanity_check(self, other):
         """
