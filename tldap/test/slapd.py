@@ -2,7 +2,6 @@
 Utilities for starting up a test slapd server
 and talking to it with ldapsearch/ldapadd.
 """
-from os import path as os_path
 import sys
 import os
 import socket
@@ -75,7 +74,7 @@ class Slapd:
     _log = logging.getLogger("Slapd")
 
     # Use /var/tmp to placate apparmour on Ubuntu:
-    TEST_UTILS_DIR = os_path.abspath(os_path.split(__file__)[0])
+    TEST_UTILS_DIR = os.path.abspath(os.path.split(__file__)[0])
     PATH_SBINDIR = "/usr/sbin"
     PATH_BINDIR = "/usr/bin"
     PATH_SCHEMA_DIR = TEST_UTILS_DIR + "/ldap_schemas/"
