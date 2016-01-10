@@ -10,7 +10,6 @@ else
     TESTS="tldap"
 fi
 
-# NOTE (RS) Disabled because there are far too many errors to fix.
 echo ""
 echo "FLAKE8"
 echo "############################"
