@@ -149,9 +149,6 @@ class Slapd:
     def get_root_password(self):
         return self._root_password
 
-    def __del__(self):
-        self.stop()
-
     def configure(self, cfg):
         """
         Appends slapd.conf configuration lines to cfg.
