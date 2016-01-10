@@ -131,7 +131,7 @@ class LDAPbase(object):
 
         try:
             return fn(self._obj)
-        except ldap3.core.exceptions.LDAPSessionTerminatedByServer:
+        except ldap3.core.exceptions.LDAPSessionTerminatedByServerError:
             # if it fails, reconnect then retry
             _debug("SERVER_DOWN, reconnecting")
             self._reconnect()
