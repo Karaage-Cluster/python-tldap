@@ -20,16 +20,14 @@
 from __future__ import absolute_import
 
 import six
-
 import ldap3
 
 import tldap
 import tldap.manager
 import tldap.helpers
 import tldap.filter
+from tldap.tree import Node
 
-import django.utils.tree
-from django.utils.encoding import python_2_unicode_compatible
 
 # Used to control how many objects are worked with at once in some cases (e.g.
 # when deleting objects).
@@ -183,7 +181,7 @@ class QuerySet(object):
         search = []
         for child in q.children:
             # if this child is a node, then descend into it
-            if isinstance(child, django.utils.tree.Node):
+            if isinstance(child, Node):
                 search.append(self._get_filter(child))
             else:
                 # otherwise get the values in this node
@@ -262,7 +260,7 @@ class QuerySet(object):
         for child in q.children:
 
             # if this child is a node, then descend into it
-            if isinstance(child, django.utils.tree.Node):
+            if isinstance(child, Node):
                 dst.children.append(self._clone_query(child))
             else:
                 dst.children.append(child)
@@ -281,7 +279,7 @@ class QuerySet(object):
         for child in q.children:
 
             # if this child is a node, then descend into it
-            if isinstance(child, django.utils.tree.Node):
+            if isinstance(child, Node):
                 dst.children.append(self._expand_query(child))
                 continue
 
