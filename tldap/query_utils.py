@@ -17,10 +17,10 @@
 from __future__ import absolute_import
 
 import six
-from .tree import Node
+import django.utils.tree
 
 
-class Q(Node):
+class Q(django.utils.tree.Node):
     """
     Encapsulates filters as objects that can then be combined logically
     (using ``&`` and ``|``).
