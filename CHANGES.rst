@@ -1,3 +1,8 @@
+Release 0.3.17 (26 Apr, 2016)
+=============================
+* Unbreak tests by using Node directly from Django.
+
+
 Release 0.3.16 (26 Apr, 2016)
 =============================
 * Ensure we install test schemas.
