@@ -35,6 +35,7 @@ setup(
     packages=[
         'tldap', 'tldap.test', 'tldap.backend',
         'tldap.methods', 'tldap.tests', 'tldap.schemas',
+        'tldap.test.ldap_schemas',
         'tldap.methods.south_migrations', 'tldap.methods.migrations'],
     license="GPL3+",
     long_description=open('README.rst').read(),

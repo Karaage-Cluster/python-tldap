@@ -1,3 +1,8 @@
+Release 0.3.16 (26 Apr, 2016)
+=============================
+* Ensure we install test schemas.
+
+
 Release 0.3.15 (10 Jan, 2016)
 =============================
 * Bugs fixed.
