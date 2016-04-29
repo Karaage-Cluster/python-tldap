@@ -30,7 +30,7 @@ setup(
     version=version,
     url='https://github.com/Karaage-Cluster/python-tldap',
     author='Brian May',
-    author_email='brian@v3.org.au',
+    author_email='brian@linuxpenguins.xyz',
     description='High level python LDAP Library',
     packages=[
         'tldap', 'tldap.test', 'tldap.backend',
