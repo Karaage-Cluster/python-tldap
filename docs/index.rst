@@ -6,6 +6,9 @@
 python-tldap's documentation
 ============================
 
+:Date: |today|
+:Version: |version|
+
 Contents:
 
 .. toctree::
