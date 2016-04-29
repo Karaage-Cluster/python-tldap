@@ -1,3 +1,4 @@
+# FILE COPIED FROM conf.orig.py; DO NOT CHANGE
 # -*- coding: utf-8 -*-
 #
 # python-tldap documentation build configuration file, created by
@@ -15,6 +16,7 @@
 import six
 import sys
 import os
+import django
 from setuptools_scm import get_version
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -22,6 +24,7 @@ from setuptools_scm import get_version
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 os.environ['DJANGO_SETTINGS_MODULE'] = 'docs.settings'
 sys.path.insert(0, os.path.abspath('..'))
+django.setup()
 
 import tldap  # NOQA
 
