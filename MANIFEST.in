@@ -1,6 +1,7 @@
 include *.txt
 include *.rst
 include *.py
+include *.ini
 include MANIFEST.in
 include pylint.conf
 recursive-include tldap *.py *.schema

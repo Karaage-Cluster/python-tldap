@@ -1,2 +1,8 @@
+/.cache/
+/.eggs/
+/.tox/
+/python_tldap.egg-info/
+/build/
+/dist/
 *.bak
 *.pyc
