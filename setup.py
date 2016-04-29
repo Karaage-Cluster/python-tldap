@@ -19,15 +19,21 @@
 
 import os
 from setuptools import setup
+import shutil
 
-with open('VERSION.txt', 'r') as f:
-    version = f.readline().strip()
+with open("./docs/conf.orig.py", "r") as src:
+    with open("./docs/conf.py", "w") as dst:
+        dst.write("# FILE COPIED FROM conf.orig.py; DO NOT CHANGE\n")
+        shutil.copyfileobj(src, dst)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.tests.settings'
 
 setup(
     name="python-tldap",
-    version=version,
+    use_scm_version={
+        'write_to': "tldap/version.py",
+    },
+    setup_requires=['setuptools_scm'],
     url='https://github.com/Karaage-Cluster/python-tldap',
     author='Brian May',
     author_email='brian@linuxpenguins.xyz',

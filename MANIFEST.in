@@ -4,5 +4,7 @@ include *.py
 include *.ini
 include MANIFEST.in
 include pylint.conf
+exclude sshuttle/version.py
+exclude docs/conf.py
 recursive-include tldap *.py *.schema
 recursive-include docs Makefile *.py *.rst *.inv
