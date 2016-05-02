@@ -1,3 +1,13 @@
+Release 0.3.18 (03 May 2016)
+============================
+* Update my email address.
+* Remove dependancy on Django.
+* Add tox tests.
+* Use setuptools-scm for versiong.
+* Fix documentation.
+* Add changelog to documentation.
+
+
 Release 0.3.17 (26 Apr, 2016)
 =============================
 * Unbreak tests by using Node directly from Django.
