@@ -6,7 +6,6 @@ include *.sh
 include .gitreview
 include MANIFEST.in
 include pylint.conf
-exclude tldap/version.py
 exclude docs/conf.py
 recursive-include tldap *.py *.schema
 recursive-include docs Makefile *.py *.rst *.inv
