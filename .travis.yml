@@ -6,10 +6,6 @@ python:
 - 3.5
 - pypy
 
-env:
- - DJANGO_VERSION=1.7.10
- - DJANGO_VERSION=1.8
-
 addons:
   apt:
     packages:
@@ -17,12 +13,7 @@ addons:
     - ldap-utils
 
 install:
-  - travis_retry pip install -q Django==$DJANGO_VERSION ldap3 passlib six
+  - pip install -rrequirements-tests.txt
 
 script:
   - ./setup.py test
-
-matrix:
-    exclude:
-        - python: 3.5
-          env: DJANGO_VERSION=1.7.10

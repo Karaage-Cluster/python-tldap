@@ -1,1 +1,3 @@
-setuptools_scm
+passlib==1.7.0
+ldap3==1.4.0
+setuptools_scm==1.15.0
