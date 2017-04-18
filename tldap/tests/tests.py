@@ -32,6 +32,7 @@ import tldap.tests.schemas as test_schemas
 
 import ldap3
 import ldap3.core.exceptions
+from ..compat import SUBTREE, LEVEL, BASE
 
 server = None
 
@@ -46,7 +47,7 @@ class BackendTest(base.LdapTestCase):
         raises MultipleResultsException if more than one
         entry exists for given search string
         """
-        result_data = list(c.search(base, ldap3.SEARCH_SCOPE_BASE_OBJECT))
+        result_data = list(c.search(base, BASE))
         no_results = len(result_data)
         self.assertEqual(no_results, 1)
         return result_data[0][1]
@@ -187,65 +188,65 @@ class BackendTest(base.LdapTestCase):
         })
         r = c.search(
             "uid=tux, ou=People, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 1)
         r = c.search(
             "ou=People, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "ou=Groups, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
 
         r = c.search(
             "uid=tux, ou=People, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_SINGLE_LEVEL, "(uid=tux)")
+            LEVEL, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "ou=People, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_SINGLE_LEVEL, "(uid=tux)")
+            LEVEL, "(uid=tux)")
         self.assertEqual(len(list(r)), 1)
         r = c.search(
             "dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_SINGLE_LEVEL, "(uid=tux)")
+            LEVEL, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "ou=Groups, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_SINGLE_LEVEL, "(uid=tux)")
+            LEVEL, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
 
         r = c.search(
             "uid=tux, ou=People, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_WHOLE_SUBTREE, "(uid=tux)")
+            SUBTREE, "(uid=tux)")
         self.assertEqual(len(list(r)), 1)
         r = c.search(
             "ou=People, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_WHOLE_SUBTREE, "(uid=tux)")
+            SUBTREE, "(uid=tux)")
         self.assertEqual(len(list(r)), 1)
         r = c.search(
             "dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_WHOLE_SUBTREE, "(uid=tux)")
+            SUBTREE, "(uid=tux)")
         self.assertEqual(len(list(r)), 1)
         r = c.search(
             "ou=Groups, dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_WHOLE_SUBTREE, "(uid=tux)")
+            SUBTREE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
         r = c.search(
             "dc=python-ldap,dc=org",
-            ldap3.SEARCH_SCOPE_BASE_OBJECT, "(uid=tux)")
+            BASE, "(uid=tux)")
         self.assertEqual(len(list(r)), 0)
 
         # test replacing attribute with rollback

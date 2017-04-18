@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 
 import six
-import ldap3
+from .compat import SUBTREE
 
 import tldap
 import tldap.manager
@@ -381,7 +381,7 @@ class QuerySet(object):
             query = query & tldap.Q(objectClass=oc)
 
         # do a SUBTREE search
-        scope = ldap3.SEARCH_SCOPE_WHOLE_SUBTREE
+        scope = SUBTREE
 
         # add requested query
         if self._query is not None:

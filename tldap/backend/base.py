@@ -21,6 +21,8 @@ with a subset of the functions from the real ldap module. """
 import ssl
 import ldap3
 import logging
+from ..compat import SIMPLE
+
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -100,7 +102,7 @@ class LDAPbase(object):
         s = ldap3.Server(host, port=port, use_ssl=use_ssl, tls=tls)
         c = ldap3.Connection(
             s,  # client_strategy=ldap3.STRATEGY_SYNC_RESTARTABLE,
-            user=user, password=password, authentication=ldap3.AUTH_SIMPLE)
+            user=user, password=password, authentication=SIMPLE)
         c.strategy.restartable_sleep_time = 0
         c.strategy.restartable_tries = 1
         c.raise_exceptions = True
