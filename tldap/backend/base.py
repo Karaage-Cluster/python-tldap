@@ -20,6 +20,7 @@ with a subset of the functions from the real ldap module. """
 
 import ssl
 import ldap3
+import ldap3.core.exceptions as exceptions
 import logging
 from ..compat import SIMPLE
 
@@ -60,7 +61,7 @@ class LDAPbase(object):
             conn = self._connect(user=dn, password=password)
             conn.unbind()
             return True
-        except ldap3.LDAPInvalidCredentialsResult:
+        except exceptions.LDAPInvalidCredentialsResult:
             return False
 
     def _connect(self, user, password):
