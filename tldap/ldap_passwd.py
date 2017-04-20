@@ -40,7 +40,7 @@ def check_password(password, encrypted):
 
 
 def encode_password(password):
-    return pwd_context.hash(password)
+    return pwd_context.encrypt(password)
 
 
 class UserPassword(object):
