@@ -1,0 +1,302 @@
+python-tldap (0.3.18-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Brian May <bam@debian.org>  Tue, 03 May 2016 09:21:23 +1000
+
+python-tldap (0.3.17-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Brian May <bam@debian.org>  Tue, 26 Apr 2016 14:43:34 +1000
+
+python-tldap (0.3.15-2) unstable; urgency=medium
+
+  * Add flake8 to build depends.
+
+ -- Brian May <bam@debian.org>  Tue, 26 Apr 2016 11:57:31 +1000
+
+python-tldap (0.3.15-1) unstable; urgency=medium
+
+  * New upstream version.
+
+ -- Brian May <bam@debian.org>  Sun, 10 Jan 2016 14:38:18 +1100
+
+python-tldap (0.3.14-1) unstable; urgency=medium
+
+  * Don't include docs directory in package. Closes: #804643.
+
+ -- Brian May <bam@debian.org>  Tue, 10 Nov 2015 20:24:15 +1100
+
+python-tldap (0.3.13-2) unstable; urgency=medium
+
+  * Ensure tests run for Python3.4 and Python3.5.
+
+ -- Brian May <bam@debian.org>  Mon, 26 Oct 2015 13:13:29 +1100
+
+python-tldap (0.3.13-1) unstable; urgency=medium
+
+  * Fix FTBFS issues. Closes: #801943
+
+ -- Brian May <bam@debian.org>  Sun, 18 Oct 2015 13:50:59 +1100
+
+python-tldap (0.3.12-1) unstable; urgency=medium
+
+  * Fix FTBFS issues. #796756.
+  * Update git repository location.
+
+ -- Brian May <bam@debian.org>  Mon, 24 Aug 2015 20:38:56 +1000
+
+python-tldap (0.3.11-1) unstable; urgency=medium
+
+  * Fix ds389 account locking/unlocking.
+  * Define new LOCKED_ROLE setting for ds389.
+
+ -- Brian May <bam@debian.org>  Thu, 11 Jun 2015 11:05:00 +1000
+
+python-tldap (0.3.10-1) unstable; urgency=medium
+
+  * Fix TLS configuration. Will break existing setups if validation fails.
+  * python3-ldap renamed to ldap3 upstream.
+
+ -- Brian May <bam@debian.org>  Fri, 20 Feb 2015 11:06:51 +1100
+
+python-tldap (0.3.9-1) unstable; urgency=medium
+
+  * Various bug fixes.
+
+ -- Brian May <bam@debian.org>  Thu, 19 Feb 2015 11:40:53 +1100
+
+python-tldap (0.3.8-1) unstable; urgency=low
+
+  * Works with python3-ldap 0.9.6.2.
+  * Don't use depreciated django.utils.importlib.
+  * Update standards version to 3.9.6.
+
+ -- Brian May <bam@debian.org>  Tue, 18 Nov 2014 13:05:45 +1100
+
+python-tldap (0.3.7-1) unstable; urgency=low
+
+  * Add more read only attributes.
+  * Add Django 1.7 migration.
+
+ -- Brian May <bam@debian.org>  Tue, 09 Sep 2014 10:55:51 +1000
+
+python-tldap (0.3.6-1) unstable; urgency=low
+
+  * Rename migrations to south_migrations.
+  * Add groupOfNames objectClass.
+  * hasSubordinates is read only attribute.
+
+ -- Brian May <bam@debian.org>  Mon, 08 Sep 2014 09:39:56 +1000
+
+python-tldap (0.3.5-1) unstable; urgency=low
+
+  * Update override_dh_auto_test.
+  * Really fix debian/copyright file.
+
+ -- Brian May <bam@debian.org>  Thu, 07 Aug 2014 09:36:38 +1000
+
+python-tldap (0.3.4-1) unstable; urgency=low
+
+  * Don't die if default LDAP server not configured.
+
+ -- Brian May <bam@debian.org>  Tue, 15 Jul 2014 14:19:16 +1000
+
+python-tldap (0.3.3-1) unstable; urgency=low
+
+  * Fix typo.
+  * Remove hard dependency on Django.
+  * Rename source project.
+  * Move ldap_passwd from tldap.methods.
+  * Fix Debian copyright.
+  * Retry upload to Debian. Closes: #753482.
+
+ -- Brian May <bam@debian.org>  Mon, 14 Jul 2014 12:29:10 +1000
+
+django-tldap (0.3.2-1) unstable; urgency=low
+
+  * Fix PEP8 issues.
+  * FIx close() undefined error, python-ldap3 0.9.4.2
+  * Trick pep8 into ignoring E721.
+  * Revert "Copy escape_bytes function from ldap3."
+
+ -- Brian May <bam@debian.org>  Wed, 09 Jul 2014 16:21:02 +1000
+
+django-tldap (0.3.1-1) unstable; urgency=low
+
+  * Add link to homepage.
+  * Remove unneeded file.
+  * New release for Debian.
+  * Add Vcs headers.
+  * Declare Python 3 compatible.
+  * Fix __unicode__ string methods for Python 3.
+  * Don't connect to LDAP until we need to.
+  * Python 3 tests.
+  * PEP8 fixes.
+  * Run flake8 tests during build.
+
+ -- Brian May <bam@debian.org>  Sun, 06 Jul 2014 11:27:08 +1000
+
+django-tldap (0.3.0-2) unstable; urgency=low
+
+  * Minor changes to Debian packaging.
+
+ -- Brian May <bam@debian.org>  Thu, 03 Jul 2014 10:44:33 +1000
+
+django-tldap (0.3.0-1) unstable; urgency=low
+
+  * Python3 support.
+  * Python3 package.
+
+ -- Brian May <bam@debian.org>  Tue, 01 Jul 2014 11:38:35 +1000
+
+django-tldap (0.2.17-1) unstable; urgency=low
+
+  * Replace USE_TLS setting with REQUIRE_TLS and START_TLS settings.
+    Old USE_TLS setting will no longer work.
+
+ -- Brian May <bam@debian.org>  Fri, 28 Mar 2014 13:18:22 +1100
+
+django-tldap (0.2.16-1) unstable; urgency=low
+
+  * New release.
+  * Fix PEP8 style issues.
+  * Replace ldap_passwd with passlib code.
+  * Testing: check LDAP port not already in use.
+
+ -- Brian May <bam@debian.org>  Mon, 24 Mar 2014 14:30:39 +1100
+
+django-tldap (0.2.15-1) unstable; urgency=low
+
+  * Move tests to tldap.tests.
+  * Update Python packaging.
+  * Update documentation.
+
+ -- Brian May <bam@debian.org>  Tue, 11 Mar 2014 10:00:39 +1100
+
+django-tldap (0.2.14-1) unstable; urgency=low
+
+  * Support moving objects in LDAP tree.
+  * Fix replaces/breaks header for upgrades from legacy package.
+
+ -- Brian May <bam@debian.org>  Mon, 17 Feb 2014 13:27:59 +1100
+
+django-tldap (0.2.13-1) unstable; urgency=low
+
+  * Initial documentation.
+  * Make transactions operate on all connections by default.
+  * Remove obsolete functions.
+
+ -- Brian May <bam@debian.org>  Wed, 05 Feb 2014 09:09:55 +1100
+
+django-tldap (0.2.12-1) unstable; urgency=low
+
+  * Use dh_python2 for packaging.
+
+ -- Brian May <bam@debian.org>  Tue, 28 Jan 2014 11:55:31 +1100
+
+django-tldap (0.2.11-1) unstable; urgency=low
+
+  * Fix bug in samba specific function.
+  * Works with no LDAP servers configured.
+
+ -- Brian May <bam@debian.org>  Tue, 21 Jan 2014 12:46:54 +1100
+
+django-tldap (0.2.10-1) unstable; urgency=low
+
+  * Bug fixes.
+
+ -- Brian May <bam@debian.org>  Tue, 17 Dec 2013 14:40:16 +1100
+
+django-tldap (0.2.9-1) unstable; urgency=low
+
+  * Update referenced backend names.
+  * Rewrite method functions.
+  * Fix creating gid and uid for different servers.
+  * Updates to 389 support.
+
+ -- Brian May <bam@debian.org>  Wed, 14 Aug 2013 13:51:00 +1000
+
+django-tldap (0.2.8-1) unstable; urgency=low
+
+  * Rename backends.
+    tldap.backend.transaction to tldap.backend.fake_transactions
+    tldap.backend.python to tldap.backend.no_transactions
+  * Remove prefixes from LDAP names.
+
+ -- Brian May <bam@debian.org>  Fri, 26 Jul 2013 16:01:07 +1000
+
+django-tldap (0.2.7-1) unstable; urgency=low
+
+  * New methods submodule, moved from placard schema.
+  * Add depends on python-ldap.
+  * Fix LDAP bind if connection failed.
+  * Fix md5-crypt password comparison.
+  * Write LDAP entries to ldif_writer.
+
+ -- Brian May <bam@debian.org>  Thu, 18 Jul 2013 14:04:43 +1000
+
+django-tldap (0.2.6-1) unstable; urgency=low
+
+  * Tests: Purge environment when calling slapd.
+  * Update description to reflect what tldap does.
+
+ -- Brian May <bam@debian.org>  Mon, 27 May 2013 09:31:04 +1000
+
+django-tldap (0.2.5-2) unstable; urgency=low
+
+  * Transition to dh_python2.
+    http://wiki.debian.org/Python/TransitionToDHPython2
+
+ -- Brian May <bam@debian.org>  Thu, 09 May 2013 14:05:49 +1000
+
+django-tldap (0.2.5-1) unstable; urgency=low
+
+  * Support new method of creating schemas.
+
+ -- Brian May <bam@debian.org>  Wed, 01 May 2013 18:28:42 +1000
+
+django-tldap (0.2.4-1) unstable; urgency=low
+
+  * Add classes that were deleted in error.
+
+ -- Brian May <bam@debian.org>  Fri, 22 Mar 2013 15:25:28 +1100
+
+django-tldap (0.2.3-2) unstable; urgency=low
+
+  * Don't support python 2.5, it is broken. With keyword not supported in
+    tests.
+
+ -- Brian May <bam@debian.org>  Fri, 15 Mar 2013 15:52:36 +1100
+
+django-tldap (0.2.3-1) unstable; urgency=low
+
+  * Fix copy of CaseInsensitiveDict.
+  * PEP8 formatting fixed.
+
+ -- Brian May <bam@debian.org>  Fri, 15 Mar 2013 14:21:23 +1100
+
+django-tldap (0.2.2-1) unstable; urgency=low
+
+  * Fix bug in processing commit flag.
+
+ -- Brian May <bam@debian.org>  Tue, 19 Feb 2013 11:23:53 +1100
+
+django-tldap (0.2.1-1) unstable; urgency=low
+
+  * Fix tests.
+
+ -- Brian May <bam@debian.org>  Mon, 18 Feb 2013 11:07:34 +1100
+
+django-tldap (0.2-1) unstable; urgency=low
+
+  * Lots and lots and lots of updates.
+
+ -- Brian May <bam@debian.org>  Fri, 08 Feb 2013 11:59:23 +1100
+
+django-tldap (0.1-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Brian May <bam@debian.org>  Tue, 03 Apr 2012 10:46:40 +1000

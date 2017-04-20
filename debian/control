@@ -1,0 +1,61 @@
+Source: python-tldap
+Section: python
+Priority: optional
+Maintainer: Brian May <bam@debian.org>
+Build-Depends: debhelper (>= 8.1.0), dh-python, slapd, ldap-utils,
+ python-all (>= 2.6.6-3~), python-setuptools, python-six, python-pyasn1,
+ python-passlib, python-ldap3 (>= 0.9.7.1), python-django (>= 1.2.1),
+ python-setuptools-scm,
+ python3-all, python3-setuptools, python3-six,
+ python3-passlib, python3-ldap3 (>= 0.9.7.1), python3-django, python3-pyasn1,
+ python3-setuptools-scm,
+Build-Depends-Indep: python3-sphinx (>= 1.0.7+dfsg-1~)
+Standards-Version: 3.9.8
+X-Python-Version: >= 2.7
+Homepage: https://github.com/Karaage-Cluster/python-tldap-debian
+Vcs-Git: git://github.com/Karaage-Cluster/python-tldap-debian
+Vcs-Browser: https://github.com/Karaage-Cluster/python-tldap-debian
+
+Package: python-tldap
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Replaces: django-tldap (<< 0.2.13)
+Breaks: django-tldap (<< 0.2.13)
+Description: High level python LDAP Library
+ TLDAP is a high level LDAP library for Python 2 that users django-db like
+ models to define LDAP schemas that can then be used in an easy way from Python
+ code.  It also supports fake LDAP transactions, to try and ensure LDAP database
+ remains in a consistent state, even if there are errors that cause the
+ transaction to fail.
+
+Package: python3-tldap
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: High level python LDAP Library
+ TLDAP is a high level LDAP library for Python 3 that users django-db like
+ models to define LDAP schemas that can then be used in an easy way from Python
+ code.  It also supports fake LDAP transactions, to try and ensure LDAP database
+ remains in a consistent state, even if there are errors that cause the
+ transaction to fail.
+
+Package: python-tldap-doc
+Architecture: all
+Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Section: doc
+Description: High level python LDAP Library
+ TLDAP is a high level LDAP library for Python that users django-db like models
+ to define LDAP schemas that can then be used in an easy way from Python code.
+ It also supports fake LDAP transactions, to try and ensure LDAP database
+ remains in a consistent state, even if there are errors that cause the
+ transaction to fail.
+ .
+ This package contains the documentation.
+
+Package: django-tldap
+Depends: python-tldap, ${misc:Depends}
+Architecture: all
+Priority: extra
+Section: oldlibs
+Description: High level python LDAP Library (transitional package)
+ This is a dummy package to aid switching to python-tldap.
+
