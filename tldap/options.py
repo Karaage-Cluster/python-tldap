@@ -21,7 +21,6 @@ from __future__ import absolute_import
 
 import re
 import warnings
-import django.utils.translation
 import tldap.helpers
 
 
@@ -74,9 +73,7 @@ class Options(object):
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
             if self.verbose_name_plural is None:
-                self.verbose_name_plural = (
-                    django.utils.translation.string_concat(
-                        self.verbose_name, 's'))
+                self.verbose_name_plural = self.verbose_name + 's'
 
             # Any leftover attributes must be invalid.
             if meta_attrs != {}:
@@ -84,8 +81,7 @@ class Options(object):
                     "'class Meta' got invalid attribute(s): %s" %
                     ','.join(meta_attrs.keys()))
         else:
-            self.verbose_name_plural = django.utils.translation.string_concat(
-                self.verbose_name, 's')
+            self.verbose_name_plural = self.verbose_name + 's'
 
         del self.meta
 

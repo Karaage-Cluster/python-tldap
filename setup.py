@@ -47,7 +47,6 @@ setup(
     long_description=open('README.rst').read(),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "Framework :: Django",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: "
             "GNU General Public License v3 or later (GPLv3+)",
@@ -58,12 +57,11 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    keywords="ldap django",
+    keywords="ldap",
     package_data={
         'tldap.test.ldap_schemas': ['*.schema', ],
     },
     install_requires=[
-        "django",
         "ldap3",
         "passlib",
         "six",
