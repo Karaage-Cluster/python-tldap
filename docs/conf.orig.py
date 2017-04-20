@@ -197,7 +197,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ('index', 'python-tldap.tex', six.u('django-tldap Documentation'),
+    ('index', 'python-tldap.tex', six.u('python-tldap Documentation'),
         six.u('Brian May'), 'manual'),
 ]
 
@@ -227,7 +227,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'python-tldap', six.u('django-tldap Documentation'),
+    ('index', 'python-tldap', six.u('python-tldap Documentation'),
         [six.u('Brian May')], 1)
 ]
 
@@ -241,7 +241,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'python-tldap', six.u('django-tldap Documentation'),
+    ('index', 'python-tldap', six.u('python-tldap Documentation'),
         six.u('Brian May'), 'python-tldap', 'One line description of project.',
         'Miscellaneous'),
 ]
