@@ -26,7 +26,7 @@ import tldap.helpers
 
 
 def get_verbose_name(class_name):
-    re.sub(
+    return re.sub(
         '(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1',
         class_name).lower().strip()
 
