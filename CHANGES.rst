@@ -8,8 +8,8 @@ adheres to `Semantic Versioning`_.
 .. _`Keep a Changelog`: http://keepachangelog.com/
 .. _`Semantic Versioning`: http://semver.org/
 
-Unreleased
-----------
+0.3.19 - 2017-04-21
+-------------------
 Changes to work with latest software. Note that ldap3 >= 2 still has
 problems that are being worked on. Also we get warnings that the
 `encode` method in passlib has been replaced by the `hash` method.
