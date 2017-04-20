@@ -30,6 +30,7 @@ def get_verbose_name(class_name):
         '(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1',
         class_name).lower().strip()
 
+
 DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural',
                  'object_classes', 'search_classes', 'base_dn',
                  'base_dn_setting', 'pk')

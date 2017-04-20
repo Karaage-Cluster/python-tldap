@@ -38,6 +38,7 @@ def delete_directory_content(path):
             _log.info("rmdir %s", os.path.join(dirpath, n))
             os.rmdir(os.path.join(dirpath, n))
 
+
 LOCALHOST = '127.0.0.1'
 
 
@@ -417,6 +418,7 @@ class Slapd:
             'cn: ' + root_cn,
             ''
         ]))
+
 
 Slapd.check_paths()
 

@@ -71,5 +71,6 @@ class DefaultConnectionProxy(object):
     def __ne__(self, other):
         return connections[DEFAULT_LDAP_ALIAS] != other
 
+
 connection = DefaultConnectionProxy()
 """ The default LDAP connection. """
