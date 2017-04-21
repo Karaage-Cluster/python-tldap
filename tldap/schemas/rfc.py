@@ -65,7 +65,6 @@ class person(tldap.base.LDAPobject):
 class organizationalPerson(tldap.base.LDAPobject):
     title = tldap.fields.CharField()
     x121Address = tldap.fields.CharField()
-    registeredAddresss = tldap.fields.CharField()
     destinationIndicator = tldap.fields.CharField()
     preferredDeliveryMethod = tldap.fields.CharField()
     telexNumber = tldap.fields.CharField()
