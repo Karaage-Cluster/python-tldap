@@ -1,6 +1,8 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
+DEB_UPSTREAM_VERSION ?= $(shell dpkg-parsechangelog | sed -rne 's/^Version: ([0-9.]+)[-+].*$$/\1/p')
+
 export PYBUILD_NAME=tldap
 
 %:
@@ -8,6 +10,10 @@ export PYBUILD_NAME=tldap
 
 .PHONY: override_dh_auto_build
 override_dh_auto_build:
+	# Kludge for Jessie
+	if [ ! -f tldap/version.py ]; then \
+	    echo "version = '$(DEB_UPSTREAM_VERSION)'" > tldap/version.py; \
+	fi
 	PYTHONPATH=. sphinx-build -b html -d docs/.build/.doctrees -N docs docs/.build/html
 	dh_auto_build
 
