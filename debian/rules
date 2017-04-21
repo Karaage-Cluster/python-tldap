@@ -2,7 +2,6 @@
 # -*- makefile -*-
 
 export PYBUILD_NAME=tldap
-export SETUPTOOLS_SCM_PRETEND_VERSION=$(shell cat PKG-INFO | sed -n 's/^Version: //p')
 
 %:
 	dh $@ --with sphinxdoc,python2,python3 --buildsystem=pybuild
