@@ -21,11 +21,6 @@ import os
 from setuptools import setup
 import shutil
 
-with open("./docs/conf.orig.py", "r") as src:
-    with open("./docs/conf.py", "w") as dst:
-        dst.write("# FILE COPIED FROM conf.orig.py; DO NOT CHANGE\n")
-        shutil.copyfileobj(src, dst)
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.tests.settings'
 
 setup(
