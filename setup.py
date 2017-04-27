@@ -60,5 +60,8 @@ setup(
         "passlib",
         "six",
     ],
-    test_suite="tldap.tests",
+    tests_require=[
+        "pytest",
+        "pytest-runner",
+    ],
 )

@@ -1,1 +1,3 @@
 -rrequirements.txt
+pytest==3.0.7
+pytest-runner==2.11.1
