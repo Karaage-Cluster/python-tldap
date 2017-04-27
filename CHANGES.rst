@@ -9,6 +9,15 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+UNRELEASED
+----------
+
+Security
+~~~~~~~~
+* Use sha512_crypt by default for passwords instead of ldap_salted_sha1. We
+  still support salted ldap_salted_sha1 for existing passwords.
+
+
 0.3.20 - 2017-04-21
 -------------------
 

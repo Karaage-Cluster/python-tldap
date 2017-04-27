@@ -20,6 +20,7 @@ import warnings
 
 pwd_context = CryptContext(
     schemes=[
+        "ldap_sha512_crypt",
         "ldap_salted_sha1",
         "ldap_md5",
         "ldap_sha1",
@@ -27,7 +28,7 @@ pwd_context = CryptContext(
         "ldap_des_crypt",
         "ldap_md5_crypt",
     ],
-    default="ldap_salted_sha1",
+    default="ldap_sha512_crypt",
 )
 
 

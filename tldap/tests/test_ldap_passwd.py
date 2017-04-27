@@ -28,24 +28,37 @@ server = None
 
 class PasswordTest(unittest.TestCase):
 
-    def test_password_old(self):
+    def test_password_check_ldap_md5_crypt(self):
         self.assertTrue(lp.check_password(
             "test", "{MD5}CY9rzUYh03PK3k6DJie09g=="))
+
+    def test_password_check_ldap_sha1(self):
         self.assertTrue(lp.check_password(
             "test", "{SHA}qUqP5cyxm6YcTAhz05Hph5gvu9M="))
+
+    def test_password_check_ldap_salted_sha1(self):
+        self.assertTrue(lp.check_password(
+            "test", "{SSHA}sAloRnCFgBV+SjStZB0lIr8jCCq21to7"))
+
+    def test_password_check_ldap_salted_md5(self):
         self.assertTrue(lp.check_password(
             "test", "{SMD5}xosLPIl3lM7lKx4xeEDPmdpjTig="))
+
+    def test_password_check_md5_crypt(self):
         self.assertTrue(lp.check_password(
             "test", "{CRYPT}$1$U1TmLCl7$MZS59PDJxAE8j9fO/Zs4A0"))
+        # some old passwords have crypt in lower case
+        self.assertTrue(lp.check_password(
+            "test", "{crypt}$1$U1TmLCl7$MZS59PDJxAE8j9fO/Zs4A0"))
+
+    def test_password_check_des_crypt(self):
         self.assertTrue(lp.check_password(
             "test", "{CRYPT}PQl1.p7BcJRuM"))
         # some old passwords have crypt in lower case
         self.assertTrue(lp.check_password(
-            "test", "{crypt}$1$U1TmLCl7$MZS59PDJxAE8j9fO/Zs4A0"))
-        self.assertTrue(lp.check_password(
             "test", "{crypt}PQl1.p7BcJRuM"))
 
-    def test_password_depreciated(self):
+    def test_password_depreciated_encode(self):
         with warnings.catch_warnings(record=True) as w:
             up = lp.UserPassword()
             warnings.simplefilter("always")
@@ -53,13 +66,14 @@ class PasswordTest(unittest.TestCase):
             # this appears to be broken
             # self.assertEqual(len(w), 1)
             # self.assertTrue(issubclass(w[0].category, DeprecationWarning))
+        # The algorithm parameter is ignored.
         encrypted = up.encodePassword("test", "SSHA")
-        self.assertTrue(encrypted.startswith("{SSHA}"))
+        self.assertTrue(encrypted.startswith("{CRYPT}$6$"))
         self.assertTrue(up._compareSinglePassword("test", encrypted))
         self.assertFalse(up._compareSinglePassword("teddst", encrypted))
 
-    def test_password_ssha(self):
+    def test_password_encode(self):
         encrypted = lp.encode_password("test")
-        self.assertTrue(encrypted.startswith("{SSHA}"))
+        self.assertTrue(encrypted.startswith("{CRYPT}$6$"))
         self.assertTrue(lp.check_password("test", encrypted))
         self.assertFalse(lp.check_password("teddst", encrypted))
