@@ -10,6 +10,7 @@ import subprocess
 import logging
 import tempfile
 import base64
+import tldap.ldap_passwd as lp
 
 _log = logging.getLogger("slapd")
 
@@ -174,7 +175,8 @@ class Slapd:
 
         cfg.append("suffix " + quote(self.get_dn_suffix()))
         cfg.append("rootdn " + quote(self.get_root_dn()))
-        cfg.append("rootpw " + quote(self.get_root_password()))
+        cfg.append("rootpw " + quote(
+            lp.encode_password(self.get_root_password())))
 
         cfg.append("moduleload ppolicy")
         cfg.append("overlay ppolicy")
