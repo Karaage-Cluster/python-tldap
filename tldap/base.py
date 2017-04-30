@@ -523,10 +523,13 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         self._rename(new_rdn, new_base_dn)
 
         # construct new dn
-        split_dn = tldap.dn.str2dn(self._dn)
+        if new_base_dn is not None:
+            split_base_dn = tldap.dn.str2dn(new_base_dn)
+        else:
+            split_base_dn = tldap.dn.str2dn(self._dn)[1:]
         tmplist = []
         tmplist.append(split_new_rdn[0])
-        tmplist.extend(split_dn[1:])
+        tmplist.extend(split_base_dn)
         self._dn = tldap.dn.dn2str(tmplist)
 
     rename.alters_data = True
