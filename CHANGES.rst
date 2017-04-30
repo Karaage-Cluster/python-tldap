@@ -12,6 +12,21 @@ adheres to `Semantic Versioning`_.
 UNRELEASED
 ----------
 
+Added
+~~~~~
+* Supports ldap3 2.2.3
+
+Changed
+~~~~~~~
+* Rewrote test cases. Now smaller in scope for what each test covers. Needs
+  more work for queries.
+
+Fixed
+~~~~~
+* Fixed bug setting primary group if primary group already set.
+* Allow clearing/setting primary group if current value invalid.
+* Fix incorrect DN calculated in cached data after move.
+
 Security
 ~~~~~~~~
 * Use sha512_crypt by default for passwords instead of ldap_salted_sha1. We
