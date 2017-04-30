@@ -40,7 +40,6 @@ connections = None
 def setup(settings):
     """ Function used to initialize LDAP settings. """
     global connections, connection
-    assert connections is None
     connections = tldap.utils.ConnectionHandler(settings)
 
 

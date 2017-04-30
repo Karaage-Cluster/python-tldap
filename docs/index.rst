@@ -17,6 +17,12 @@ Contents:
     getting_started
     history
     future
+
+Appendices:
+
+.. toctree::
+    :maxdepth: 1
+
     changes
     reference
 

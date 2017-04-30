@@ -19,7 +19,6 @@
 
 import os
 from setuptools import setup
-import shutil
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.tests.settings'
 
@@ -61,5 +60,8 @@ setup(
         "passlib",
         "six",
     ],
-    test_suite="tldap.tests",
+    tests_require=[
+        "pytest",
+        "pytest-runner",
+    ],
 )

@@ -204,7 +204,6 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                     p_value.append(f_value)
             else:
                 assert not isinstance(p_value, list)
-                assert p_value is None or self.is_f_eq_p(f_value, p_value)
                 p_value = f_value
                 setattr(p_instance, p_key, p_value)
 
@@ -237,10 +236,6 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
             else:
                 this_value = self.p_to_f(this_value)
             return self._get_query_set(this_value, linked_key)
-
-        def clear(self, commit=True):
-            for obj in list(self.get_query_set()):
-                self.remove(obj, commit)
 
         if linked_is_p:
 
@@ -300,7 +295,11 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 self._remove(p_instance, p_key, f_instance, f_key)
                 obj.save()
 
-        else:
+            def clear(self, commit=True):
+                for obj in list(self.get_query_set()):
+                    self.remove(obj, commit)
+
+        else:  # not linked_is_p
 
             def get_or_create(self, commit=True, **kwargs):
                 p_instance = self._this_instance
@@ -369,6 +368,16 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                 f_key = self._linked_key
                 assert isinstance(f_instance, self._linked_cls)
                 self._remove(p_instance, p_key, f_instance, f_key)
+                if commit:
+                    p_instance.save()
+
+            def clear(self, commit=True):
+                p_instance = self._this_instance
+                p_key = self._this_key
+                if p_value_is_list:
+                    setattr(p_instance, p_key, [])
+                else:
+                    setattr(p_instance, p_key, None)
                 if commit:
                     p_instance.save()
 

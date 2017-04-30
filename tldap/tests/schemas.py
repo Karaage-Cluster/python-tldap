@@ -62,7 +62,7 @@ class account(person):
 
     def save(self, *args, **kwargs):
         if self.uidNumber is None:
-            uid = None
+            uid = 1000
             for u in account.objects.all():
                 if uid is None or u.uidNumber > uid:
                     uid = u.uidNumber
