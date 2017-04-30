@@ -289,7 +289,7 @@ class LDAPobject(six.with_metaclass(LDAPmeta)):
         :param self: object to save.
         :param force_add: Assume object doesn't already exist and must be
             created.
-        :param force_modify: Assume oobject already exists and must be updated.
+        :param force_modify: Assume object already exists and must be updated.
         """
 
         # what database should we be using?
