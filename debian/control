@@ -5,10 +5,12 @@ Maintainer: Brian May <bam@debian.org>
 Build-Depends: debhelper (>= 9), dh-python, slapd, ldap-utils,
  python-all (>= 2.6.6-3~), python-setuptools, python-six, python-pyasn1,
  python-passlib, python-ldap3 (>= 0.9.7.1), python-django (>= 1.2.1),
- python-setuptools-scm,
+ python-setuptools-scm, python-pytest, python-pytest-mock, python-pytest-runner,
+ python-mock,
  python3-all, python3-setuptools, python3-six,
  python3-passlib, python3-ldap3 (>= 0.9.7.1), python3-django, python3-pyasn1,
- python3-setuptools-scm,
+ python3-setuptools-scm, python3-pytest, python3-pytest-mock, python3-pytest-runner,
+ python3-mock,
 Build-Depends-Indep: python3-sphinx (>= 1.0.7+dfsg-1~)
 Standards-Version: 3.9.8
 X-Python-Version: >= 2.7
