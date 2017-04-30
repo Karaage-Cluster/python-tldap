@@ -280,7 +280,7 @@ def get_testable_values(values):
     return result
 
 
-class TestModel:
+class TestModelPerson:
     def test_create(self, defaults, mock_LDAP):
         """ Test create LDAP object. """
         c = mock_LDAP
