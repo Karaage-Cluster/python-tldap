@@ -544,6 +544,7 @@ class TestModelPerson:
 class TestModelAccount:
     def test_set_primary_group(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test setting primary group for account. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -563,6 +564,7 @@ class TestModelAccount:
 
     def test_get_primary_group(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test getting primary group for account. """
         account1.primary_group = group1
         account1.save()
 
@@ -577,6 +579,7 @@ class TestModelAccount:
 
     def test_add_secondary_group_existing(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test adding existing secondary group to account. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -596,6 +599,7 @@ class TestModelAccount:
 
     def test_add_secondary_group_new(
             self, mock_LDAP, defaults, account1):
+        """ Test adding new secondary group to account. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -620,6 +624,7 @@ class TestModelAccount:
 
     def test_remove_secondary_group(
             self, mock_LDAP, defaults, account1, group2):
+        """ Test removing secondary group from account. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -639,6 +644,7 @@ class TestModelAccount:
 
     def test_clear_secondary_group(
             self, mock_LDAP, defaults, account1, group2):
+        """ Test removing all secondary groups from account. """
         c = mock_LDAP
         c.search = SearchMock()
         c.search.add_result("memberUid=tux", group2)
@@ -659,6 +665,7 @@ class TestModelAccount:
 
     def test_get_secondary_group_none(
             self, mock_LDAP, defaults, account1):
+        """ Test getting secondary group when none set. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -668,6 +675,7 @@ class TestModelAccount:
 
     def test_get_secondary_group_set(
             self, mock_LDAP, defaults, account1, group2):
+        """ Test getting secondary group when one set. """
         c = mock_LDAP
         c.search = SearchMock()
         c.search.add_result("memberUid=tux", group2)
@@ -680,6 +688,7 @@ class TestModelAccount:
 class TestModelGroup:
     def test_add_primary_account(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test add primary account to group. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -698,6 +707,7 @@ class TestModelGroup:
 
     def test_remove_primary_account(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test remove primary account from group. """
         account1.primary_group = group1
         account1.save()
 
@@ -713,6 +723,7 @@ class TestModelGroup:
 
     def test_get_primary_accounts(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test getting primary accounts from group. """
         account1.primary_group = group1
         account1.save()
 
@@ -728,6 +739,7 @@ class TestModelGroup:
 
     def test_add_secondary_account_existing(
             self, mock_LDAP, defaults, account1, group1):
+        """ Test add existing secondary account to group. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -747,6 +759,7 @@ class TestModelGroup:
 
     def test_add_secondary_account_new(
             self, mock_LDAP, defaults, group1):
+        """ Test add new secondary account to group. """
         c = mock_LDAP
         c.search = SearchMock()
         account_attributes = dict(defaults.account_attributes)
@@ -783,6 +796,7 @@ class TestModelGroup:
 
     def test_remove_secondary_account(
             self, mock_LDAP, defaults, account1, group2):
+        """ Test remove secondary account from group. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -802,6 +816,7 @@ class TestModelGroup:
 
     def test_clear_secondary_account(
             self, mock_LDAP, defaults, account1, group2):
+        """ Test remove all secondary accounts from group. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -821,6 +836,7 @@ class TestModelGroup:
 
     def test_get_secondary_accounts_none(
             self, mock_LDAP, defaults, group1):
+        """ Test get all secondary accounts when none set. """
         c = mock_LDAP
         c.search = SearchMock()
 
@@ -830,6 +846,7 @@ class TestModelGroup:
 
     def test_get_secondary_accounts_set(
             self, mock_LDAP, defaults, account1, group2):
+        """ Test get all secondary accounts when one set. """
         c = mock_LDAP
         c.search = SearchMock()
         c.search.add_result("uid=tux", account1)
