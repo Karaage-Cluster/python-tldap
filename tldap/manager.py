@@ -204,7 +204,6 @@ def _create_link_manager(superclass, linked_is_p, p_value_is_list):
                     p_value.append(f_value)
             else:
                 assert not isinstance(p_value, list)
-                assert p_value is None or self.is_f_eq_p(f_value, p_value)
                 p_value = f_value
                 setattr(p_instance, p_key, p_value)
 
