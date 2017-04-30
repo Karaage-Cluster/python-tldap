@@ -563,3 +563,4 @@ class BackendTest(base.LdapTestCase):
         self.assert_dn_not_exists(
             "uid=tux, ou=People, dc=python-ldap,dc=org")
         onfailure.assert_not_called()
+        # FIXME: we should check all attributes are correct on restored object.
