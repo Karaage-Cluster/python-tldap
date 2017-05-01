@@ -9,6 +9,15 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+0.4.1 - 2017-05-01
+------------------
+
+Fixed
+~~~~~
+* Remove unused dependancy on pytest-mock.
+* Added upload information to setup.cfg
+
+
 0.4.0 - 2017-05-01
 ------------------
 Increment minor version as we changed the default password hash to a new one
