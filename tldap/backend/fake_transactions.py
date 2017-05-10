@@ -27,7 +27,7 @@ import sys
 import logging
 
 from .base import LDAPbase
-from ..compat import SUBTREE
+from ..compat import BASE
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ class LDAPwrapper(LDAPbase):
             lambda obj: obj.search(
                 dn,
                 '(objectclass=*)',
-                SUBTREE,
+                BASE,
                 attributes=['*', '+']))
         results = self._obj.response
         if len(results) < 1:
