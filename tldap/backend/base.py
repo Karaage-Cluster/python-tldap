@@ -43,6 +43,7 @@ class LDAPbase(object):
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict
         self._obj = None
+        self._connection_class = ldap3.Connection
 
     def reset(self):
         pass
@@ -55,6 +56,9 @@ class LDAPbase(object):
     #########################
     # Connection Management #
     #########################
+
+    def set_connection_class(self, connection_class):
+        self._connection_class = connection_class
 
     def check_password(self, dn, password):
         try:
@@ -101,7 +105,7 @@ class LDAPbase(object):
                 tls.validate = ssl.CERT_REQUIRED
 
         s = ldap3.Server(host, port=port, use_ssl=use_ssl, tls=tls)
-        c = ldap3.Connection(
+        c = self._connection_class(
             s,  # client_strategy=ldap3.STRATEGY_SYNC_RESTARTABLE,
             user=user, password=password, authentication=SIMPLE)
         c.strategy.restartable_sleep_time = 0

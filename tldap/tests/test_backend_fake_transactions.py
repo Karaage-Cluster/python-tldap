@@ -20,6 +20,7 @@
 
 import pytest
 import mock
+from mock import call, ANY
 
 import tldap
 import tldap.schemas.rfc
@@ -31,7 +32,6 @@ import tldap.test.slapd
 
 import ldap3
 import ldap3.core.exceptions as errors
-from ..compat import SUBTREE, LEVEL, BASE
 
 server = None
 
@@ -43,28 +43,93 @@ class Defaults:
     pass
 
 
+class ServerComparer:
+    def __init__(self, server):
+        self._server = server
+        assert isinstance(server, ldap3.Server)
+
+    def __eq__(self, other):
+        if not isinstance(other, ldap3.Server):
+            return False
+        if self._server.name != other.name:
+            return False
+        return True
+
+
+class MockSearchResponse:
+    def __init__(self):
+        self.response = []
+
+    def add(self, dn, db_values):
+        self.response.append({
+            'type': 'searchResEntry',
+            'dn': dn,
+            'raw_attributes': db_values,
+        })
+
+    def __getitem__(self, key):
+        return self.response[key]
+
+    def __iter__(self):
+        return iter(self.response)
+
+    def __len__(self):
+        return len(self.response)
+
+
 @pytest.fixture
-def defaults():
+def search_response():
+    return MockSearchResponse()
+
+
+@pytest.fixture
+def defaults(search_response):
     """ Get globals for all model tests. """
 
     values = Defaults()
     values.modlist = tldap.modlist.addModlist({
-        'givenName': ["Tux"],
-        'sn': ["Torvalds"],
-        'cn': ["Tux Torvalds"],
-        'telephoneNumber': ["000"],
-        'mail': ["tuz@example.org"],
-        'o': ["Linux Rules"],
-        'userPassword': ["silly"],
+        'givenName': [b"Tux"],
+        'sn': [b"Torvalds"],
+        'cn': [b"Tux Torvalds"],
+        'telephoneNumber': [b"000"],
+        'mail': [b"tuz@example.org"],
+        'o': [b"Linux Rules"],
+        'userPassword': [b"silly"],
         'objectClass': [
-            'top', 'person', 'organizationalPerson', 'inetOrgPerson'],
+            b'top', b'person', b'organizationalPerson', b'inetOrgPerson'],
     })
 
+    values.mock_connection = mock.MagicMock()
+    values.mock_connection.response = search_response
+
+    values.mock_class = mock.MagicMock()
+    values.mock_class.return_value = values.mock_connection
+
+    LDAP = {
+        'default': {
+            'ENGINE': 'tldap.backend.fake_transactions',
+            'URI': 'ldap://localhost:38911/',
+            'USER': 'cn=Manager,dc=python-ldap,dc=org',
+            'PASSWORD': 'password',
+            'USE_TLS': False,
+            'TLS_CA': None,
+            'LDAP_ACCOUNT_BASE': 'ou=People, dc=python-ldap,dc=org',
+            'LDAP_GROUP_BASE': 'ou=Group, dc=python-ldap,dc=org'
+        }
+    }
+
+    tldap.setup(LDAP)
+
     c = tldap.connection
-    c.add("ou=People, dc=python-ldap,dc=org", values.modlist)
-    c.add("ou=Groups, dc=python-ldap,dc=org", {
-        "objectClass": ["top", "organizationalunit"]
-    })
+    c.set_connection_class(values.mock_class)
+
+    values.expected_server = ServerComparer(ldap3.Server(
+        host='localhost',
+        port=38911,
+        use_ssl=False,
+        allowed_referral_hosts=[('*', True)],
+        get_info='NO_INFO'))
+
     assert c._transact is False
     assert c._onrollback == []
 
@@ -74,508 +139,526 @@ def defaults():
     assert c._onrollback == []
 
 
-class TestBackend:
-    def get(self, c, base):
-        """
-        returns ldap object for search_string
-        raises MultipleResultsException if more than one
-        entry exists for given search string
-        """
-        result_data = list(c.search(base, BASE))
-        no_results = len(result_data)
-        self.assert_equal(no_results, 1)
-        return result_data[0][1]
-
-    def assert_dn_exists(self, dn):
-        c = tldap.connection
-        self.get(c, dn)
-
-    def assert_dn_not_exists(self, dn):
-        c = tldap.connection
-        with pytest.raises(NO_SUCH_OBJECT):
-            self.get(c, dn)
-
-    def assert_equal(self, v1, v2):
-        assert v1 == v2
-
-    def test_check_password_correct(self, LDAP, defaults):
+class TestBackendBase:
+    def test_check_password_correct(self, defaults):
         """ Test if we can logon correctly with correct password. """
         result = tldap.connection.check_password(
             'cn=Manager,dc=python-ldap,dc=org',
             'password'
         )
-        self.assert_equal(result, True)
+        assert result is True
 
-    def test_check_password_wrong(self, LDAP, defaults):
+        defaults.mock_class.assert_called_once_with(
+            defaults.expected_server,
+            authentication='SIMPLE',
+            password='password',
+            user='cn=Manager,dc=python-ldap,dc=org')
+
+        expected_calls = [call.open(), call.bind(), call.unbind()]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_check_password_wrong(self, defaults):
         """ Test that we can't logon correctly with wrong password. """
+        defaults.mock_connection.bind.side_effect = \
+            errors.LDAPInvalidCredentialsResult()
+
         result = tldap.connection.check_password(
             'cn=Manager,dc=python-ldap,dc=org',
             'password2'
         )
-        self.assert_equal(result, False)
+        assert result is False
 
-    def test_transaction_explicit_roll_back(self, LDAP, defaults):
+        defaults.mock_class.assert_called_once_with(
+            defaults.expected_server,
+            authentication='SIMPLE',
+            password='password2',
+            user='cn=Manager,dc=python-ldap,dc=org')
+
+        expected_calls = [call.open(), call.bind(), call.unbind()]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_search(self, search_response, defaults):
+        """ Test base search scope. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+        search_response.add(dn, defaults.modlist)
+
+        c = tldap.connection
+        mock_dn = mock.Mock()
+        mock_scope = mock.Mock()
+        mock_filter = mock.Mock()
+        mock_limit = mock.Mock()
+        r = c.search(mock_dn, mock_scope, mock_filter, limit=mock_limit)
+
+        assert next(r)[1] == defaults.modlist
+        assert next(r)[1] == defaults.modlist
+
+        with pytest.raises(StopIteration):
+            next(r)
+
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.search(
+                mock_dn, mock_filter, mock_scope,
+                attributes=ANY, paged_size=mock_limit),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+
+class TestBackendFakeTransactions:
+    def test_transaction_roll_back_explicit(self, search_response, defaults):
         """ Test explicit roll back. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
         with tldap.transaction.commit_on_success():
-            c.add("uid=tux, ou=People, dc=python-ldap,dc=org",
-                  defaults.modlist)
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                'sn': (ldap3.MODIFY_REPLACE, "Gates")},
+            c.add(dn, defaults.modlist)
+            c.modify(dn, {
+                'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
                 onfailure=onfailure)
             c.rollback()
-        self.assert_dn_not_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        onfailure.assert_called_once_with()
 
-    def test_transaction_explicit_roll_back_on_exception(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.delete(dn)
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_roll_back_exception(self, search_response, defaults):
         """ Test roll back on exception. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        try:
+        with pytest.raises(RuntimeError):
             with tldap.transaction.commit_on_success():
-                c.add(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org",
-                    defaults.modlist)
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    'sn': (ldap3.MODIFY_REPLACE, "Gates")},
+                c.add(dn, defaults.modlist)
+                c.modify(dn, {
+                    'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
                     onfailure)
                 raise RuntimeError("testing failure")
-        except RuntimeError:
-            pass
-        self.assert_dn_not_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        onfailure.assert_called_once_with()
 
-    def test_transaction_replace_attribute_rollback(self, LDAP, defaults):
-        """ Test explicit roll back. """
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.delete(dn)
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_replace_attribute_rollback(
+            self, search_response, defaults):
+        """ Test replace attribute with explicit roll back. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    'sn': (ldap3.MODIFY_REPLACE, "Gates")},
+                c.modify(dn, {
+                    'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
                     onfailure=onfailure)
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'],
-            [b"Torvalds"])
-        onfailure.assert_called_once_with()
 
-    def test_transaction_replace_attribute_success(self, LDAP, defaults):
-        """ Test success commits. """
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_replace_attribute_success(
+            self, search_response, defaults):
+        """ Test change attribute with success. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
+        c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                'sn': (ldap3.MODIFY_REPLACE, "Gates")},
+            c.modify(dn, {
+                'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
                 onfailure=onfailure)
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'], [b"Gates"])
-        onfailure.assert_not_called()
 
-    def test_transaction_replace_attribute_list_rollback(self, LDAP, defaults):
+        onfailure.assert_not_called()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_replace_attribute_list_rollback(
+            self, search_response, defaults):
         """ Test replacing attribute with rollback. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    "telephoneNumber": (ldap3.MODIFY_REPLACE, ["222"])},
+                c.modify(dn, {
+                    "telephoneNumber": (ldap3.MODIFY_REPLACE, [b"222"])},
                     onfailure=onfailure)
-                self.assert_equal(self.get(
-                    c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                    'telephoneNumber'],
-                    [b"222"])
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
-            [b"000"])
-        onfailure.assert_called_once_with()
 
-    def test_transaction_replace_attribute_list_success(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_REPLACE', [b'222'])}),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_REPLACE', [b'000'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_replace_attribute_list_success(
+            self, search_response, defaults):
         """ Test replacing attribute with success. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
+        c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                'telephoneNumber': (ldap3.MODIFY_REPLACE, "222")},
+            c.modify(dn, {
+                'telephoneNumber': (ldap3.MODIFY_REPLACE, [b"222"])},
                 onfailure=onfailure)
-            self.assert_equal(self.get(
-                c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                'telephoneNumber'],
-                [b"222"])
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
-            [b"222"])
-        onfailure.assert_not_called()
 
-    def test_transaction_delete_attribute_rollback(self, LDAP, defaults):
+        onfailure.assert_not_called()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_REPLACE', [b'222'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_delete_attribute_rollback(
+            self, search_response, defaults):
         """ Test deleting attribute *of new object* with rollback. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    "telephoneNumber": (ldap3.MODIFY_DELETE, ['000'])},
+                c.modify(dn, {
+                    "telephoneNumber": (ldap3.MODIFY_DELETE, [b'000'])},
                     onfailure=onfailure)
-                with pytest.raises(KeyError):
-                    self.get(
-                        c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                        'telephoneNumber']
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
-            [b"000"])
-        onfailure.assert_called_once_with()
 
-    def test_transaction_delete_attribute_success(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_DELETE', [b'000'])}),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_ADD', [b'000'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_delete_attribute_success(
+            self, search_response, defaults):
         """ Test deleting attribute *of new object* with success. """
-        c = tldap.connection
-        onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                "telephoneNumber": (ldap3.MODIFY_DELETE, ['000'])},
-                onfailure=onfailure)
-            with pytest.raises(KeyError):
-                self.get(
-                    c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                    'telephoneNumber']
-        with pytest.raises(KeyError):
-            self.get(
-                c,
-                "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber']
-        onfailure.assert_not_called()
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
 
-    def test_transaction_add_attribute_rollback(self, LDAP, defaults):
-        """ Test adding attribute with rollback. """
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with tldap.transaction.commit_on_success():
+            c.modify(dn, {
+                "telephoneNumber": (ldap3.MODIFY_DELETE, [b'000'])},
+                onfailure=onfailure)
+
+        onfailure.assert_not_called()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_DELETE', [b'000'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_add_attribute_rollback(
+            self, search_response, defaults):
+        """ Test adding attribute with rollback. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
+        c = tldap.connection
+        onfailure = mock.Mock()
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    "telephoneNumber": (ldap3.MODIFY_ADD, ["111"])},
+                c.modify(dn, {
+                    "telephoneNumber": (ldap3.MODIFY_ADD, [b"111"])},
                     onfailure=onfailure)
-                self.assert_equal(self.get(
-                    c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                    'telephoneNumber'],
-                    [b"000", b"111"])
-                with pytest.raises(errors.LDAPAttributeOrValueExistsResult):
-                    c.modify(
-                        "uid=tux, ou=People, dc=python-ldap,dc=org", {
-                            'telephoneNumber': (ldap3.MODIFY_ADD, ["111"])})
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
-            [b"000"])
-        onfailure.assert_called_once_with()
 
-    def test_transaction_add_attribute_success(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_ADD', [b'111'])}),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_DELETE', [b'111'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_add_attribute_success(
+            self, search_response, defaults):
         """ Test adding attribute with success. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
+        c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
-            c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                'telephoneNumber': (ldap3.MODIFY_ADD, ["111"])},
+            c.modify(dn, {
+                'telephoneNumber': (ldap3.MODIFY_ADD, [b"111"])},
                 onfailure=onfailure)
-            self.assert_equal(self.get(
-                c, "uid=tux, ou=People, dc=python-ldap,dc=org")[
-                'telephoneNumber'], [b"000", b"111"])
-            with pytest.raises(errors.LDAPAttributeOrValueExistsResult):
-                c.modify(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org", {
-                        'telephoneNumber': (ldap3.MODIFY_ADD, ["111"])})
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['telephoneNumber'],
-            [b"000", b"111"])
+
         onfailure.assert_not_called()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'telephoneNumber': ('MODIFY_ADD', [b'111'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_search_base(self, LDAP, defaults):
-        """ Test base search scope. """
-        c = tldap.connection
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        r = c.search(
-            "uid=tux, ou=People, dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 1)
-        r = c.search(
-            "ou=People, dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "ou=Groups, dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-
-    def test_search_level(self, LDAP, defaults):
-        """ Test level search scope. """
-        c = tldap.connection
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        r = c.search(
-            "uid=tux, ou=People, dc=python-ldap,dc=org",
-            LEVEL, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "ou=People, dc=python-ldap,dc=org",
-            LEVEL, "(uid=tux)")
-        self.assert_equal(len(list(r)), 1)
-        r = c.search(
-            "dc=python-ldap,dc=org",
-            LEVEL, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "ou=Groups, dc=python-ldap,dc=org",
-            LEVEL, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-
-    def test_search_subtree(self, LDAP, defaults):
-        """ Test subtree search scope. """
-        c = tldap.connection
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        r = c.search(
-            "uid=tux, ou=People, dc=python-ldap,dc=org",
-            SUBTREE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 1)
-        r = c.search(
-            "ou=People, dc=python-ldap,dc=org",
-            SUBTREE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 1)
-        r = c.search(
-            "dc=python-ldap,dc=org",
-            SUBTREE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 1)
-        r = c.search(
-            "ou=Groups, dc=python-ldap,dc=org",
-            SUBTREE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-        r = c.search(
-            "dc=python-ldap,dc=org",
-            BASE, "(uid=tux)")
-        self.assert_equal(len(list(r)), 0)
-
-    def test_transaction_third_statement_fails(self, LDAP, defaults):
+    def test_transaction_third_statement_fails(
+            self, search_response, defaults):
         """
         Test success when 3rd statement fails;
 
         Need to roll back 2nd and 1st statements
         """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        onfailure = mock.Mock()
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    "sn": (ldap3.MODIFY_REPLACE, "Milkshakes")})
-                self.assert_equal(self.get(
-                    c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'],
-                    [b"Milkshakes"])
-                c.modify("uid=tux, ou=People, dc=python-ldap,dc=org", {
-                    "sn": (ldap3.MODIFY_REPLACE, "Bannas")})
-                self.assert_equal(self.get(
-                    c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'],
-                    [b"Bannas"])
+                c.modify(dn, {
+                    "sn": (ldap3.MODIFY_REPLACE, b"Milkshakes")},
+                    onfailure=onfailure)
+                c.modify(dn, {
+                    "sn": (ldap3.MODIFY_REPLACE, [b"Bannas"])},
+                    onfailure=onfailure)
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_equal(self.get(
-            c, "uid=tux, ou=People, dc=python-ldap,dc=org")['sn'],
-            [b"Torvalds"])
 
-    def test_transaction_rename_rollback(self, LDAP, defaults):
+        onfailure.assert_has_calls([call(), call()])
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', b'Milkshakes')}),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Bannas'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_rename_rollback(self, search_response, defaults):
         """ Test rename with rollback. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        dn2 = 'uid=tuz,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.rename(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org", 'uid=tuz',
+                    dn, 'uid=tuz',
                     onfailure=onfailure)
-                c.modify("uid=tuz, ou=People, dc=python-ldap,dc=org", {
-                    "sn": (ldap3.MODIFY_REPLACE, "Tuz")})
-                self.assert_dn_not_exists(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org")
-                self.assert_dn_exists(
-                    "uid=tuz, ou=People, dc=python-ldap,dc=org")
+                c.modify(dn2, {
+                    "sn": (ldap3.MODIFY_REPLACE, [b"Tuz"])})
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_dn_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assert_dn_not_exists("uid=tuz, ou=People, dc=python-ldap,dc=org")
-        onfailure.assert_called_once_with()
 
-    def test_transaction_rename_success(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.modify_dn(dn, 'uid=tuz', new_superior=None),
+            call.search(dn2, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn2, {'sn': ('MODIFY_REPLACE', [b'Tuz'])}),
+            call.modify(dn2, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.modify_dn(dn2, 'uid=tux', new_superior=None),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_rename_success(self, search_response, defaults):
         """ Test rename with success. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        dn2 = 'uid=tuz,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
+        c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.rename(
-                "uid=tux, ou=People, dc=python-ldap,dc=org", 'uid=tuz',
+                dn, 'uid=tuz',
                 onfailure=onfailure)
-            c.modify("uid=tuz, ou=People, dc=python-ldap,dc=org", {
-                'sn': (ldap3.MODIFY_REPLACE, "Tuz")})
-            self.assert_dn_not_exists(
-                "uid=tux, ou=People, dc=python-ldap,dc=org")
-            self.assert_dn_exists(
-                "uid=tuz, ou=People, dc=python-ldap,dc=org")
-        self.assert_dn_not_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assert_dn_exists("uid=tuz, ou=People, dc=python-ldap,dc=org")
-        onfailure.assert_not_called()
+            c.modify(dn2, {
+                'sn': (ldap3.MODIFY_REPLACE, [b"Tuz"])})
 
-    def test_transaction_move_rollback(self, LDAP, defaults):
+        onfailure.assert_not_called()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.modify_dn(dn, 'uid=tuz', new_superior=None),
+            call.search(dn2, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.modify(dn2, {'sn': ('MODIFY_REPLACE', [b'Tuz'])}),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_move_rollback(self, search_response, defaults):
         """ Test move with rollback. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        dn2 = 'uid=tux,ou=Groups,dc=python-ldap,dc=org'
+        old_base = 'ou=People,dc=python-ldap,dc=org'
+        new_base = 'ou=Groups,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.rename(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org",
-                    "uid=tux", "ou=Groups, dc=python-ldap,dc=org",
+                    dn,
+                    "uid=tux", "ou=Groups,dc=python-ldap,dc=org",
                     onfailure=onfailure)
-                self.assert_dn_not_exists(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org")
-                self.assert_dn_exists(
-                    "uid=tux, ou=Groups, dc=python-ldap,dc=org")
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_dn_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assert_dn_not_exists("uid=tux, ou=Groups, dc=python-ldap,dc=org")
-        onfailure.assert_called_once_with()
 
-    def test_transaction_move_success(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.modify_dn(dn, 'uid=tux', new_superior=new_base),
+            call.modify_dn(dn2, 'uid=tux', new_superior=old_base),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_move_success(self, search_response, defaults):
         """ Test move with success. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        new_base = 'ou=Groups,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
+        c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.rename(
-                "uid=tux, ou=People, dc=python-ldap,dc=org",
-                "uid=tux", "ou=Groups, dc=python-ldap,dc=org",
+                dn,
+                "uid=tux", new_base,
                 onfailure=onfailure)
-            self.assert_dn_not_exists(
-                "uid=tux, ou=People, dc=python-ldap,dc=org")
-            self.assert_dn_exists(
-                "uid=tux, ou=Groups, dc=python-ldap,dc=org")
-        self.assert_dn_not_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assert_dn_exists("uid=tux, ou=Groups, dc=python-ldap,dc=org")
+
         onfailure.assert_not_called()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.modify_dn(dn, 'uid=tux', new_superior=new_base),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_delete_and_add_rollback(self, LDAP, defaults):
-        """ Test roll back on error of delete and add of same user. """
-        c = tldap.connection
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
-            with tldap.transaction.commit_on_success():
-                c.delete("uid=tux, ou=People, dc=python-ldap,dc=org")
-                self.assert_dn_not_exists(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org")
-                c.add(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org",
-                    defaults.modlist)
-                c.fail()  # raises TestFailure during commit causing rollback
-                c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_dn_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-
-    def test_transaction_delete_and_add_success(self, LDAP, defaults):
-        """ Test delate and add same user. """
-        c = tldap.connection
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        with tldap.transaction.commit_on_success():
-            c.delete("uid=tux, ou=People, dc=python-ldap,dc=org")
-            self.assert_dn_not_exists(
-                "uid=tux, ou=People, dc=python-ldap,dc=org")
-            c.add(
-                "uid=tux, ou=People, dc=python-ldap,dc=org",
-                defaults.modlist)
-        self.assert_dn_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-
-    def test_transaction_delete_rollback(self, LDAP, defaults):
+    def test_transaction_delete_rollback(self, search_response, defaults):
         """ Test delete rollback. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
-        try:
+        c.add(dn, defaults.modlist)
+        with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.delete(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org",
-                    onfailure=onfailure)
-                self.assert_dn_not_exists(
-                    "uid=tux, ou=People, dc=python-ldap,dc=org")
+                c.delete(dn, onfailure=onfailure)
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
-        except tldap.exceptions.TestFailure:
-            pass
-        else:
-            defaults.fail("Exception not generated")
-        self.assert_dn_exists("uid=tux, ou=People, dc=python-ldap,dc=org")
-        onfailure.assert_called_once_with()
 
-    def test_transaction_delete_success(self, LDAP, defaults):
+        onfailure.assert_called_once_with()
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.delete(dn),
+            call.add(dn, None, defaults.modlist),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
+
+    def test_transaction_delete_success(self, search_response, defaults):
         """ Test delete success. """
+        dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
+        search_response.add(dn, defaults.modlist)
+
         c = tldap.connection
         onfailure = mock.Mock()
-        c.add("uid=tux, ou=People, dc=python-ldap,dc=org", defaults.modlist)
+        c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
-            c.delete(
-                "uid=tux, ou=People, dc=python-ldap,dc=org",
-                onfailure=onfailure)
-            self.assert_dn_not_exists(
-                "uid=tux, ou=People, dc=python-ldap,dc=org")
-        self.assert_dn_not_exists(
-            "uid=tux, ou=People, dc=python-ldap,dc=org")
+            c.delete(dn, onfailure=onfailure)
+
         onfailure.assert_not_called()
-        # FIXME: we should check all attributes are correct on restored object.
+        expected_calls = [
+            call.open(),
+            call.bind(),
+            call.add(dn, None, defaults.modlist),
+            call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
+            call.delete(dn),
+        ]
+        defaults.mock_connection.assert_has_calls(expected_calls)
