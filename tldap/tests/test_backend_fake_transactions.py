@@ -207,7 +207,7 @@ class TestBackendBase:
 
 
 class TestBackendFakeTransactions:
-    def test_transaction_roll_back_explicit(self, search_response, defaults):
+    def test_roll_back_explicit(self, search_response, defaults):
         """ Test explicit roll back. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -233,7 +233,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_roll_back_exception(self, search_response, defaults):
+    def test_roll_back_exception(self, search_response, defaults):
         """ Test roll back on exception. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -260,8 +260,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_replace_attribute_rollback(
-            self, search_response, defaults):
+    def test_replace_attribute_rollback(self, search_response, defaults):
         """ Test replace attribute with explicit roll back. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -288,8 +287,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_replace_attribute_success(
-            self, search_response, defaults):
+    def test_replace_attribute_success(self, search_response, defaults):
         """ Test change attribute with success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -312,8 +310,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_replace_attribute_list_rollback(
-            self, search_response, defaults):
+    def test_replace_attribute_list_rollback(self, search_response, defaults):
         """ Test replacing attribute with rollback. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -340,8 +337,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_replace_attribute_list_success(
-            self, search_response, defaults):
+    def test_replace_attribute_list_success(self, search_response, defaults):
         """ Test replacing attribute with success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -364,8 +360,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_delete_attribute_rollback(
-            self, search_response, defaults):
+    def test_delete_attribute_rollback(self, search_response, defaults):
         """ Test deleting attribute *of new object* with rollback. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -392,8 +387,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_delete_attribute_success(
-            self, search_response, defaults):
+    def test_delete_attribute_success(self, search_response, defaults):
         """ Test deleting attribute *of new object* with success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -416,8 +410,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_add_attribute_rollback(
-            self, search_response, defaults):
+    def test_add_attribute_rollback(self, search_response, defaults):
         """ Test adding attribute with rollback. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -444,7 +437,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_add_attribute_success(
+    def test_add_attribute_success(
             self, search_response, defaults):
         """ Test adding attribute with success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
@@ -468,8 +461,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_third_statement_fails(
-            self, search_response, defaults):
+    def test_third_statement_fails(self, search_response, defaults):
         """
         Test success when 3rd statement fails;
 
@@ -504,7 +496,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_rename_rollback(self, search_response, defaults):
+    def test_rename_rollback(self, search_response, defaults):
         """ Test rename with rollback. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         dn2 = 'uid=tuz,ou=People,dc=python-ldap,dc=org'
@@ -536,7 +528,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_rename_success(self, search_response, defaults):
+    def test_rename_success(self, search_response, defaults):
         """ Test rename with success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         dn2 = 'uid=tuz,ou=People,dc=python-ldap,dc=org'
@@ -563,7 +555,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_move_rollback(self, search_response, defaults):
+    def test_move_rollback(self, search_response, defaults):
         """ Test move with rollback. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         dn2 = 'uid=tux,ou=Groups,dc=python-ldap,dc=org'
@@ -593,7 +585,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_move_success(self, search_response, defaults):
+    def test_move_success(self, search_response, defaults):
         """ Test move with success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         new_base = 'ou=Groups,dc=python-ldap,dc=org'
@@ -617,7 +609,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_delete_rollback(self, search_response, defaults):
+    def test_delete_rollback(self, search_response, defaults):
         """ Test delete rollback. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
@@ -642,7 +634,7 @@ class TestBackendFakeTransactions:
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
-    def test_transaction_delete_success(self, search_response, defaults):
+    def test_delete_success(self, search_response, defaults):
         """ Test delete success. """
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
