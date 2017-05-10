@@ -25,7 +25,7 @@ def step_create_account(context, username):
 
 @behave.when(u'we modify a account called {username}')
 def step_modify_account(context, username):
-    """ Test if we can create a account. """
+    """ Test if we can modify a account. """
     account = test_schemas.account.objects.get(uid=username)
     account.cn = "Super Tux"
     account.sn = "Tux"

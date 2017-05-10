@@ -23,7 +23,7 @@ def step_create_person(context, username):
 
 @behave.when(u'we modify a person called {username}')
 def step_modify_person(context, username):
-    """ Test if we can create a person. """
+    """ Test if we can modify a person. """
     person = test_schemas.person.objects.get(uid=username)
     person.cn = "Super Tux"
     person.sn = "Tux"

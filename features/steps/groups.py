@@ -18,7 +18,7 @@ def step_create_group(context, name):
 
 @behave.when(u'we modify a group called {name}')
 def step_modify_group(context, name):
-    """ Test if we can create a group. """
+    """ Test if we can modify a group. """
     group = test_schemas.group.objects.get(cn=name)
     group.gidNumber = 11
     group.save()
