@@ -31,6 +31,20 @@ def step_modify_person(context, username):
     person.save()
 
 
+@behave.when(u'we rename a person called {username} to {new_name}')
+def step_rename_person(context, username, new_name):
+    """ Test if we can rename a person. """
+    person = test_schemas.person.objects.get(uid=username)
+    person.rename(uid=new_name)
+
+
+@behave.when(u'we move a person called {username} to {new_dn}')
+def step_move_person(context, username, new_dn):
+    """ Test if we can move a person. """
+    person = test_schemas.person.objects.get(uid=username)
+    person.rename(new_dn)
+
+
 @behave.when(u'we delete a person called {username}')
 def step_delete_person(context, username):
     """ Test if we can delete a person. """

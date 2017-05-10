@@ -64,3 +64,37 @@ Feature: Testing group functions
       and we rollback the transaction
       then we should be able to get a group called tux
       and we should be able to find 1 groups
+
+  Scenario: Test rename group
+      when we create a group called tux
+      and we enter a transaction
+      and we rename a group called tux to tuz
+      and we commit the transaction
+      then we should not be able to get a group called tux
+      then we should be able to get a group called tuz
+      and we should be able to find 1 groups
+
+  Scenario: Test rename group with rollback
+      when we create a group called tux
+      and we enter a transaction
+      and we rename a group called tux to tuz
+      and we rollback the transaction
+      then we should be able to get a group called tux
+      then we should not be able to get a group called tuz
+      and we should be able to find 1 groups
+
+  Scenario: Test move group
+      when we create a group called tux
+      and we enter a transaction
+      and we move a group called tux to ou=People,dc=python-ldap,dc=org
+      and we commit the transaction
+      then we should not be able to get a group called tux
+      and we should be able to find 0 groups
+
+  Scenario: Test move group with rollback
+      when we create a group called tux
+      and we enter a transaction
+      and we move a group called tux to ou=People,dc=python-ldap,dc=org
+      and we rollback the transaction
+      then we should be able to get a group called tux
+      and we should be able to find 1 groups

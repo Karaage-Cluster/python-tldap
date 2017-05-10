@@ -64,3 +64,37 @@ Feature: Testing person functions
       and we rollback the transaction
       then we should be able to get a person called tux
       and we should be able to find 1 persons
+
+  Scenario: Test rename person
+      when we create a person called tux
+      and we enter a transaction
+      and we rename a person called tux to tuz
+      and we commit the transaction
+      then we should not be able to get a person called tux
+      then we should be able to get a person called tuz
+      and we should be able to find 1 persons
+
+  Scenario: Test rename person with rollback
+      when we create a person called tux
+      and we enter a transaction
+      and we rename a person called tux to tuz
+      and we rollback the transaction
+      then we should be able to get a person called tux
+      then we should not be able to get a person called tuz
+      and we should be able to find 1 persons
+
+  Scenario: Test move person
+      when we create a person called tux
+      and we enter a transaction
+      and we move a person called tux to ou=Groups,dc=python-ldap,dc=org
+      and we commit the transaction
+      then we should not be able to get a person called tux
+      and we should be able to find 0 persons
+
+  Scenario: Test move person with rollback
+      when we create a person called tux
+      and we enter a transaction
+      and we move a person called tux to ou=Groups,dc=python-ldap,dc=org
+      and we rollback the transaction
+      then we should be able to get a person called tux
+      and we should be able to find 1 persons

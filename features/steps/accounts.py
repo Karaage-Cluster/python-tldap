@@ -33,6 +33,20 @@ def step_modify_account(context, username):
     account.save()
 
 
+@behave.when(u'we rename a account called {name} to {new_name}')
+def step_rename_account(context, name, new_name):
+    """ Test if we can rename a account. """
+    account = test_schemas.account.objects.get(uid=name)
+    account.rename(uid=new_name)
+
+
+@behave.when(u'we move a account called {name} to {new_dn}')
+def step_move_account(context, name, new_dn):
+    """ Test if we can move a account. """
+    account = test_schemas.account.objects.get(uid=name)
+    account.rename(new_dn)
+
+
 @behave.when(u'we delete a account called {username}')
 def step_delete_account(context, username):
     """ Test if we can delete a account. """

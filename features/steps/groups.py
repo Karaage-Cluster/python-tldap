@@ -24,6 +24,20 @@ def step_modify_group(context, name):
     group.save()
 
 
+@behave.when(u'we rename a group called {name} to {new_name}')
+def step_rename_group(context, name, new_name):
+    """ Test if we can rename a group. """
+    group = test_schemas.group.objects.get(cn=name)
+    group.rename(cn=new_name)
+
+
+@behave.when(u'we move a group called {name} to {new_dn}')
+def step_move_group(context, name, new_dn):
+    """ Test if we can move a group. """
+    group = test_schemas.group.objects.get(cn=name)
+    group.rename(new_dn)
+
+
 @behave.when(u'we delete a group called {name}')
 def step_delete_group(context, name):
     """ Test if we can delete a group. """
