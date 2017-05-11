@@ -377,7 +377,7 @@ class QuerySet(object):
 
         # add object classes to search array
         query = tldap.Q()
-        for oc in object_classes:
+        for oc in sorted(object_classes):
             query = query & tldap.Q(objectClass=oc)
 
         # do a SUBTREE search
