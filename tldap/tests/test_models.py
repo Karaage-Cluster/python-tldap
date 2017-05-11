@@ -33,6 +33,7 @@ import tldap.tests.schemas as test_schemas
 
 class SearchMock():
     def __init__(self):
+        self.calls = []
         self.results = []
 
     def add_result(self, search, obj):
@@ -41,6 +42,8 @@ class SearchMock():
     def __call__(
             self, base, scope, filterstr='(objectClass=*)',
             attrlist=None, limit=None):
+
+        self.calls.append((base, scope, filterstr, attrlist, limit))
 
         results = []
         for search, obj in self.results:
@@ -844,6 +847,9 @@ class TestModelGroup:
         accounts = list(group1.secondary_accounts.all())
         assert accounts == []
 
+        expected_calls = []
+        assert c.search.calls == expected_calls
+
     def test_get_secondary_accounts_set(
             self, mock_LDAP, defaults, account1, group2):
         """ Test get all secondary accounts when one set. """
@@ -854,6 +860,23 @@ class TestModelGroup:
         # Get the secondary groups.
         accounts = list(group2.secondary_accounts.all())
         assert accounts == [account1]
+
+        expected_calls = [(
+            'ou=People, dc=python-ldap,dc=org',
+            'SUBTREE',
+            '(&'
+            '(objectClass=inetOrgPerson)'
+            '(objectClass=organizationalPerson)'
+            '(objectClass=person)'
+            '(objectClass=posixAccount)'
+            '(objectClass=shadowAccount)'
+            '(objectClass=top)'
+            '(uid=tux)'
+            ')',
+            mock.ANY,
+            None
+        )]
+        assert c.search.calls == expected_calls
 
 
 class TestModelQuery:
@@ -867,6 +890,21 @@ class TestModelQuery:
         person = defaults.person.objects.get(
             dn="uid=tux, ou=People, dc=python-ldap,dc=org")
         assert person.uid == "tux"
+
+        expected_calls = [(
+            'ou=People, dc=python-ldap,dc=org',
+            'SUBTREE',
+            '(&'
+            '(objectClass=inetOrgPerson)'
+            '(objectClass=organizationalPerson)'
+            '(objectClass=person)'
+            '(objectClass=top)'
+            '(entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org)'
+            ')',
+            mock.ANY,
+            None
+        )]
+        assert c.search.calls == expected_calls
 
     def test_filter_normal(self, defaults):
         """ Test filter. """
