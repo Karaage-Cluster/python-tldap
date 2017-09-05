@@ -1,2 +1,2 @@
 -rrequirements.txt
-django==1.11.4
+django==1.11.5
