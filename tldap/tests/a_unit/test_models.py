@@ -37,10 +37,11 @@ class SearchMock():
         self.results = []
 
     def add_result(self, search, obj):
-        self.results.append(("(%s)" % search, obj))
+        assert isinstance(search, bytes)
+        self.results.append((b"(%s)" % search, obj))
 
     def __call__(
-            self, base, scope, filterstr='(objectClass=*)',
+            self, base, scope, filterstr=b'(objectClass=*)',
             attrlist=None, limit=None):
 
         self.calls.append((base, scope, filterstr, attrlist, limit))
@@ -229,13 +230,27 @@ def get_expected_initial_db_values():
     }
 
 
+def _get_db_value(value):
+    """ Convert value into db value. """
+    if isinstance(value, str):
+        result = value.encode("UTF-8")
+    elif isinstance(value, int):
+        result = b"%d" % value
+    elif isinstance(value, bytes):
+        result = value
+    else:
+        assert False
+
+    return result
+
+
 def get_db_values(updates):
     """ Convert values into db values. """
     result = {}
 
     for key, value in updates.items():
         if isinstance(value, list):
-            result[key] = value
+            result[key] = [_get_db_value(v) for v in value]
         else:
             result[key] = [value.encode("UTF-8")]
 
@@ -573,7 +588,7 @@ class TestModelAccount:
 
         c = mock_LDAP
         c.search = SearchMock()
-        c.search.add_result("gidNumber=10", group1)
+        c.search.add_result(b"gidNumber=10", group1)
 
         # Get the primary group
         group = account1.primary_group.get()
@@ -650,7 +665,7 @@ class TestModelAccount:
         """ Test removing all secondary groups from account. """
         c = mock_LDAP
         c.search = SearchMock()
-        c.search.add_result("memberUid=tux", group2)
+        c.search.add_result(b"memberUid=tux", group2)
 
         # Add person to group.
         account1.secondary_groups.clear()
@@ -681,7 +696,7 @@ class TestModelAccount:
         """ Test getting secondary group when one set. """
         c = mock_LDAP
         c.search = SearchMock()
-        c.search.add_result("memberUid=tux", group2)
+        c.search.add_result(b"memberUid=tux", group2)
 
         # Get the secondary groups.
         groups = list(account1.secondary_groups.all())
@@ -732,7 +747,7 @@ class TestModelGroup:
 
         c = mock_LDAP
         c.search = SearchMock()
-        c.search.add_result("gidNumber=10", account1)
+        c.search.add_result(b"gidNumber=10", account1)
 
         # Get the primary group
         accounts = list(group1.primary_accounts.all())
@@ -855,7 +870,7 @@ class TestModelGroup:
         """ Test get all secondary accounts when one set. """
         c = mock_LDAP
         c.search = SearchMock()
-        c.search.add_result("uid=tux", account1)
+        c.search.add_result(b"uid=tux", account1)
 
         # Get the secondary groups.
         accounts = list(group2.secondary_accounts.all())
@@ -864,15 +879,15 @@ class TestModelGroup:
         expected_calls = [(
             'ou=People, dc=python-ldap,dc=org',
             'SUBTREE',
-            '(&'
-            '(objectClass=inetOrgPerson)'
-            '(objectClass=organizationalPerson)'
-            '(objectClass=person)'
-            '(objectClass=posixAccount)'
-            '(objectClass=shadowAccount)'
-            '(objectClass=top)'
-            '(uid=tux)'
-            ')',
+            b'(&'
+            b'(objectClass=inetOrgPerson)'
+            b'(objectClass=organizationalPerson)'
+            b'(objectClass=person)'
+            b'(objectClass=posixAccount)'
+            b'(objectClass=shadowAccount)'
+            b'(objectClass=top)'
+            b'(uid=tux)'
+            b')',
             mock.ANY,
             None
         )]
@@ -885,7 +900,7 @@ class TestModelQuery:
         c = mock_LDAP
         c.search = SearchMock()
         c.search.add_result(
-            "entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", person)
+            b"entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", person)
 
         person = defaults.person.objects.get(
             dn="uid=tux, ou=People, dc=python-ldap,dc=org")
@@ -894,13 +909,13 @@ class TestModelQuery:
         expected_calls = [(
             'ou=People, dc=python-ldap,dc=org',
             'SUBTREE',
-            '(&'
-            '(objectClass=inetOrgPerson)'
-            '(objectClass=organizationalPerson)'
-            '(objectClass=person)'
-            '(objectClass=top)'
-            '(entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org)'
-            ')',
+            b'(&'
+            b'(objectClass=inetOrgPerson)'
+            b'(objectClass=organizationalPerson)'
+            b'(objectClass=person)'
+            b'(objectClass=top)'
+            b'(entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org)'
+            b')',
             mock.ANY,
             None
         )]
@@ -910,40 +925,40 @@ class TestModelQuery:
         """ Test filter. """
         ldap_filter = defaults.person.objects.all()._get_filter(
             tldap.Q(uid='tux'))
-        assert ldap_filter == "(uid=tux)"
+        assert ldap_filter == b"(uid=tux)"
 
     def test_filter_backslash(self, defaults):
         """ Test filter with backslash. """
         ldap_filter = defaults.person.objects.all()._get_filter(
             tldap.Q(uid='t\\ux'))
-        assert ldap_filter == "(uid=t\\5cux)"
+        assert ldap_filter == b"(uid=t\\5cux)"
 
     def test_filter_negated(self, defaults):
         """ Test filter with negated value. """
         ldap_filter = defaults.person.objects.all()._get_filter(
             ~tldap.Q(uid='tux'))
-        assert ldap_filter == "(!(uid=tux))"
+        assert ldap_filter == b"(!(uid=tux))"
 
     def test_filter_or_2(self, defaults):
         """ Test filter with OR condition. """
         ldap_filter = defaults.person.objects.all()._get_filter(
             tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        assert ldap_filter == "(|(uid=tux)(uid=tuz))"
+        assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
 
     def test_filter_or_3(self, defaults):
         """ Test filter with OR condition """
         ldap_filter = defaults.person.objects.all()._get_filter(
             tldap.Q() | tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
-        assert ldap_filter == "(|(uid=tux)(uid=tuz))"
+        assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
 
     def test_filter_and(self, defaults):
         """ Test filter with AND condition. """
         ldap_filter = defaults.person.objects.all()._get_filter(
             tldap.Q() & tldap.Q(uid='tux') & tldap.Q(uid='tuz'))
-        assert ldap_filter == "(&(uid=tux)(uid=tuz))"
+        assert ldap_filter == b"(&(uid=tux)(uid=tuz))"
 
     def test_filter_and_or(self, defaults):
         """ Test filter with AND and OR condition. """
         ldap_filter = defaults.person.objects.all()._get_filter(
             tldap.Q(uid='tux') & (tldap.Q(uid='tuz') | tldap.Q(uid='meow')))
-        assert ldap_filter == "(&(uid=tux)(|(uid=tuz)(uid=meow)))"
+        assert ldap_filter == b"(&(uid=tux)(|(uid=tuz)(uid=meow)))"

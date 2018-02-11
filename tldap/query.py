@@ -151,14 +151,14 @@ class QuerySet(object):
         A field could be found for this term, try to get filter string for it.
         """
         assert isinstance(name, six.string_types)
-        assert isinstance(value, six.string_types + (bytes,))
+        assert isinstance(value, bytes)
         if operation is None:
             return tldap.filter.filter_format(
-                "(%s=%s)", [name, value])
+                b"(%s=%s)", [name, value])
         elif operation == "contains":
             assert value != ""
             return tldap.filter.filter_format(
-                "(%s=*%s*)", [name, value])
+                b"(%s=*%s*)", [name, value])
         else:
             raise ValueError("Unknown search operation %s" % operation)
 
@@ -169,11 +169,11 @@ class QuerySet(object):
         """
         # check the details are valid
         if q.negated and len(q.children) == 1:
-            op = "!"
+            op = b"!"
         elif q.connector == tldap.Q.AND:
-            op = "&"
+            op = b"&"
         elif q.connector == tldap.Q.OR:
-            op = "|"
+            op = b"|"
         else:
             raise ValueError("Invalid value of op found")
 
@@ -202,13 +202,17 @@ class QuerySet(object):
                     if isinstance(value, list):
                         s = []
                         for v in value:
+                            assert isinstance(v, str)
+                            v = value.encode('utf_8')
                             s.append(self._get_filter_item(name, operation, v))
                         search.append("(&".join(search) + ")")
 
                     # or process just the single value
                     else:
+                        assert isinstance(value, str)
+                        v = value.encode('utf_8')
                         search.append(
-                            self._get_filter_item(name, operation, value))
+                            self._get_filter_item(name, operation, v))
                     continue
 
                 # try to find field associated with name
@@ -230,13 +234,13 @@ class QuerySet(object):
                     if isinstance(value, list):
                         s = []
                         for v in value:
-                            v = field.value_to_db(v)
+                            v = field.value_to_filter(v)
                             s.append(self._get_filter_item(name, operation, v))
-                        search.append("(&".join(search) + ")")
+                        search.append(b"(&".join(search) + b")")
 
                     # or process just the single value
                     else:
-                        value = field.value_to_db(value)
+                        value = field.value_to_filter(value)
                         search.append(
                             self._get_filter_item(name, operation, value))
 
@@ -246,7 +250,7 @@ class QuerySet(object):
             return search[0]
         else:
             # multiple terms
-            return "(" + op + "".join(search) + ")"
+            return b"(" + op + b"".join(search) + b")"
 
     def _clone_query(self, q):
         dst = tldap.Q()

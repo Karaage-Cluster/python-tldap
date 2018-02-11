@@ -48,11 +48,11 @@ def escape_filter_chars(assertion_value, escape_mode=0):
             raise ValueError('escape_mode must be 0, 1 or 2.')
 
         if do_escape:
-            s.append("\\%02x" % c)
+            s.append(b"\\%02x" % c)
         else:
-            s.append(chr(c))
+            s.append(bytes([c]))
 
-    return ''.join(s)
+    return b''.join(s)
 
 
 def filter_format(filter_template, assertion_values):
@@ -63,6 +63,6 @@ def filter_format(filter_template, assertion_values):
           List or tuple of assertion values. Length must match
           count of %s in filter_template.
     """
-    assert isinstance(filter_template, six.string_types)
+    assert isinstance(filter_template, bytes)
     return filter_template % (
         tuple(map(escape_filter_chars, assertion_values)))

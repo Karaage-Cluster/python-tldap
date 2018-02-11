@@ -139,6 +139,9 @@ class Field(object):
         "returns field's single value prepared for saving into a database."
         raise RuntimeError("Not implemented")
 
+    def value_to_filter(self, value):
+        return self.value_to_db(value)
+
     def value_to_python(self, value):
         """
         Converts the input single value into the expected Python data type,
@@ -262,7 +265,7 @@ class IntegerField(Field):
         """
         if not isinstance(value, bytes):
             raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+                "%r should be bytes" % self.name)
         if value is None:
             return value
         try:
