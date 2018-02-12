@@ -50,7 +50,12 @@ def escape_filter_chars(assertion_value, escape_mode=0):
         if do_escape:
             s.append(b"\\%02x" % c)
         else:
-            s.append(bytes([c]))
+            b = None
+            if str != bytes:  # Python 3
+                b = bytes([c])
+            else:  # Python 2
+                b = chr(c)
+            s.append(b)
 
     return b''.join(s)
 
