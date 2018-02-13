@@ -9,6 +9,19 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+0.4.2 - 2018-02-13
+------------------
+
+Changed
+~~~~~~~
+* Updated requirements.
+* Changed filter string to byte string.
+
+Removed
+~~~~~~~
+* Python 3.5 support.
+
+
 0.4.1 - 2017-05-01
 ------------------
 
