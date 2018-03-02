@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+from django.utils.deprecation import MiddlewareMixin
+
 import tldap.transaction
 
 
-class TransactionMiddleware(object):
+class TransactionMiddleware(MiddlewareMixin):
     """
     Transaction middleware. If this is enabled, each view function will be run
     with commit_on_response activated - that way a save() doesn't do a direct

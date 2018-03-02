@@ -9,6 +9,15 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+0.4.4 - 2018-03-02
+------------------
+
+Changed
+~~~~~~~
+* Django middleware now inherits from django.utils.deprecation.MiddlewareMixin
+* Update pytest requirement.
+
+
 0.4.3 - 2018-02-13
 ------------------
 Forgot to merge master before releasing 0.4.2; retry.
