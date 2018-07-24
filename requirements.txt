@@ -1,5 +1,5 @@
 passlib==1.7.1
 pyasn1==0.4.3
 ldap3==2.5
-setuptools-scm==3.0.2
+setuptools-scm==3.0.3
 six==1.11.0
