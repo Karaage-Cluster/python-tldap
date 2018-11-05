@@ -1,5 +1,5 @@
 -rrequirements.txt
 Mock==2.0.0
-pytest==3.9.3
+pytest==3.10.0
 pytest-runner==4.2
 pytest-bdd==3.0.0
