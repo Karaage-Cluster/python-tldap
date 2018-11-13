@@ -58,20 +58,6 @@ class PasswordTest(unittest.TestCase):
         self.assertTrue(lp.check_password(
             "test", "{crypt}PQl1.p7BcJRuM"))
 
-    def test_password_depreciated_encode(self):
-        with warnings.catch_warnings(record=True) as w:
-            up = lp.UserPassword()
-            warnings.simplefilter("always")
-            w
-            # this appears to be broken
-            # self.assertEqual(len(w), 1)
-            # self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-        # The algorithm parameter is ignored.
-        encrypted = up.encodePassword("test", "SSHA")
-        self.assertTrue(encrypted.startswith("{CRYPT}$6$"))
-        self.assertTrue(up._compareSinglePassword("test", encrypted))
-        self.assertFalse(up._compareSinglePassword("teddst", encrypted))
-
     def test_password_encode(self):
         encrypted = lp.encode_password("test")
         self.assertTrue(encrypted.startswith("{CRYPT}$6$"))

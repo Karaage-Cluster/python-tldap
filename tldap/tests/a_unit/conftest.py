@@ -1,12 +1,13 @@
 import mock
 import pytest
 
-import tldap
+import tldap.backend
+import tldap.tests.database
 
 
 @pytest.fixture
-def mock_LDAP():
-    LDAP = {
+def mock_ldap():
+    ldap = {
         'default': {
             'ENGINE': 'tldap.backend.fake_transactions',
             'URI': 'ldap://localhost:38911/',
@@ -18,8 +19,8 @@ def mock_LDAP():
             'LDAP_GROUP_BASE': 'ou=Group, dc=python-ldap,dc=org'
         }
     }
-    tldap.setup(LDAP)
+    tldap.backend.setup(ldap)
     connection = mock.Mock()
-    connection.settings_dict = LDAP['default']
-    setattr(tldap.connections._connections, 'default', connection)
+    connection.settings_dict = ldap['default']
+    setattr(tldap.backend.connections._connections, 'default', connection)
     return connection

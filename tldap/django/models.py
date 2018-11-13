@@ -24,7 +24,6 @@ from django.db import models
 class Counters(models.Model):
     """ Keep track of next uidNumber and gidNumber to use for new LDAP objects.
     """
-
     scheme = models.CharField(max_length=20, db_index=True)
     name = models.CharField(max_length=20, db_index=True)
     count = models.IntegerField()

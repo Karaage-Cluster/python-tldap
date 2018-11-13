@@ -275,7 +275,7 @@ class DNTest(unittest.TestCase):
         result = tldap.dn.dn2str(result)
         self.assertEqual(result, value)
 
-        value = "CN=L. Eagle,O=Sue\, Grabbit and Runn,C=GB"
+        value = "CN=L. Eagle,O=Sue\\, Grabbit and Runn,C=GB"
         result = tldap.dn.str2dn(value)
         self.assertIsNotNone(result)
         self.assertEqual(result, [

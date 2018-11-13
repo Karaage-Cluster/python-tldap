@@ -19,15 +19,14 @@
 with a subset of the functions from the real ldap module. """
 
 import ssl
+from typing import Optional, TypeVar, Callable, Tuple
+
 import ldap3
 import ldap3.core.exceptions as exceptions
 import logging
 from ..compat import SIMPLE
 
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -37,18 +36,18 @@ def _debug(*argv):
     logger.debug(" ".join(argv))
 
 
+Entity = TypeVar('Entity')
+
+
 class LDAPbase(object):
     """ The vase LDAP connection class. """
 
-    def __init__(self, settings_dict):
+    def __init__(self, settings_dict: dict) -> None:
         self.settings_dict = settings_dict
         self._obj = None
         self._connection_class = ldap3.Connection
 
-    def reset(self):
-        pass
-
-    def close(self):
+    def close(self) -> None:
         if self._obj is not None:
             self._obj.unbind()
             self._obj = None
@@ -60,7 +59,7 @@ class LDAPbase(object):
     def set_connection_class(self, connection_class):
         self._connection_class = connection_class
 
-    def check_password(self, dn, password):
+    def check_password(self, dn: str, password: str) -> bool:
         try:
             conn = self._connect(user=dn, password=password)
             conn.unbind()
@@ -68,7 +67,7 @@ class LDAPbase(object):
         except exceptions.LDAPInvalidCredentialsResult:
             return False
 
-    def _connect(self, user, password):
+    def _connect(self, user: str, password: str) -> ldap3.Connection:
         settings = self.settings_dict
 
         _debug("connecting")
@@ -125,7 +124,7 @@ class LDAPbase(object):
 
         return c
 
-    def _reconnect(self):
+    def _reconnect(self) -> None:
         settings = self.settings_dict
         try:
             self._obj = self._connect(
@@ -135,7 +134,7 @@ class LDAPbase(object):
             raise
         assert self._obj is not None
 
-    def _do_with_retry(self, fn):
+    def _do_with_retry(self, fn: Callable[[ldap3.Connection], Entity]) -> Entity:
         if self._obj is None:
             self._reconnect()
             assert self._obj is not None
@@ -153,7 +152,7 @@ class LDAPbase(object):
     ###################
 
     def search(self, base, scope, filterstr='(objectClass=*)',
-               attrlist=None, limit=None):
+               attrlist=None, limit=None) -> Tuple[str, dict]:
         """
         Search for entries in LDAP database.
         """
@@ -190,3 +189,93 @@ class LDAPbase(object):
         # we are finished - return results, eat cake
         _debug("---> done")
         return
+
+    ####################
+    # Cache Management #
+    ####################
+
+    def reset(self, forceflushcache: bool=False) -> None:
+        """
+        Reset transaction back to original state, discarding all
+        uncompleted transactions.
+        """
+        pass
+
+    ##########################
+    # Transaction Management #
+    ##########################
+
+    # Fake it
+
+    def is_dirty(self) -> bool:
+        """ Are there uncommitted changes? """
+        raise NotImplementedError()
+
+    def is_managed(self) -> bool:
+        """ Are we inside transaction management? """
+        raise NotImplementedError()
+
+    def enter_transaction_management(self) -> None:
+        """ Start a transaction. """
+        raise NotImplementedError()
+
+    def leave_transaction_management(self) -> None:
+        """
+        End a transaction. Must not be dirty when doing so. ie. commit() or
+        rollback() must be called if changes made. If dirty, changes will be
+        discarded.
+        """
+        raise NotImplementedError()
+
+    def commit(self) -> None:
+        """
+        Attempt to commit all changes to LDAP database. i.e. forget all
+        rollbacks.  However stay inside transaction management.
+        """
+        raise NotImplementedError()
+
+    def rollback(self) -> None:
+        """
+        Roll back to previous database state. However stay inside transaction
+        management.
+        """
+        raise NotImplementedError()
+
+    ##################################
+    # Functions needing Transactions #
+    ##################################
+
+    def add(self, dn: str, modlist: dict, onfailure=None):
+        """
+        Add a DN to the LDAP database; See ldap module. Doesn't return a result
+        if transactions enabled.
+        """
+        raise NotImplementedError()
+
+    def modify(self, dn: str, modlist: dict, onfailure=None):
+        """
+        Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled.
+        """
+        raise NotImplementedError()
+
+    def modify_no_rollback(self, dn: str, modlist: dict):
+        """
+        Modify a DN in the LDAP database; See ldap module. Doesn't return a
+        result if transactions enabled.
+        """
+        raise NotImplementedError()
+
+    def delete(self, dn: str, onfailure=None):
+        """
+        delete a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled.
+        """
+        raise NotImplementedError()
+
+    def rename(self, dn: str, newrdn: str, newsuperior: Optional[str]=None, onfailure=None):
+        """
+        rename a dn in the ldap database; see ldap module. doesn't return a
+        result if transactions enabled.
+        """
+        raise NotImplementedError()

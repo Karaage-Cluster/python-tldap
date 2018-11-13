@@ -23,7 +23,7 @@ import mock
 from mock import call, ANY
 
 import tldap
-import tldap.schemas.rfc
+import tldap.backend
 import tldap.transaction
 import tldap.exceptions
 import tldap.modlist
@@ -118,9 +118,9 @@ def defaults(search_response):
         }
     }
 
-    tldap.setup(LDAP)
+    tldap.backend.setup(LDAP)
 
-    c = tldap.connection
+    c = tldap.backend.connection
     c.set_connection_class(values.mock_class)
 
     values.expected_server = ServerComparer(ldap3.Server(
@@ -142,7 +142,7 @@ def defaults(search_response):
 class TestBackendBase:
     def test_check_password_correct(self, defaults):
         """ Test if we can logon correctly with correct password. """
-        result = tldap.connection.check_password(
+        result = tldap.backend.connection.check_password(
             'cn=Manager,dc=python-ldap,dc=org',
             'password'
         )
@@ -162,7 +162,7 @@ class TestBackendBase:
         defaults.mock_connection.bind.side_effect = \
             errors.LDAPInvalidCredentialsResult()
 
-        result = tldap.connection.check_password(
+        result = tldap.backend.connection.check_password(
             'cn=Manager,dc=python-ldap,dc=org',
             'password2'
         )
@@ -183,7 +183,7 @@ class TestBackendBase:
         search_response.add(dn, defaults.modlist)
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         mock_dn = mock.Mock()
         mock_scope = mock.Mock()
         mock_filter = mock.Mock()
@@ -212,7 +212,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         with tldap.transaction.commit_on_success():
             c.add(dn, defaults.modlist)
@@ -238,7 +238,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         with pytest.raises(RuntimeError):
             with tldap.transaction.commit_on_success():
@@ -265,7 +265,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -292,7 +292,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
@@ -315,7 +315,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -342,7 +342,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
@@ -365,7 +365,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -392,7 +392,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
@@ -415,7 +415,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -443,7 +443,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
@@ -470,7 +470,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -502,7 +502,7 @@ class TestBackendFakeTransactions:
         dn2 = 'uid=tuz,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -534,7 +534,7 @@ class TestBackendFakeTransactions:
         dn2 = 'uid=tuz,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
@@ -563,7 +563,7 @@ class TestBackendFakeTransactions:
         new_base = 'ou=Groups,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -591,7 +591,7 @@ class TestBackendFakeTransactions:
         new_base = 'ou=Groups,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
@@ -614,7 +614,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
@@ -639,7 +639,7 @@ class TestBackendFakeTransactions:
         dn = 'uid=tux,ou=People,dc=python-ldap,dc=org'
         search_response.add(dn, defaults.modlist)
 
-        c = tldap.connection
+        c = tldap.backend.connection
         onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():

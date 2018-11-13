@@ -3,10 +3,12 @@ import pytest
 from pytest_bdd import given, when, then, parsers
 
 import tldap
-from tldap.tests import schemas as test_schemas
+import tldap.tests.database
 from tldap import transaction
-import tldap.schemas
+import tldap.backend
+import tldap.database
 import tldap.test.slapd
+from tldap.tests.database import Account
 
 
 @pytest.fixture
@@ -24,24 +26,28 @@ def LDAP(step_login):
         }
     }
 
-    tldap.setup(LDAP)
+    tldap.backend.setup(LDAP)
     server = tldap.test.slapd.Slapd()
     server.set_port(38911)
 
     server.start()
 
-    yield tldap.connection
+    yield tldap.backend.connections['default']
 
     server.stop()
 
 
 @pytest.fixture
 def LDAP_ou(LDAP):
-    organizationalUnit = tldap.schemas.rfc.organizationalUnit
-    organizationalUnit.objects.create(
-        dn="ou=People, dc=python-ldap,dc=org")
-    organizationalUnit.objects.create(
-        dn="ou=Groups, dc=python-ldap,dc=org")
+    organizationalUnit = tldap.tests.database.OU({
+        'dn': "ou=People, dc=python-ldap,dc=org"
+    })
+    tldap.database.insert(organizationalUnit)
+
+    organizationalUnit = tldap.tests.database.OU({
+        'dn': "ou=Groups, dc=python-ldap,dc=org"
+    })
+    tldap.database.insert(organizationalUnit)
 
 
 @pytest.fixture
@@ -85,19 +91,18 @@ def step_rollback_transaction(LDAP_ou):
 @then('we should be able to search')
 def step_search(LDAP_ou):
     """ Test we can search. """
-    list(test_schemas.person.objects.all())
+    list(tldap.database.search(Account))
 
 
 @then('we should not be able to search')
 def step_not_search(LDAP):
     """ Test we can search. """
     with pytest.raises(exceptions.LDAPInvalidCredentialsResult):
-        list(test_schemas.person.objects.all())
+        list(tldap.database.search(Account))
 
 
 @then(parsers.cfparse(
     'we should be able confirm the {attribute} attribute is {value}'))
 def step_confirm_attribute(context, attribute, value):
-    actual_value = getattr(context['obj'], attribute)
-    assert str(actual_value) == value
-    pass
+    actual_value = context['obj'][attribute]
+    assert str(actual_value) == value, attribute

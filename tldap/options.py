@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import re
 import warnings
-import tldap.helpers
+import tldap.dict
 
 
 def get_verbose_name(class_name):
@@ -42,7 +42,7 @@ class Options(object):
         self.verbose_name_plural = None
         self.object_name = None
         self.meta = meta
-        self._fields = tldap.helpers.CaseInsensitiveDict()
+        self._fields = tldap.dict.CaseInsensitiveDict()
         self.object_classes = set()
         self.search_classes = set()
         self.base_dn = None

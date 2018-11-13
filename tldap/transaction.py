@@ -29,13 +29,9 @@ Managed transactions don't do those commits, but will need some kind of manual
 or implicit commits or rollbacks.
 """
 import sys
+from functools import wraps
 
-try:
-    from functools import wraps
-except ImportError:
-    from django.utils.functional import wraps  # Python 2.4 fallback.
-
-import tldap
+import tldap.backend
 
 
 class TransactionManagementError(Exception):
@@ -57,11 +53,11 @@ def enter_transaction_management(using=None):
     when no current block is running).
     """
     if using is None:
-        for using in tldap.connections:
-            connection = tldap.connections[using]
+        for using in tldap.backend.connections:
+            connection = tldap.backend.connections[using]
             connection.enter_transaction_management()
         return
-    connection = tldap.connections[using]
+    connection = tldap.backend.connections[using]
     connection.enter_transaction_management()
 
 
@@ -72,11 +68,11 @@ def leave_transaction_management(using=None):
     those from outside. (Commits are on connection level.)
     """
     if using is None:
-        for using in tldap.connections:
-            connection = tldap.connections[using]
+        for using in tldap.backend.connections:
+            connection = tldap.backend.connections[using]
             connection.leave_transaction_management()
         return
-    connection = tldap.connections[using]
+    connection = tldap.backend.connections[using]
     connection.leave_transaction_management()
 
 
@@ -87,12 +83,12 @@ def is_dirty(using=None):
     """
     if using is None:
         dirty = False
-        for using in tldap.connections:
-            connection = tldap.connections[using]
+        for using in tldap.backend.connections:
+            connection = tldap.backend.connections[using]
             if connection.is_dirty():
                 dirty = True
         return dirty
-    connection = tldap.connections[using]
+    connection = tldap.backend.connections[using]
     return connection.is_dirty()
 
 
@@ -102,12 +98,12 @@ def is_managed(using=None):
     """
     if using is None:
         managed = False
-        for using in tldap.connections:
-            connection = tldap.connections[using]
+        for using in tldap.backend.connections:
+            connection = tldap.backend.connections[using]
             if connection.is_managed():
                 managed = True
         return managed
-    connection = tldap.connections[using]
+    connection = tldap.backend.connections[using]
     return connection.is_managed()
 
 
@@ -116,11 +112,11 @@ def commit(using=None):
     Does the commit itself and resets the dirty flag.
     """
     if using is None:
-        for using in tldap.connections:
-            connection = tldap.connections[using]
+        for using in tldap.backend.connections:
+            connection = tldap.backend.connections[using]
             connection.commit()
         return
-    connection = tldap.connections[using]
+    connection = tldap.backend.connections[using]
     connection.commit()
 
 
@@ -129,11 +125,11 @@ def rollback(using=None):
     This function does the rollback itself and resets the dirty flag.
     """
     if using is None:
-        for using in tldap.connections:
-            connection = tldap.connections[using]
+        for using in tldap.backend.connections:
+            connection = tldap.backend.connections[using]
             connection.rollback()
         return
-    connection = tldap.connections[using]
+    connection = tldap.backend.connections[using]
     connection.rollback()
 
 ##############

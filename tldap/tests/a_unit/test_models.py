@@ -17,32 +17,36 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
+import datetime
+from typing import Optional, List
 
 import mock
 import pytest
 
 import tldap
-import tldap.schemas.rfc
+import tldap.database
+import tldap.database.helpers
 import tldap.transaction
 import tldap.exceptions
 import tldap.modlist
-
 import tldap.test.slapd
-import tldap.tests.schemas as test_schemas
+import tldap.tests.database
+from tldap import Q
+import tldap.query
 
 
-class SearchMock():
+class SearchMock:
     def __init__(self):
         self.calls = []
         self.results = []
 
-    def add_result(self, search, obj):
+    def add_result(self, search: bytes, obj):
         assert isinstance(search, bytes)
         self.results.append((b"(%s)" % search, obj))
 
     def __call__(
-            self, base, scope, filterstr=b'(objectClass=*)',
-            attrlist=None, limit=None):
+            self, base: str, scope: str, filterstr: bytes=b'(objectClass=*)',
+            attrlist: Optional[List[str]]=None, limit: Optional[int]=None):
 
         self.calls.append((base, scope, filterstr, attrlist, limit))
 
@@ -50,9 +54,12 @@ class SearchMock():
         for search, obj in self.results:
             if search in filterstr:
                 results.append(
-                    (obj._dn, get_db_values(obj._db_values))
+                    (obj['dn'], get_db_values(obj.to_dict()))
                 )
         return results
+
+    def reset(self):
+        self.calls = []
 
 
 class Defaults:
@@ -60,106 +67,116 @@ class Defaults:
 
 
 @pytest.fixture
-def defaults():
+def group1(mock_ldap):
+    """ Get group 1. """
+    group = tldap.tests.database.Group()
+    group = group.merge({
+        'cn': 'group1',
+        'gidNumber': 10,
+        'memberUid': [],
+    })
+    group = tldap.database.insert(group)
+    mock_ldap.reset_mock()
+    return group
+
+
+@pytest.fixture
+def defaults(group1):
     """ Get globals for all model tests. """
 
     values = Defaults()
-    values.person = test_schemas.person
-    values.DoesNotExist = values.person.DoesNotExist
-    values.AlreadyExists = values.person.AlreadyExists
-    values.get = values.person.objects.get
-    values.get_or_create = values.person.objects.get_or_create
-    values.all_person_attributes = {
-        'st', 'labeledURI', 'userPKCS12', 'postOfficeBox', 'l',
-        'internationaliSDNNumber', 'manager', 'mobile', 'objectClass',
-        'physicalDeliveryOfficeName', 'preferredDeliveryMethod', 'postalCode',
-        'departmentNumber', 'ou', 'homePhone', 'userPassword',
-        'teletexTerminalIdentifier', 'givenName', 'x121Address',
-        'x500uniqueIdentifier', 'jpegPhoto', 'employeeNumber', 'cn',
-        'preferredLanguage', 'carLicense', 'uid', 'seeAlso', 'audio',
-        'homePostalAddress', 'mail', 'description', 'destinationIndicator',
-        'sn', 'roomNumber', 'businessCategory', 'userSMIMECertificate',
-        'userCertificate', 'street', 'pager', 'employeeType', 'initials',
-        'secretary', 'telexNumber', 'o', 'photo', 'facsimileTelephoneNumber',
-        'title', 'displayName', 'postalAddress', 'telephoneNumber'}
+    # values.person = test_schemas.person
+    # values.DoesNotExist = values.person.DoesNotExist
+    # values.AlreadyExists = values.person.AlreadyExists
+    # values.get = values.person.objects.get
+    # values.get_or_create = values.person.objects.get_or_create
+    # values.all_person_attributes = {
+    #     'st', 'labeledURI', 'userPKCS12', 'postOfficeBox', 'l',
+    #     'internationaliSDNNumber', 'manager', 'mobile', 'objectClass',
+    #     'physicalDeliveryOfficeName', 'preferredDeliveryMethod', 'postalCode',
+    #     'departmentNumber', 'ou', 'homePhone', 'userPassword',
+    #     'teletexTerminalIdentifier', 'givenName', 'x121Address',
+    #     'x500uniqueIdentifier', 'jpegPhoto', 'employeeNumber', 'cn',
+    #     'preferredLanguage', 'carLicense', 'uid', 'seeAlso', 'audio',
+    #     'homePostalAddress', 'mail', 'description', 'destinationIndicator',
+    #     'sn', 'roomNumber', 'businessCategory', 'userSMIMECertificate',
+    #     'userCertificate', 'street', 'pager', 'employeeType', 'initials',
+    #     'secretary', 'telexNumber', 'o', 'photo', 'facsimileTelephoneNumber',
+    #     'title', 'displayName', 'postalAddress', 'telephoneNumber'}
 
-    values.account = test_schemas.account
-    values.group = test_schemas.group
+    # values.account = test_schemas.account
+    # values.group = test_schemas.group
 
-    values.person_attributes = {
-        'uid': "tux",
-        'givenName': "Tux",
-        'sn': "Torvalds",
-        'cn': "Tux Torvalds",
-        'telephoneNumber': "000",
-        'mail': "tuz@example.org",
-        'o': "Linux Rules",
-        'userPassword': "silly",
-    }
+    # values.person_attributes = {
+    #     'uid': "tux",
+    #     'givenName': "Tux",
+    #     'sn': "Torvalds",
+    #     'cn': "Tux Torvalds",
+    #     'telephoneNumber': "000",
+    #     'mail': "tuz@example.org",
+    #     'o': "Linux Rules",
+    #     'userPassword': "silly",
+    # }
 
     values.account_attributes = {
         'uid': "tux",
-        'gidNumber': 0,
         'givenName': "Tux",
         'sn': "Torvalds",
         'cn': "Tux Torvalds",
         'telephoneNumber': "000",
         'mail': "tuz@example.org",
         'o': "Linux Rules",
-        'userPassword': "silly",
+        'password': "silly",
         'homeDirectory': "/home/tux",
+        'loginShell': "/bin/bash",
+        'primary_group': group1,
     }
 
     return values
 
 
 @pytest.fixture
-def person(defaults, mock_LDAP):
-    """ Get a person. """
-    person = defaults.person.objects.create(**defaults.person_attributes)
-    mock_LDAP.reset_mock()
-    return person
-
-
-@pytest.fixture
-def account1(defaults, mock_LDAP):
+def account1(defaults, mock_ldap):
     """ Get an account. """
-    old_search = mock_LDAP.search
-    mock_LDAP.search = mock.MagicMock(return_value=[])
+    # old_search = mock_ldap.search
+    # mock_ldap.search = mock.MagicMock(return_value=[])
 
-    account = defaults.account.objects.create(**defaults.account_attributes)
+    account = tldap.tests.database.Account()
+    account = account.merge(defaults.account_attributes)
+    account = tldap.database.insert(account)
 
-    mock_LDAP.search = old_search
-    mock_LDAP.reset_mock()
+    # mock_ldap.search = old_search
+    mock_ldap.reset_mock()
     return account
 
 
 @pytest.fixture
-def group1(defaults, mock_LDAP):
-    """ Get group 1. """
-    group = defaults.group.objects.create(
-        cn="group1", gidNumber=10, memberUid=[])
-    mock_LDAP.reset_mock()
-    return group
-
-
-@pytest.fixture
-def group2(defaults, person, mock_LDAP):
+def group2(account1, mock_ldap):
     """ Get group 2. """
-    group = defaults.group.objects.create(
-        cn="group2", gidNumber=11, memberUid=[person.uid])
-    mock_LDAP.reset_mock()
+    group = tldap.tests.database.Group()
+    group = group.merge({
+        'cn': 'group2',
+        'gidNumber': 11,
+        'members': [account1],
+    })
+    group = tldap.database.insert(group)
+    mock_ldap.reset_mock()
     return group
 
 
-class unordered_list(object):
-    "A helper object that compares two unordered lists."
+class TestObject:
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class UnorderedList(TestObject):
+    """ A helper object that compares two unordered lists."""
 
     def __init__(self, l):
-        self.l = l
+        self._l = l
 
     def __eq__(self, other):
-        t = list(self.l)   # make a mutable copy
+        t = list(self._l)   # make a mutable copy
         try:
             for elem in other:
                 t.remove(elem)
@@ -167,67 +184,76 @@ class unordered_list(object):
             return False
         return not t
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
+    def __repr__(self):
+        return '<unordered_list %s>' % self._l
+
+
+class CheckInstance(TestObject):
+
+    def __init__(self, instance_type):
+        self._type = instance_type
+
+    def __eq__(self, other):
+        return isinstance(other, self._type)
 
     def __repr__(self):
-        return '<unordered_list %s>' % self.l
+        return '<type %s>' % self._type
 
 
-def get_expected_initial_db_values():
-    """ Get initial db values for new person. """
-    return {
-        'audio': [],
-        'businessCategory': [],
-        'carLicense': [],
-        'cn': [],
-        'departmentNumber': [],
-        'description': [],
-        'destinationIndicator': [],
-        'displayName': [],
-        'employeeNumber': [],
-        'employeeType': [],
-        'facsimileTelephoneNumber': [],
-        'givenName': [],
-        'homePhone': [],
-        'homePostalAddress': [],
-        'initials': [],
-        'internationaliSDNNumber': [],
-        'jpegPhoto': [],
-        'l': [],
-        'labeledURI': [],
-        'mail': [],
-        'manager': [],
-        'mobile': [],
-        'o': [],
-        'objectClass': [],
-        'ou': [],
-        'pager': [],
-        'photo': [],
-        'physicalDeliveryOfficeName': [],
-        'postOfficeBox': [],
-        'postalAddress': [],
-        'postalCode': [],
-        'preferredDeliveryMethod': [],
-        'preferredLanguage': [],
-        'roomNumber': [],
-        'secretary': [],
-        'seeAlso': [],
-        'sn': [],
-        'st': [],
-        'street': [],
-        'telephoneNumber': [],
-        'teletexTerminalIdentifier': [],
-        'telexNumber': [],
-        'title': [],
-        'uid': [],
-        'userCertificate': [],
-        'userPKCS12': [],
-        'userPassword': [],
-        'userSMIMECertificate': [],
-        'x121Address': [],
-        'x500uniqueIdentifier': [],
-    }
+# def get_expected_initial_db_values():
+#     """ Get initial db values for new account. """
+#     return {
+#         'audio': [],
+#         'businessCategory': [],
+#         'carLicense': [],
+#         'cn': [],
+#         'departmentNumber': [],
+#         'description': [],
+#         'destinationIndicator': [],
+#         'displayName': [],
+#         'employeeNumber': [],
+#         'employeeType': [],
+#         'facsimileTelephoneNumber': [],
+#         'givenName': [],
+#         'homePhone': [],
+#         'homePostalAddress': [],
+#         'initials': [],
+#         'internationaliSDNNumber': [],
+#         'jpegPhoto': [],
+#         'l': [],
+#         'labeledURI': [],
+#         'mail': [],
+#         'manager': [],
+#         'mobile': [],
+#         'o': [],
+#         'objectClass': [],
+#         'ou': [],
+#         'pager': [],
+#         'photo': [],
+#         'physicalDeliveryOfficeName': [],
+#         'postOfficeBox': [],
+#         'postalAddress': [],
+#         'postalCode': [],
+#         'preferredDeliveryMethod': [],
+#         'preferredLanguage': [],
+#         'roomNumber': [],
+#         'secretary': [],
+#         'seeAlso': [],
+#         'sn': [],
+#         'st': [],
+#         'street': [],
+#         'telephoneNumber': [],
+#         'teletexTerminalIdentifier': [],
+#         'telexNumber': [],
+#         'title': [],
+#         'uid': [],
+#         'userCertificate': [],
+#         'userPKCS12': [],
+#         'userPassword': [],
+#         'userSMIMECertificate': [],
+#         'x121Address': [],
+#         'x500uniqueIdentifier': [],
+#     }
 
 
 def _get_db_value(value):
@@ -244,144 +270,268 @@ def _get_db_value(value):
     return result
 
 
-def get_db_values(updates):
-    """ Convert values into db values. """
+# def z_get_db_values(updates):
+#     """ Convert values into db values. """
+#     result = {}
+#
+#     for key, value in updates.items():
+#         if isinstance(value, list):
+#             result[key] = [_get_db_value(v) for v in value]
+#         else:
+#             result[key] = [value.encode("UTF-8")]
+#
+#     return result
+
+
+def get_python_expected_values(updates):
     result = {}
 
     for key, value in updates.items():
-        if isinstance(value, list):
-            result[key] = [_get_db_value(v) for v in value]
+        if key == "password":
+            result['password'] = None
+            result['userPassword'] = mock.ANY
+        elif key == "primary_group":
+            result[key] = CheckInstance(tldap.database.NotLoadedObject)
+        else:
+            result[key] = value
+
+    return result
+
+
+def get_db_values(updates):
+    """ Convert values into something we can compare against db values. """
+    result = {}
+
+    for key, value in updates.items():
+        if key == "dn":
+            pass
+        elif key == "password":
+            pass
+        elif key == "locked":
+            pass
+        elif key == "groups":
+            pass
+        elif key == "primary_group":
+            if not isinstance(value, tldap.database.NotLoadedObject):
+                if value is None:
+                    result["gidNumber"] = []
+                else:
+                    result["gidNumber"] = [str(value['gidNumber']).encode("UTF-8")]
+        elif value is None:
+            result[key] = []
+        elif value is mock.ANY:
+            result[key] = [value]
+        elif isinstance(value, TestObject):
+            result[key] = [value]
+        elif key == "shadowLastChange":
+            value = value - datetime.date(year=1970, month=1, day=1)
+            result[key] = [str(value.days).encode("UTF-8")]
+        elif key == "members":
+            if not isinstance(value, tldap.database.NotLoadedListToList):
+                result['memberUid'] = [v['uid'] for v in value]
+        elif key == "groups":
+            pass
+        elif isinstance(value, list):
+            value = [
+                _get_db_value(v)
+                for v in value
+            ]
+            result[key] = value
+        elif isinstance(value, int):
+            result[key] = [str(value).encode("UTF-8")]
         else:
             result[key] = [value.encode("UTF-8")]
 
     return result
 
 
-def get_expected_values(updates):
+def get_db_expected_values(updates):
     """ Convert values into something we can compare against db values. """
     result = {}
 
-    for key, value in updates.items():
-        if isinstance(value, list):
-            result[key] = unordered_list(value)
-        elif isinstance(value, int):
-            result[key] = unordered_list([str(value).encode("UTF-8")])
-        else:
-            result[key] = unordered_list([value.encode("UTF-8")])
-
-    return result
-
-
-def update_expected_db_values(db_values, updates):
-    """ Update db values with updates. """
-    result = dict(db_values)
+    updates = get_db_values(updates)
 
     for key, value in updates.items():
-        if value is None:
-            result[key] = []
-        elif isinstance(value, list):
-            result[key] = unordered_list(value)
-        else:
-            result[key] = unordered_list([value.encode("UTF-8")])
+        result[key] = UnorderedList(value)
 
     return result
 
 
-def get_testable_values(values):
-    """ Convert db values into something we can use for testing. """
-    result = {}
+# def z_update_expected_db_values(db_values, updates):
+#     """ Update db values with updates. """
+#     result = dict(db_values)
+#
+#     for key, value in updates.items():
+#         if value is mock.ANY:
+#             result[key] = mock.ANY
+#         elif value is None:
+#             result[key] = []
+#         elif isinstance(value, list):
+#             result[key] = unordered_list(value)
+#         elif isinstance(value, int):
+#             result[key] = unordered_list([b"%d" % value])
+#         else:
+#             result[key] = unordered_list([value.encode("UTF-8")])
+#
+#     return result
+#
+#
+# def z_get_testable_values(values):
+#     """ Convert db values into something we can use for testing. """
+#     result = {}
+#
+#     for key, value in values.items():
+#         assert isinstance(value, list)
+#         result[key] = unordered_list(value)
+#
+#     return result
 
-    for key, value in values.items():
-        assert isinstance(value, list)
-        result[key] = unordered_list(value)
 
-    return result
-
-
-class TestModelPerson:
-    def test_create(self, defaults, mock_LDAP):
+class TestModelAccount:
+    def test_create(self, defaults, mock_ldap):
         """ Test create LDAP object. """
-        c = mock_LDAP
-        person_attributes = dict(defaults.person_attributes)
-        expected_db_values = get_expected_initial_db_values()
+        c = mock_ldap
+        account_attributes = defaults.account_attributes
 
         # Create the object.
-        person = defaults.person.objects.create(**person_attributes)
+        account = tldap.tests.database.Account()
+        account = account.merge(account_attributes)
+        account = tldap.database.insert(account)
 
         # Simulate required attributes that should be added.
-        person_attributes.update({
+        expected_values = dict(account_attributes)
+        expected_values.update({
             'objectClass':
-                [b'person', b'top', b'inetOrgPerson', b'organizationalPerson']
+                ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
+                 'shadowAccount', 'posixAccount', 'pwdPolicy'],
+            'gecos': "Tux Torvalds",
+            'displayName': "Tux Torvalds",
+            'shadowLastChange': mock.ANY,
+            'userPassword': mock.ANY,
+            'dn': "uid=tux,ou=People,dc=python-ldap,dc=org",
+            'pwdAttribute': 'userPassword',
         })
+        python_expected_values = get_python_expected_values(expected_values)
+        db_expected_values = get_db_expected_values(expected_values)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.add(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                get_expected_values(person_attributes),
-                mock.ANY,
+                db_expected_values,
             )
         ]
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == update_expected_db_values(
-            expected_db_values, person_attributes)
+        for key, value in python_expected_values.items():
+            assert account[key] == value, key
 
-        # Simulate failure.
-        args, kwargs = c.add.call_args
-        onfailure = args[2]
-        onfailure()
+    def test_create_with_dn(self, defaults, mock_ldap):
+        """ Test create LDAP object. """
+        c = mock_ldap
+        account_attributes = defaults.account_attributes
+
+        # Create the object.
+        account = tldap.tests.database.Account()
+        account = account.merge(account_attributes)
+        account = account.merge({'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org"})
+        account = tldap.database.insert(account)
+
+        # Simulate required attributes that should be added.
+        expected_values = dict(account_attributes)
+        expected_values.update({
+            'objectClass':
+                ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
+                 'shadowAccount', 'posixAccount', 'pwdPolicy'],
+            'gecos': "Tux Torvalds",
+            'displayName': "Tux Torvalds",
+            'shadowLastChange': mock.ANY,
+            'userPassword': mock.ANY,
+            'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org",
+            'pwdAttribute': 'userPassword',
+        })
+        python_expected_values = get_python_expected_values(expected_values)
+        db_expected_values = get_db_expected_values(expected_values)
+
+        # Assert that we made the correct calls to the backend.
+        expected_calls = [
+            mock.call.add(
+                'uid=penguin,ou=People,dc=python-ldap,dc=org',
+                db_expected_values,
+            )
+        ]
+        c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias is None
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values is None
+        for key, value in python_expected_values.items():
+            assert account[key] == value, key
 
-    def test_delete(self, defaults, mock_LDAP, person):
+    def test_search(self, defaults, mock_ldap, account1, group1):
         """ Test delete LDAP object. """
-        c = mock_LDAP
-        expected_db_values = get_testable_values(person._db_values)
+        c = mock_ldap
+        c.search = SearchMock()
+        account1 = account1.merge({
+            'primary_group': group1,
+        })
+        c.search.add_result(b"uid=tux", account1)
+
+        results = tldap.database.search(tldap.tests.database.Account, Q(uid='does_not_exist'))
+        assert list(results) == []
+
+        results = tldap.database.search(tldap.tests.database.Account, Q(uid='tux'))
+        results = list(results)
+        assert len(results) == 1
+
+        account = results[0]
+
+        account_attributes = defaults.account_attributes
+        expected_values = dict(account_attributes)
+        expected_values.update({
+            'objectClass':
+                ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
+                 'shadowAccount', 'posixAccount', 'pwdPolicy'],
+            'gecos': "Tux Torvalds",
+            'displayName': "Tux Torvalds",
+            'shadowLastChange': mock.ANY,
+            'userPassword': mock.ANY,
+            'dn': "uid=tux,ou=People,dc=python-ldap,dc=org",
+            'pwdAttribute': 'userPassword',
+        })
+        python_expected_values = get_python_expected_values(expected_values)
+
+        # Assert caches are correct.
+        for key, value in python_expected_values.items():
+            assert account[key] == value, key
+
+    def test_delete(self, mock_ldap, account1):
+        """ Test delete LDAP object. """
+        c = mock_ldap
 
         # Delete the object.
-        person.delete()
+        tldap.database.delete(account1)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.delete(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                mock.ANY,
             )
         ]
         c.assert_has_calls(expected_calls)
 
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values is None
-
-        # Simulate failure.
-        args, kwargs = c.delete.call_args
-        onfailure = args[1]
-        onfailure()
-
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
-
-    def test_rename(self, defaults, mock_LDAP, person):
+    def test_rename(self, defaults, mock_ldap, account1):
         """ Test rename LDAP object. """
-        c = mock_LDAP
-        expected_db_values = get_testable_values(person._db_values)
+        c = mock_ldap
 
         # Rename the object.
-        person.rename(uid='tuz')
+        account1 = tldap.database.rename(account1, uid='tuz')
 
         # Simulate required attributes that should be added.
-        person_attributes = {'uid': "tuz"}
+        expected_values = dict(defaults.account_attributes)
+        expected_values.update({
+            'uid': "tuz",
+        })
+        python_expected_values = get_python_expected_values(expected_values)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
@@ -389,34 +539,25 @@ class TestModelPerson:
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
                 'uid=tuz',
                 None,
-                mock.ANY,
             )
         ]
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tuz,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == update_expected_db_values(
-            expected_db_values, person_attributes)
+        assert account1['dn'] == "uid=tuz,ou=People,dc=python-ldap,dc=org"
+        for key, value in python_expected_values.items():
+            assert account1[key] == value, key
 
-        # Simulate failure.
-        args, kwargs = c.rename.call_args
-        onfailure = args[3]
-        onfailure()
-
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
-
-    def test_move(self, defaults, mock_LDAP, person):
+    def test_move(self, defaults, mock_ldap, account1):
         """ Test move LDAP object. """
-        c = mock_LDAP
-        expected_db_values = get_testable_values(person._db_values)
+        c = mock_ldap
 
         # Move the object.
-        person.rename("ou=Groups, dc=python-ldap,dc=org")
+        account1 = tldap.database.rename(account1, "ou=Groups, dc=python-ldap,dc=org")
+
+        # Simulate required attributes that should be added.
+        expected_values = dict(defaults.account_attributes)
+        python_expected_values = get_python_expected_values(expected_values)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
@@ -424,487 +565,261 @@ class TestModelPerson:
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
                 'uid=tux',
                 'ou=Groups, dc=python-ldap,dc=org',
-                mock.ANY,
             )
         ]
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=Groups,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
+        assert account1['dn'] == "uid=tux,ou=Groups,dc=python-ldap,dc=org"
+        for key, value in python_expected_values.items():
+            assert account1[key] == value, key
 
-        # Simulate failure.
-        args, kwargs = c.rename.call_args
-        onfailure = args[3]
-        onfailure()
-
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
-
-    def test_add_attribute(self, defaults, mock_LDAP, person):
+    def test_add_attribute(self, defaults, mock_ldap, account1):
         """ Test add new attribute. """
-        c = mock_LDAP
-        expected_db_values = get_testable_values(person._db_values)
+        c = mock_ldap
 
         # Replace the attribute.
-        person.title = "Superior"
-        person.save()
+        changes = tldap.database.get_changes(account1, {'title': "Superior"})
+        account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.
-        person_attributes = {'title': "Superior"}
+        expected_values = dict(defaults.account_attributes)
+        expected_values.update({
+            'title': "Superior"
+        })
+        python_expected_values = get_python_expected_values(expected_values)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'title': ('MODIFY_ADD', [b'Superior'])},
-                mock.ANY,
+                {'title': ('MODIFY_REPLACE', [b'Superior'])},
             )
         ]
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == update_expected_db_values(
-            expected_db_values, person_attributes)
+        assert account1['dn'] == "uid=tux,ou=People,dc=python-ldap,dc=org"
+        for key, value in python_expected_values.items():
+            assert account1[key] == value, key
 
-        # Simulate failure.
-        args, kwargs = c.modify.call_args
-        onfailure = args[2]
-        onfailure()
-
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
-
-    def test_replace_attribute(self, defaults, mock_LDAP, person):
+    def test_replace_dn(self, account1):
         """ Test replace LDAP attribute. """
-        c = mock_LDAP
-        expected_db_values = get_testable_values(person._db_values)
+        # Replace the attribute.
+        changes = tldap.database.get_changes(account1, {'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org"})
+        with pytest.raises(RuntimeError):
+            tldap.database.save(changes)
+
+    def test_replace_attribute(self, defaults, mock_ldap, account1):
+        """ Test replace LDAP attribute. """
+        c = mock_ldap
 
         # Replace the attribute.
-        person.sn = "Gates"
-        person.save()
+        changes = tldap.database.get_changes(account1, {'sn': "Gates"})
+        account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.
-        person_attributes = {'sn': "Gates"}
+        expected_values = dict(defaults.account_attributes)
+        expected_values.update({
+            'cn': 'Tux Gates',
+            'displayName': 'Tux Gates',
+            'gecos': 'Tux Gates',
+            'sn': "Gates",
+        })
+        python_expected_values = get_python_expected_values(expected_values)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'sn': ('MODIFY_REPLACE', [b'Gates'])},
-                mock.ANY,
+                {
+                    'cn': ('MODIFY_REPLACE', [b'Tux Gates']),
+                    'displayName': ('MODIFY_REPLACE', [b'Tux Gates']),
+                    'gecos': ('MODIFY_REPLACE', [b'Tux Gates']),
+                    'sn': ('MODIFY_REPLACE', [b'Gates']),
+                },
             )
         ]
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == update_expected_db_values(
-            expected_db_values, person_attributes)
+        assert account1['dn'] == "uid=tux,ou=People,dc=python-ldap,dc=org"
+        for key, value in python_expected_values.items():
+            assert account1[key] == value, key
 
-        # Simulate failure.
-        args, kwargs = c.modify.call_args
-        onfailure = args[2]
-        onfailure()
+    def test_replace_attribute_same(self, account1):
+        """ Test replace LDAP attribute. """
 
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
+        # Replace the attribute.
+        changes = tldap.database.get_changes(account1, {'sn': "Torvalds"})
+        assert 'sn' not in changes
 
-    def test_delete_attribute(self, defaults, mock_LDAP, person):
+        # Replace the attribute.
+        changes = tldap.database.get_changes(account1, {})
+        changes = changes.set('sn', "Torvalds")
+        assert 'sn' not in changes
+
+        # Replace the attribute.
+        changes = tldap.database.get_changes(account1, {})
+        changes = changes.merge({'sn': "Torvalds"})
+        assert 'sn' not in changes
+
+    def test_delete_attribute(self, defaults, mock_ldap, account1):
         """ Test delete LDAP attribute. """
-        c = mock_LDAP
-        expected_db_values = get_testable_values(person._db_values)
+        """ Test replace LDAP attribute. """
+        c = mock_ldap
 
         # Replace the attribute.
-        person.telephoneNumber = None
-        person.save()
+        changes = tldap.database.get_changes(account1, {'telephoneNumber': None})
+        account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.
-        person_attributes = {'telephoneNumber': None}
+        expected_values = dict(defaults.account_attributes)
+        expected_values.update({
+            'telephoneNumber': None,
+        })
+        python_expected_values = get_python_expected_values(expected_values)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'telephoneNumber': ('MODIFY_DELETE', [])},
-                mock.ANY,
+                {
+                    'telephoneNumber': ('MODIFY_DELETE', []),
+                },
             )
         ]
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == update_expected_db_values(
-            expected_db_values, person_attributes)
-
-        # Simulate failure.
-        args, kwargs = c.modify.call_args
-        onfailure = args[2]
-        onfailure()
-
-        # Assert caches are correct.
-        assert person._alias == "default"
-        assert person._dn == "uid=tux,ou=People,dc=python-ldap,dc=org"
-        assert person._db_values == expected_db_values
+        assert account1['dn'] == "uid=tux,ou=People,dc=python-ldap,dc=org"
+        for key, value in python_expected_values.items():
+            assert account1[key] == value, key
 
 
-class TestModelAccount:
+class TestModelGroup:
     def test_set_primary_group(
-            self, mock_LDAP, defaults, account1, group1):
+            self, mock_ldap, account1, group2):
         """ Test setting primary group for account. """
-        c = mock_LDAP
-        c.search = SearchMock()
+        c = mock_ldap
 
         # Add person to group.
-        account1.primary_group = group1
-        account1.save()
+        changes = tldap.database.get_changes(account1, {'primary_group': group2})
+        tldap.database.save(changes)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'gidNumber': ('MODIFY_REPLACE', [b'10'])},
-                mock.ANY,
+                {'gidNumber': ('MODIFY_REPLACE', [b'11'])},
             )
         ]
         c.assert_has_calls(expected_calls)
 
     def test_get_primary_group(
-            self, mock_LDAP, defaults, account1, group1):
+            self, mock_ldap, account1, group1):
         """ Test getting primary group for account. """
-        account1.primary_group = group1
-        account1.save()
 
-        c = mock_LDAP
+        c = mock_ldap
         c.search = SearchMock()
         c.search.add_result(b"gidNumber=10", group1)
 
         # Get the primary group
-        group = account1.primary_group.get()
+        account1 = tldap.database.preload(account1)
+        group = account1['primary_group']
 
-        assert group == group1
+        for key in ["cn", "description", "gidNumber", "memberUid"]:
+            assert group[key] == group1[key]
 
-    def test_add_secondary_group_existing(
-            self, mock_LDAP, defaults, account1, group1):
+    def test_add_secondary_group(
+            self, mock_ldap, account1, group1):
         """ Test adding existing secondary group to account. """
-        c = mock_LDAP
+        c = mock_ldap
         c.search = SearchMock()
 
         # Add person to group.
-        account1.secondary_groups.add(group1)
-        account1.save()
+        changes = tldap.database.get_changes(group1, {'members': [account1]})
+        tldap.database.save(changes)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.modify(
                 'cn=group1,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_ADD', [b'tux'])},
-                mock.ANY,
-            )
-        ]
-        c.assert_has_calls(expected_calls)
-
-    def test_add_secondary_group_new(
-            self, mock_LDAP, defaults, account1):
-        """ Test adding new secondary group to account. """
-        c = mock_LDAP
-        c.search = SearchMock()
-
-        # Add person to group.
-        account1.secondary_groups.create(cn="drwho", gidNumber=12)
-        account1.save()
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.add(
-                'cn=drwho,ou=Group,dc=python-ldap,dc=org',
-                {
-                    'gidNumber': [b'12'],
-                    'objectClass': unordered_list([b'top', b'posixGroup']),
-                    'memberUid': [b'tux'],
-                    'cn': [b'drwho']
-                },
-                mock.ANY,
+                {'memberUid': ('MODIFY_REPLACE', [b'tux'])},
             )
         ]
         c.assert_has_calls(expected_calls)
 
     def test_remove_secondary_group(
-            self, mock_LDAP, defaults, account1, group2):
+            self, mock_ldap, group2):
         """ Test removing secondary group from account. """
-        c = mock_LDAP
+        c = mock_ldap
         c.search = SearchMock()
 
         # Add person to group.
-        account1.secondary_groups.remove(group2)
-        account1.save()
+        changes = tldap.database.get_changes(group2, {'members': []})
+        tldap.database.save(changes)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
             mock.call.modify(
                 'cn=group2,ou=Group,dc=python-ldap,dc=org',
                 {'memberUid': ('MODIFY_DELETE', [])},
-                mock.ANY,
-            )
-        ]
-        c.assert_has_calls(expected_calls)
-
-    def test_clear_secondary_group(
-            self, mock_LDAP, defaults, account1, group2):
-        """ Test removing all secondary groups from account. """
-        c = mock_LDAP
-        c.search = SearchMock()
-        c.search.add_result(b"memberUid=tux", group2)
-
-        # Add person to group.
-        account1.secondary_groups.clear()
-        account1.save()
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.modify(
-                'cn=group2,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_DELETE', [])},
-                mock.ANY,
             )
         ]
         c.assert_has_calls(expected_calls)
 
     def test_get_secondary_group_none(
-            self, mock_LDAP, defaults, account1):
+            self, mock_ldap, account1):
         """ Test getting secondary group when none set. """
-        c = mock_LDAP
+        c = mock_ldap
         c.search = SearchMock()
 
+        # Don't try to preload primary group, it will fail.
+        account1 = account1.set('primary_group', None)
+
         # Get the secondary groups.
-        groups = list(account1.secondary_groups.all())
+        account1 = tldap.database.preload(account1)
+
+        # Test result
+        groups = account1['groups']
         assert groups == []
 
     def test_get_secondary_group_set(
-            self, mock_LDAP, defaults, account1, group2):
+            self, mock_ldap, account1, group2):
         """ Test getting secondary group when one set. """
-        c = mock_LDAP
+        c = mock_ldap
         c.search = SearchMock()
         c.search.add_result(b"memberUid=tux", group2)
 
-        # Get the secondary groups.
-        groups = list(account1.secondary_groups.all())
-        assert groups == [group2]
-
-
-class TestModelGroup:
-    def test_add_primary_account(
-            self, mock_LDAP, defaults, account1, group1):
-        """ Test add primary account to group. """
-        c = mock_LDAP
-        c.search = SearchMock()
-
-        # Add person to group.
-        group1.primary_accounts.add(account1)
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.modify(
-                'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'gidNumber': ('MODIFY_REPLACE', [b'10'])},
-                mock.ANY,
-            )
-        ]
-        c.assert_has_calls(expected_calls)
-
-    def test_remove_primary_account(
-            self, mock_LDAP, defaults, account1, group1):
-        """ Test remove primary account from group. """
-        account1.primary_group = group1
-        account1.save()
-
-        c = mock_LDAP
-        c.search = SearchMock()
-
-        # Remove person from primary group. This should fail, as all
-        # accounts must have a primary group.
-        with pytest.raises(tldap.exceptions.ValidationError):
-            group1.primary_accounts.remove(account1)
-
-        assert c.call_count == 0
-
-    def test_get_primary_accounts(
-            self, mock_LDAP, defaults, account1, group1):
-        """ Test getting primary accounts from group. """
-        account1.primary_group = group1
-        account1.save()
-
-        c = mock_LDAP
-        c.search = SearchMock()
-        c.search.add_result(b"gidNumber=10", account1)
-
-        # Get the primary group
-        accounts = list(group1.primary_accounts.all())
-
-        assert accounts[0] == account1
-        assert accounts == [account1]
-
-    def test_add_secondary_account_existing(
-            self, mock_LDAP, defaults, account1, group1):
-        """ Test add existing secondary account to group. """
-        c = mock_LDAP
-        c.search = SearchMock()
-
-        # Add person to group.
-        group1.secondary_accounts.add(account1)
-        group1.save()
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.modify(
-                'cn=group1,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_ADD', [b'tux'])},
-                mock.ANY,
-            )
-        ]
-        c.assert_has_calls(expected_calls)
-
-    def test_add_secondary_account_new(
-            self, mock_LDAP, defaults, group1):
-        """ Test add new secondary account to group. """
-        c = mock_LDAP
-        c.search = SearchMock()
-        account_attributes = dict(defaults.account_attributes)
-
-        # Add person to group.
-        group1.secondary_accounts.create(**defaults.account_attributes)
-        group1.save()
-
-        # Simulate required attributes that should be added.
-        account_attributes.update({
-            'objectClass':
-                [b'inetOrgPerson', b'posixAccount', b'shadowAccount',
-                    b'top', b'person', b'organizationalPerson'],
-            'uidNumber': [b'1001'],
-        })
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.add(
-                'uid=tux,ou=People,dc=python-ldap,dc=org',
-                get_expected_values(account_attributes),
-                mock.ANY,
-            ),
-            mock.call.modify(
-                'cn=group1,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_ADD', [b'tux'])},
-                mock.ANY,
-            ),
-        ]
-        args, kwargs = c.add.call_args
-        assert args[1] == get_expected_values(account_attributes)
-
-        c.assert_has_calls(expected_calls)
-
-    def test_remove_secondary_account(
-            self, mock_LDAP, defaults, account1, group2):
-        """ Test remove secondary account from group. """
-        c = mock_LDAP
-        c.search = SearchMock()
-
-        # Add person to group.
-        group2.secondary_accounts.remove(account1)
-        group2.save()
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.modify(
-                'cn=group2,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_DELETE', [])},
-                mock.ANY,
-            )
-        ]
-        c.assert_has_calls(expected_calls)
-
-    def test_clear_secondary_account(
-            self, mock_LDAP, defaults, account1, group2):
-        """ Test remove all secondary accounts from group. """
-        c = mock_LDAP
-        c.search = SearchMock()
-
-        # Add person to group.
-        group2.secondary_accounts.clear()
-        group2.save()
-
-        # Assert that we made the correct calls to the backend.
-        expected_calls = [
-            mock.call.modify(
-                'cn=group2,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_DELETE', [])},
-                mock.ANY,
-            )
-        ]
-        c.assert_has_calls(expected_calls)
-
-    def test_get_secondary_accounts_none(
-            self, mock_LDAP, defaults, group1):
-        """ Test get all secondary accounts when none set. """
-        c = mock_LDAP
-        c.search = SearchMock()
+        # Don't try to preload primary group, it will fail.
+        account1 = account1.set('primary_group', None)
 
         # Get the secondary groups.
-        accounts = list(group1.secondary_accounts.all())
-        assert accounts == []
+        account1 = tldap.database.preload(account1)
 
-        expected_calls = []
-        assert c.search.calls == expected_calls
+        # Test result
+        groups = account1['groups']
+        assert len(groups) == 1
 
-    def test_get_secondary_accounts_set(
-            self, mock_LDAP, defaults, account1, group2):
-        """ Test get all secondary accounts when one set. """
-        c = mock_LDAP
-        c.search = SearchMock()
-        c.search.add_result(b"uid=tux", account1)
-
-        # Get the secondary groups.
-        accounts = list(group2.secondary_accounts.all())
-        assert accounts == [account1]
-
-        expected_calls = [(
-            'ou=People, dc=python-ldap,dc=org',
-            'SUBTREE',
-            b'(&'
-            b'(objectClass=inetOrgPerson)'
-            b'(objectClass=organizationalPerson)'
-            b'(objectClass=person)'
-            b'(objectClass=posixAccount)'
-            b'(objectClass=shadowAccount)'
-            b'(objectClass=top)'
-            b'(uid=tux)'
-            b')',
-            mock.ANY,
-            None
-        )]
-        assert c.search.calls == expected_calls
+        group = groups[0]
+        for key in ["cn", "description", "gidNumber"]:
+            assert group[key] == group2[key], key
 
 
 class TestModelQuery:
-    def test_query_get_person(self, mock_LDAP, person, defaults):
+    def test_query_get_person(self, mock_ldap, account1):
         """ Test getting a person. """
-        c = mock_LDAP
+        c = mock_ldap
         c.search = SearchMock()
-        c.search.add_result(
-            b"entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", person)
 
-        person = defaults.person.objects.get(
-            dn="uid=tux, ou=People, dc=python-ldap,dc=org")
-        assert person.uid == "tux"
+        c.search.add_result(
+            b"entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", account1)
+
+        person = tldap.database.get_one(
+            tldap.tests.database.Account,
+            Q(dn="uid=tux, ou=People, dc=python-ldap,dc=org"))
+        assert person['uid'] == "tux"
 
         expected_calls = [(
             'ou=People, dc=python-ldap,dc=org',
@@ -913,7 +828,6 @@ class TestModelQuery:
             b'(objectClass=inetOrgPerson)'
             b'(objectClass=organizationalPerson)'
             b'(objectClass=person)'
-            b'(objectClass=top)'
             b'(entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org)'
             b')',
             mock.ANY,
@@ -921,44 +835,65 @@ class TestModelQuery:
         )]
         assert c.search.calls == expected_calls
 
-    def test_filter_normal(self, defaults):
+    def test_filter_normal(self):
         """ Test filter. """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            tldap.Q(uid='tux'))
+        ldap_filter = tldap.query.get_filter(
+            tldap.Q(uid='tux'),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(uid=tux)"
 
-    def test_filter_backslash(self, defaults):
+    def test_filter_backslash(self):
         """ Test filter with backslash. """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            tldap.Q(uid='t\\ux'))
+        ldap_filter = tldap.query.get_filter(
+            tldap.Q(uid='t\\ux'),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(uid=t\\5cux)"
 
-    def test_filter_negated(self, defaults):
+    def test_filter_negated(self):
         """ Test filter with negated value. """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            ~tldap.Q(uid='tux'))
+        ldap_filter = tldap.query.get_filter(
+            ~tldap.Q(uid='tux'),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(!(uid=tux))"
 
-    def test_filter_or_2(self, defaults):
+    def test_filter_or_2(self):
         """ Test filter with OR condition. """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+        ldap_filter = tldap.query.get_filter(
+            tldap.Q(uid='tux') | tldap.Q(uid='tuz'),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
 
-    def test_filter_or_3(self, defaults):
+    def test_filter_or_3(self):
         """ Test filter with OR condition """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            tldap.Q() | tldap.Q(uid='tux') | tldap.Q(uid='tuz'))
+        ldap_filter = tldap.query.get_filter(
+            tldap.Q() | tldap.Q(uid='tux') | tldap.Q(uid='tuz'),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
 
-    def test_filter_and(self, defaults):
+    def test_filter_and(self):
         """ Test filter with AND condition. """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            tldap.Q() & tldap.Q(uid='tux') & tldap.Q(uid='tuz'))
+        ldap_filter = tldap.query.get_filter(
+            tldap.Q() & tldap.Q(uid='tux') & tldap.Q(uid='tuz'),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(&(uid=tux)(uid=tuz))"
 
-    def test_filter_and_or(self, defaults):
+    def test_filter_and_or(self):
         """ Test filter with AND and OR condition. """
-        ldap_filter = defaults.person.objects.all()._get_filter(
-            tldap.Q(uid='tux') & (tldap.Q(uid='tuz') | tldap.Q(uid='meow')))
+        ldap_filter = tldap.query.get_filter(
+            tldap.Q(uid='tux') & (tldap.Q(uid='tuz') | tldap.Q(uid='meow')),
+            tldap.tests.database.Account.get_fields(),
+            "uid"
+        )
         assert ldap_filter == b"(&(uid=tux)(|(uid=tuz)(uid=meow)))"

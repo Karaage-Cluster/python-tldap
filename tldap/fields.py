@@ -27,15 +27,20 @@ import six
 
 class Field(object):
     """ The base field type. """
+    db_field = True
 
-    def __init__(self, max_instances=1, required=False):
+    def __init__(self, name, max_instances=1, required=False):
+        self.name = name
         self._max_instances = max_instances
         self._required = required
 
-    def contribute_to_class(self, cls, name):
-        self.name = name
-        self._cls = cls
-        cls._meta.add_field(self)
+    # def get_db(self, db_data):
+    #     data = db_data[self.name]
+    #     return self.to_python(data)
+    #
+    # def set_db(self, db_data, python_value):
+    #     new_db_value = self.to_db(python_value)
+    #     db_data[self.name] = new_db_value
 
     def to_db(self, value):
         "returns field's value prepared for saving into a database."
@@ -66,7 +71,7 @@ class Field(object):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        assert isinstance(value, list)
+        assert isinstance(value, list), self.name
 
         # convert every value in list
         value = list(value)
@@ -157,6 +162,37 @@ class Field(object):
         this to provide validation logic.
         """
         raise RuntimeError("Not implemented")
+
+
+class FakeField(Field):
+    db_field = False
+
+    """ Field contains a binary value that can not be interpreted in anyway.
+    """
+    # def get_db(self, db_data):
+    #     return None
+    #
+    # def set_db(self, db_data, python_value):
+    #     pass
+
+    def value_to_db(self, value):
+        "returns field's single value prepared for saving into a database."
+        return None
+
+    def value_to_python(self, value):
+        """
+        Converts the input single value into the expected Python data type,
+        raising django.core.exceptions.ValidationError if the data can't be
+        converted.  Returns the converted value. Subclasses should override
+        this.
+        """
+        return None
+
+    def value_validate(self, value):
+        """
+        Validates value and throws ValidationError. Subclasses should override
+        this to provide validation logic.
+        """
 
 
 class BinaryField(Field):

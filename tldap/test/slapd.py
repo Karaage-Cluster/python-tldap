@@ -99,7 +99,7 @@ class Slapd:
         ):
             cls._log.debug("checking %s executable at %s", name, path)
             if not os.access(path, os.X_OK):
-                cls._log.warn("cannot find %s executable at %s", name, path)
+                cls._log.warning("cannot find %s executable at %s", name, path)
     check_paths = classmethod(check_paths)
 
     def __init__(self):

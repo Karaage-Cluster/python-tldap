@@ -17,7 +17,7 @@
 from __future__ import absolute_import
 
 import django.conf
-from tldap import setup
+from tldap.backend import setup
 from tldap.utils import DEFAULT_LDAP_ALIAS
 
 # For backwards compatibility - Port any old database settings over to

@@ -3,6 +3,8 @@
 /.cache/
 /.eggs/
 /.tox/
+/.idea/
+/.venv/
 /python_tldap.egg-info/
 /build/
 /dist/

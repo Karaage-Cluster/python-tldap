@@ -41,18 +41,4 @@ def check_password(password, encrypted):
 
 
 def encode_password(password):
-    return pwd_context.encrypt(password)
-
-
-class UserPassword(object):
-    def __init__(self):
-        warnings.warn(
-            "ldap_passwd class depreciated; do not use", DeprecationWarning)
-
-    @staticmethod
-    def _compareSinglePassword(password, encrypted):
-        return check_password(password, encrypted)
-
-    @staticmethod
-    def encodePassword(password, algorithm):
-        return encode_password(password)
+    return pwd_context.hash(password)

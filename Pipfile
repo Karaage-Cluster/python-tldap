@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+passlib = "==1.7.1"
+"pyasn1" = "==0.4.4"
+"ldap3" = "==2.5.1"
+setuptools-scm = "==3.1.0"
+six = "==1.11.0"
+pip = "*"
+
+[dev-packages]
+pytest = "*"
+mock = "*"
+pytest-runner = "*"
+pytest-bdd = "*"
+
+[requires]
+python_version = "3.7"

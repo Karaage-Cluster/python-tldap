@@ -19,14 +19,14 @@
 This module contains a ``modifyModlist`` function adopted from
 :py:mod:`ldap:ldap.modlist`.
 """
+from typing import Optional, List, Iterator, Dict, Tuple
 
 import ldap3
 import ldap3.utils.conv
-import tldap.helpers
-from distutils.version import LooseVersion
+import tldap.dict
 
 
-def list_dict(l, case_insensitive=0):
+def _list_dict(l: Iterator[str], case_insensitive: bool=False):
     """
     return a dictionary with all items of l being the keys of the dictionary
 
@@ -34,7 +34,8 @@ def list_dict(l, case_insensitive=0):
     used for case-insensitive string keys
     """
     if case_insensitive:
-        d = tldap.helpers.CaseInsensitiveDict()
+        raise NotImplementedError()
+        d = tldap.dict.CaseInsensitiveDict()
     else:
         d = {}
     for i in l:
@@ -42,23 +43,15 @@ def list_dict(l, case_insensitive=0):
     return d
 
 
-if LooseVersion(getattr(ldap3, '__version__', "0")) < LooseVersion("0.9.6"):
-    def escape_list(bytes_list):
-        assert isinstance(bytes_list, list)
-        return [
-            ldap3.utils.conv.escape_bytes(bytes_value)
-            for bytes_value in bytes_list
-        ]
-else:
-    def escape_list(bytes_list):
-        assert isinstance(bytes_list, list)
-        return bytes_list
+def escape_list(bytes_list):
+    assert isinstance(bytes_list, list)
+    return bytes_list
 
 
-def addModlist(entry, ignore_attr_types=None):
+def addModlist(entry: dict, ignore_attr_types: Optional[List[str]]=None) -> Dict[str, List[bytes]]:
     """Build modify list for call of method LDAPObject.add()"""
-    ignore_attr_types = list_dict(map(str.lower, (ignore_attr_types or [])))
-    modlist = {}
+    ignore_attr_types = _list_dict(map(str.lower, (ignore_attr_types or [])))
+    modlist: Dict[str, List[bytes]] = {}
     for attrtype in entry.keys():
         if attrtype.lower() in ignore_attr_types:
             # This attribute type is ignored
@@ -71,7 +64,7 @@ def addModlist(entry, ignore_attr_types=None):
 
 
 def modifyModlist(
-        old_entry, new_entry, ignore_attr_types=None, ignore_oldexistent=0):
+        old_entry: dict, new_entry: dict, ignore_attr_types=None, ignore_oldexistent: bool=False)-> Dict[str, Tuple[str, List[bytes]]]:
     """
     Build differential modify list for calling LDAPObject.modify()/modify_s()
 
@@ -82,7 +75,7 @@ def modifyModlist(
     :param ignore_attr_types:
         List of attribute type names to be ignored completely
     :param ignore_oldexistent:
-        If non-zero attribute type names which are in old_entry
+        If true attribute type names which are in old_entry
         but are not found in new_entry at all are not deleted.
         This is handy for situations where your application
         sets attribute value to '' for deleting an attribute.
@@ -97,8 +90,8 @@ def modifyModlist(
     * MOD_DELETE/MOD_DELETE used in preference to MOD_REPLACE when updating
       an existing value.
     """
-    ignore_attr_types = list_dict(map(str.lower, (ignore_attr_types or [])))
-    modlist = {}
+    ignore_attr_types = _list_dict(map(str.lower, (ignore_attr_types or [])))
+    modlist: Dict[str, Tuple[str, List[bytes]]] = {}
     attrtype_lower_map = {}
     for a in old_entry.keys():
         attrtype_lower_map[a.lower()] = a
@@ -120,8 +113,8 @@ def modifyModlist(
             modlist[attrtype] = (ldap3.MODIFY_ADD, escape_list(new_value))
         elif old_value and new_value:
             # Replace existing attribute
-            old_value_dict = list_dict(old_value)
-            new_value_dict = list_dict(new_value)
+            old_value_dict = _list_dict(old_value)
+            new_value_dict = _list_dict(new_value)
 
             delete_values = []
             for v in old_value:

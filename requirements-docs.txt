@@ -1,2 +1,0 @@
--rrequirements.txt
-django==2.1.2
