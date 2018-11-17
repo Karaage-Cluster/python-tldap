@@ -306,7 +306,6 @@ def preload(python_data: LdapObject, connection_key: str='default') -> LdapObjec
 def insert(python_data: LdapObject, connection_key: str='default') -> LdapObject:
     """ Insert a new python_data object in the database. """
     assert isinstance(python_data, LdapObject)
-    assert python_data['dn'] is None
 
     table: LdapObjectClass = type(python_data)
 
