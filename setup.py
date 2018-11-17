@@ -31,10 +31,10 @@ setup(
     author_email='brian@linuxpenguins.xyz',
     description='High level python LDAP Library',
     packages=[
-        'tldap', 'tldap.test', 'tldap.backend',
-        'tldap.methods', 'tldap.schemas',
-        'tldap.test.ldap_schemas',
-        'tldap.methods.south_migrations', 'tldap.methods.migrations'],
+        'tldap', 'tldap.backend',
+        'tldap.database',
+        'tldap.test', 'tldap.test.ldap_schemas',
+    ],
     license="GPL3+",
     long_description=open('README.rst').read(),
     classifiers=[

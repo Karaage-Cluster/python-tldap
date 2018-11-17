@@ -1,12 +1,6 @@
 """
 filters.py - misc stuff for handling LDAP filter strings (see RFC2254)
 
-See http://www.python-ldap.org/ for details.
-
-$Id: filter.py,v 1.9 2011/07/22 07:20:53 stroeder Exp $
-
-Compability:
-- Tested with Python 2.0+
 """
 import six
 

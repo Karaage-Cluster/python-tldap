@@ -18,6 +18,7 @@ pytest-runner = "*"
 pytest-bdd = "*"
 pytest-django = "*"
 django = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.7"

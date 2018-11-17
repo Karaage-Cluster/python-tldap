@@ -66,6 +66,7 @@ def step_delete_account(LDAP_ou, name):
 @then('we should be able to search for a account')
 def step_search_account(LDAP_ou):
     """ Test we can search. """
+    list(tldap.database.search(Account))
 
 
 @then('we should not be able to search for a account')

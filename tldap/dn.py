@@ -1,12 +1,5 @@
 """
 dn.py - misc stuff for handling distinguished names (see RFC 4514)
-
-See http://www.python-ldap.org/ for details.
-
-$Id: dn.py,v 1.11 2010/06/03 12:26:39 stroeder Exp $
-
-Compability:
-- Tested with Python 2.0+
 """
 import six
 

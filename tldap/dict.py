@@ -1,4 +1,4 @@
-# Copyright 2012-2014 Brian May
+# Copyright 2018 Brian May
 #
 # This file is part of python-tldap.
 #
@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
+""" Dictionary related classes. """
 from typing import TypeVar, KeysView, ItemsView, Optional, Set, Dict
 
 Entity = TypeVar('Entity', bound='CaseInsensitiveDict')
@@ -22,7 +23,7 @@ Entity = TypeVar('Entity', bound='CaseInsensitiveDict')
 class CaseInsensitiveDict:
     """
     Case insensitve dictionary for searches however preserves the case for
-    retrieval.
+    retrieval. Needs to be supplied with a set of allowed keys.
     """
 
     def __init__(self, allowed_keys: Set[str], d: Optional[dict]=None) -> None:
@@ -77,15 +78,6 @@ class CaseInsensitiveDict:
     def items(self) -> ItemsView[str, any]:
         return self._dict.items()
 
-    # def __clone__(self: Entity, d: Optional[dict]=None) -> Entity:
-    #     return self._dict.__class__()
-    #
-    # def __copy__(self: Entity) -> Entity:
-    #     clone = self.__clone__()
-    #     for k, v in self.items():
-    #         clone[k] = v
-    #     return clone
-
     def to_dict(self) -> dict:
         return self._dict
 
@@ -94,6 +86,9 @@ ImmutableDictEntity = TypeVar('ImmutableDictEntity', bound='ImmutableDict')
 
 
 class ImmutableDict:
+    """
+    Immutable dictionary that cannot be changed without creating a new instance.
+    """
     def __init__(self, allowed_keys: Optional[Set[str]]=None, d: Optional[dict]=None) -> None:
         self._allowed_keys = allowed_keys
         self._dict = CaseInsensitiveDict(allowed_keys)

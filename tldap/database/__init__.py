@@ -1,3 +1,21 @@
+# Copyright 2018 Brian May
+#
+# This file is part of python-tldap.
+#
+# python-tldap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# python-tldap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
+
+""" High level database interaction. """
 from typing import List, Iterator, TypeVar, Optional, Type, Set, Tuple
 
 import ldap3.core
@@ -14,6 +32,7 @@ import tldap.query
 
 
 class SearchOptions:
+    """ Application specific search options. """
     def __init__(self, base_dn: str, object_class: Set[str], pk_field: str) -> None:
         self.base_dn = base_dn
         self.object_class = object_class
@@ -25,6 +44,8 @@ LdapObjectClass = Type['LdapObject']
 
 
 class LdapObject(ImmutableDict):
+    """ A high level python representation of a LDAP object. """
+
     def __init__(self, d: Optional[dict]=None) -> None:
         fields = self.get_fields()
         field_names = set(f.name for f in fields)
@@ -62,6 +83,8 @@ LdapChangesEntity = TypeVar('LdapChangesEntity', bound='LdapChanges')
 
 
 class LdapChanges(ImmutableDict):
+    """ Represents a set of changes to an LdapObject. """
+
     def __init__(self, fields: List[tldap.fields.Field], src: LdapObject, d: Optional[dict]=None) -> None:
         self._fields = fields
         self._src = src
@@ -88,6 +111,8 @@ DbDataEntity = TypeVar('DbDataEntity', bound='DbData')
 
 
 class DbData(ImmutableDict):
+    """ Represents an LDAP object at low level without any translations. """
+
     def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict]=None) -> None:
         self._fields = fields
         field_names = set(f.name for f in fields if f.db_field)
@@ -101,6 +126,8 @@ DbChangesEntity = TypeVar('DbChangesEntity', bound='DbChanges')
 
 
 class DbChanges(ImmutableDict):
+    """ Represents an set of changes to an LDAP object at low level without any translations. """
+
     def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict]=None) -> None:
         self._fields = fields
         field_names = set(f.name for f in fields if f.db_field)
@@ -111,6 +138,8 @@ class DbChanges(ImmutableDict):
 
 
 class NotLoaded:
+    """ Base class to represent a related field that has not been loaded. """
+
     def __repr__(self):
         raise NotImplementedError()
 
@@ -130,6 +159,7 @@ class NotLoaded:
 
 
 class NotLoadedObject(NotLoaded):
+    """ Represents a single object that needs to be loaded. """
     def __init__(self, *, table: LdapObjectClass, key: str, value: str):
         self._table = table
         self._key = key
@@ -143,6 +173,8 @@ class NotLoadedObject(NotLoaded):
 
 
 class NotLoadedList(NotLoaded):
+    """ Represents a list of objects that needs to be loaded via a single key. """
+
     def __init__(self, *, table: LdapObjectClass, key: str, value: str):
         self._table = table
         self._key = key
@@ -156,6 +188,8 @@ class NotLoadedList(NotLoaded):
 
 
 class NotLoadedListToList(NotLoaded):
+    """ Represents a list of objects that needs to be loaded via a list of key values. """
+
     def __init__(self, *, table: LdapObjectClass, key: str, value: List[str]):
         self._table = table
         self._key = key
@@ -174,6 +208,7 @@ class NotLoadedListToList(NotLoaded):
 
 
 def get_changes(python_data: LdapObject, d: dict) -> LdapChanges:
+    """ Generate changes object for ldap object. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
 
@@ -182,6 +217,7 @@ def get_changes(python_data: LdapObject, d: dict) -> LdapChanges:
 
 
 def _db_to_python(db_data: DbData, table: LdapObjectClass, dn: str) -> LdapObject:
+    """ Convert a DbDate object to a LdapObject. """
     fields = table.get_fields()
 
     python_data = table({
@@ -196,6 +232,7 @@ def _db_to_python(db_data: DbData, table: LdapObjectClass, dn: str) -> LdapObjec
 
 
 def _python_to_db(changes: LdapChanges) -> DbChanges:
+    """ Convert a LdapChanges object to a DbChanges object. """
     table: LdapObjectClass = type(changes.src)
     fields = table.get_fields()
 
@@ -210,6 +247,7 @@ def _python_to_db(changes: LdapChanges) -> DbChanges:
 
 
 def search(table: LdapObjectClass, query: Optional[Q]=None, connection_key: str='default', base_dn: Optional[str]=None) -> Iterator[LdapObject]:
+    """ Search for a object of given type in the database. """
     fields = table.get_fields()
     db_fields = [field for field in fields if field.db_field]
     connection = tldap.backend.connections[connection_key]
@@ -234,6 +272,7 @@ def search(table: LdapObjectClass, query: Optional[Q]=None, connection_key: str=
 
 
 def get_one(table: LdapObjectClass, query: Q, connection_key: str='default', base_dn: Optional[str]=None) -> LdapObject:
+    """ Get exactly one result from the database or fail. """
     results = search(table, query, connection_key, base_dn)
 
     try:
@@ -251,6 +290,7 @@ def get_one(table: LdapObjectClass, query: Q, connection_key: str='default', bas
 
 
 def preload(python_data: LdapObject, connection_key: str='default') -> LdapObject:
+    """ Preload all NotLoaded fields in LdapObject. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
 
@@ -264,7 +304,9 @@ def preload(python_data: LdapObject, connection_key: str='default') -> LdapObjec
 
 
 def insert(python_data: LdapObject, connection_key: str='default') -> LdapObject:
+    """ Insert a new python_data object in the database. """
     assert isinstance(python_data, LdapObject)
+    assert python_data['dn'] is None
 
     table: LdapObjectClass = type(python_data)
 
@@ -276,6 +318,7 @@ def insert(python_data: LdapObject, connection_key: str='default') -> LdapObject
 
 
 def _get_mod(value: List[bytes]) -> Tuple[str, List[bytes]]:
+    """ Get the LDAP operation for this value. """
     if len(value) == 0:
         return ldap3.MODIFY_DELETE, []
     else:
@@ -283,6 +326,7 @@ def _get_mod(value: List[bytes]) -> Tuple[str, List[bytes]]:
 
 
 def save(changes: LdapChanges, connection_key: str='default') -> LdapObject:
+    """ Save all changes in a LdapChanges. """
     assert isinstance(changes, LdapChanges)
 
     connection = tldap.backend.connections[connection_key]
@@ -351,6 +395,7 @@ def save(changes: LdapChanges, connection_key: str='default') -> LdapObject:
 
 
 def delete(python_data: LdapObject, connection_key: str='default') -> None:
+    """ Delete a LdapObject from the database. """
     dn = python_data['dn']
     assert dn is not None
     connection = tldap.backend.connections[connection_key]
@@ -358,6 +403,7 @@ def delete(python_data: LdapObject, connection_key: str='default') -> None:
 
 
 def get_field_by_name(table: LdapObjectClass, name: str) -> tldap.fields.Field:
+    """ Lookup a field by its name. """
     fields = table.get_fields()
     f = [field for field in fields if field.name == name]
     if len(f) < 0:
@@ -366,6 +412,7 @@ def get_field_by_name(table: LdapObjectClass, name: str) -> tldap.fields.Field:
 
 
 def rename(python_data: LdapObject, new_base_dn=None, connection_key: str='default', **kwargs) -> LdapObject:
+    """ Move/rename a LdapObject in the database. """
     table = type(python_data)
     dn = python_data['dn']
     assert dn is not None

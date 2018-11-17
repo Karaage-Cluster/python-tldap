@@ -1,4 +1,4 @@
-# Copyright 2012-2014 Brian May
+# Copyright 2012-2018 Brian May
 #
 # This file is part of python-tldap.
 #
@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
+""" Hash and check passwords. """
 from passlib.context import CryptContext
-import warnings
 
 pwd_context = CryptContext(
     schemes=[
@@ -32,7 +32,8 @@ pwd_context = CryptContext(
 )
 
 
-def check_password(password, encrypted):
+def check_password(password: str, encrypted: str) -> bool:
+    """ Check a plaintext password against a hashed password. """
     # some old passwords have {crypt} in lower case, and passlib wants it to be
     # in upper case.
     if encrypted.startswith("{crypt}"):
@@ -40,5 +41,6 @@ def check_password(password, encrypted):
     return pwd_context.verify(password, encrypted)
 
 
-def encode_password(password):
+def encode_password(password: str) -> str:
+    """ Encode a password. """
     return pwd_context.hash(password)

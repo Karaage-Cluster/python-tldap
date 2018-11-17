@@ -24,7 +24,7 @@ Appendices:
     :maxdepth: 1
 
     changes
-    reference
+    modules
 
 Indices and tables
 ==================

@@ -5,6 +5,9 @@ Ideas that seemed like a good idea at the time that have been adandoned. These
 are documented here to avoid accidentally reimplementing bad ideas without
 consideration at to why they were discarded.
 
+*   ORM model.
+
+    Ended up being overly complicated. This approach was abandoned in 1.0.0.
 
 *   Process actions immediately.
 

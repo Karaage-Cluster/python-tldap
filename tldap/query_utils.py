@@ -16,8 +16,6 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import absolute_import
 
-from typing import List
-
 import six
 from .tree import Node
 
@@ -36,7 +34,7 @@ class Q(Node):
         super(Q, self).__init__(
             children=list(args) + list(six.iteritems(kwargs)))
 
-    def _combine(self, other: 'Q', conn: str):
+    def _combine(self, other: 'Q', conn: str) -> 'Q':
         if not isinstance(other, Q):
             raise TypeError(other)
         if len(self.children) < 1:

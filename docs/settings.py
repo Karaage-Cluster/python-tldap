@@ -19,5 +19,5 @@ DEBUG = True
 SECRET_KEY = '5hvhpe6gv2t5x4$3dtq(w2v#vg@)sx4p3r_@wv%l41g!stslc*'
 
 INSTALLED_APPS = [
-    'tldap.methods',
+    'tldap.django',
 ]
