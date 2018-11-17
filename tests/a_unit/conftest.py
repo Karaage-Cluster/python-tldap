@@ -2,7 +2,7 @@ import mock
 import pytest
 
 import tldap.backend
-import tldap.tests.database
+import tests.database
 
 
 @pytest.fixture

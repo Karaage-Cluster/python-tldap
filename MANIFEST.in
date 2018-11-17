@@ -9,3 +9,6 @@ include pylint.conf
 recursive-include tldap *.py *.schema
 recursive-include docs Makefile *.py *.rst *.inv
 recursive-exclude docs/_build *
+include Pipfile*
+recursive-include tests *.feature
+recursive-include tests *.py

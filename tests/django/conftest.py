@@ -4,7 +4,7 @@ import pytest
 import tldap.backend
 import tldap.database
 import tldap.test.slapd
-import tldap.tests.database
+import tests.database
 
 @pytest.fixture
 def LDAP():
@@ -23,12 +23,12 @@ def LDAP():
 
 @pytest.fixture
 def LDAP_ou(LDAP):
-    organizational_unit = tldap.tests.database.OU({
+    organizational_unit = tests.database.OU({
         'dn': "ou=People, dc=python-ldap,dc=org"
     })
     tldap.database.insert(organizational_unit)
 
-    organizational_unit = tldap.tests.database.OU({
+    organizational_unit = tests.database.OU({
         'dn': "ou=Groups, dc=python-ldap,dc=org"
     })
     tldap.database.insert(organizational_unit)

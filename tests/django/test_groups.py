@@ -2,7 +2,7 @@ import pytest
 
 import tldap.database
 from tldap.django.models import Counters
-from tldap.tests.django.database import Group
+from tests.django.database import Group
 
 
 @pytest.mark.django_db(transaction=True)

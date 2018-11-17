@@ -5,7 +5,7 @@ from pytest_bdd import scenarios, when, then, parsers
 import tldap.database
 from tldap import Q
 from tldap.exceptions import ObjectDoesNotExist
-from tldap.tests.database import Group
+from tests.database import Group
 
 scenarios('groups.feature')
 

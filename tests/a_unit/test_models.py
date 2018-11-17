@@ -30,7 +30,7 @@ import tldap.transaction
 import tldap.exceptions
 import tldap.modlist
 import tldap.test.slapd
-import tldap.tests.database
+import tests.database
 from tldap import Q
 import tldap.query
 
@@ -69,7 +69,7 @@ class Defaults:
 @pytest.fixture
 def group1(mock_ldap):
     """ Get group 1. """
-    group = tldap.tests.database.Group()
+    group = tests.database.Group()
     group = group.merge({
         'cn': 'group1',
         'gidNumber': 10,
@@ -141,7 +141,7 @@ def account1(defaults, mock_ldap):
     # old_search = mock_ldap.search
     # mock_ldap.search = mock.MagicMock(return_value=[])
 
-    account = tldap.tests.database.Account()
+    account = tests.database.Account()
     account = account.merge(defaults.account_attributes)
     account = tldap.database.insert(account)
 
@@ -153,7 +153,7 @@ def account1(defaults, mock_ldap):
 @pytest.fixture
 def group2(account1, mock_ldap):
     """ Get group 2. """
-    group = tldap.tests.database.Group()
+    group = tests.database.Group()
     group = group.merge({
         'cn': 'group2',
         'gidNumber': 11,
@@ -394,7 +394,7 @@ class TestModelAccount:
         account_attributes = defaults.account_attributes
 
         # Create the object.
-        account = tldap.tests.database.Account()
+        account = tests.database.Account()
         account = account.merge(account_attributes)
         account = tldap.database.insert(account)
 
@@ -433,7 +433,7 @@ class TestModelAccount:
         account_attributes = defaults.account_attributes
 
         # Create the object.
-        account = tldap.tests.database.Account()
+        account = tests.database.Account()
         account = account.merge(account_attributes)
         account = account.merge({'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org"})
         account = tldap.database.insert(account)
@@ -476,10 +476,10 @@ class TestModelAccount:
         })
         c.search.add_result(b"uid=tux", account1)
 
-        results = tldap.database.search(tldap.tests.database.Account, Q(uid='does_not_exist'))
+        results = tldap.database.search(tests.database.Account, Q(uid='does_not_exist'))
         assert list(results) == []
 
-        results = tldap.database.search(tldap.tests.database.Account, Q(uid='tux'))
+        results = tldap.database.search(tests.database.Account, Q(uid='tux'))
         results = list(results)
         assert len(results) == 1
 
@@ -817,7 +817,7 @@ class TestModelQuery:
             b"entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", account1)
 
         person = tldap.database.get_one(
-            tldap.tests.database.Account,
+            tests.database.Account,
             Q(dn="uid=tux, ou=People, dc=python-ldap,dc=org"))
         assert person['uid'] == "tux"
 
@@ -839,7 +839,7 @@ class TestModelQuery:
         """ Test filter. """
         ldap_filter = tldap.query.get_filter(
             tldap.Q(uid='tux'),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(uid=tux)"
@@ -848,7 +848,7 @@ class TestModelQuery:
         """ Test filter with backslash. """
         ldap_filter = tldap.query.get_filter(
             tldap.Q(uid='t\\ux'),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(uid=t\\5cux)"
@@ -857,7 +857,7 @@ class TestModelQuery:
         """ Test filter with negated value. """
         ldap_filter = tldap.query.get_filter(
             ~tldap.Q(uid='tux'),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(!(uid=tux))"
@@ -866,7 +866,7 @@ class TestModelQuery:
         """ Test filter with OR condition. """
         ldap_filter = tldap.query.get_filter(
             tldap.Q(uid='tux') | tldap.Q(uid='tuz'),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
@@ -875,7 +875,7 @@ class TestModelQuery:
         """ Test filter with OR condition """
         ldap_filter = tldap.query.get_filter(
             tldap.Q() | tldap.Q(uid='tux') | tldap.Q(uid='tuz'),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
@@ -884,7 +884,7 @@ class TestModelQuery:
         """ Test filter with AND condition. """
         ldap_filter = tldap.query.get_filter(
             tldap.Q() & tldap.Q(uid='tux') & tldap.Q(uid='tuz'),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(&(uid=tux)(uid=tuz))"
@@ -893,7 +893,7 @@ class TestModelQuery:
         """ Test filter with AND and OR condition. """
         ldap_filter = tldap.query.get_filter(
             tldap.Q(uid='tux') & (tldap.Q(uid='tuz') | tldap.Q(uid='meow')),
-            tldap.tests.database.Account.get_fields(),
+            tests.database.Account.get_fields(),
             "uid"
         )
         assert ldap_filter == b"(&(uid=tux)(|(uid=tuz)(uid=meow)))"

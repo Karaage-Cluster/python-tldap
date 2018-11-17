@@ -3,12 +3,12 @@ import pytest
 from pytest_bdd import given, when, then, parsers
 
 import tldap
-import tldap.tests.database
+import tests.database
 from tldap import transaction
 import tldap.backend
 import tldap.database
 import tldap.test.slapd
-from tldap.tests.database import Account
+from tests.database import Account
 
 
 @pytest.fixture
@@ -39,12 +39,12 @@ def LDAP(step_login):
 
 @pytest.fixture
 def LDAP_ou(LDAP):
-    organizationalUnit = tldap.tests.database.OU({
+    organizationalUnit = tests.database.OU({
         'dn': "ou=People, dc=python-ldap,dc=org"
     })
     tldap.database.insert(organizationalUnit)
 
-    organizationalUnit = tldap.tests.database.OU({
+    organizationalUnit = tests.database.OU({
         'dn': "ou=Groups, dc=python-ldap,dc=org"
     })
     tldap.database.insert(organizationalUnit)

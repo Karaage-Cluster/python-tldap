@@ -20,8 +20,6 @@
 import os
 from setuptools import setup
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'tldap.tests.settings'
-
 setup(
     name="python-tldap",
     use_scm_version={
@@ -34,7 +32,7 @@ setup(
     description='High level python LDAP Library',
     packages=[
         'tldap', 'tldap.test', 'tldap.backend',
-        'tldap.methods', 'tldap.tests', 'tldap.schemas',
+        'tldap.methods', 'tldap.schemas',
         'tldap.test.ldap_schemas',
         'tldap.methods.south_migrations', 'tldap.methods.migrations'],
     license="GPL3+",
