@@ -16,6 +16,8 @@ pytest = "*"
 mock = "*"
 pytest-runner = "*"
 pytest-bdd = "*"
+pytest-django = "*"
+django = "*"
 
 [requires]
 python_version = "3.7"
