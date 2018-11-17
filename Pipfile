@@ -19,6 +19,7 @@ pytest-bdd = "*"
 pytest-django = "*"
 django = "*"
 sphinx = "*"
+tox = "*"
 
 [requires]
 python_version = "3.7"

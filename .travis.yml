@@ -1,9 +1,6 @@
 language: python
 python:
-- 2.7
-- 3.5
 - 3.6
-- pypy
 
 addons:
   apt:
@@ -12,7 +9,8 @@ addons:
     - ldap-utils
 
 install:
-  - pip install -rrequirements-tests.txt
+  - pip install pipenv
+  - pipenv install --dev
 
 script:
-  - ./setup.py test
+  - pipenv run ./setup.py test

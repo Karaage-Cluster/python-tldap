@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cc3b97338911600081c86947c4858f62467880d07f56c0bceb91bb0895662a65"
+            "sha256": "35d37ec756826894167e07f9655a6b074272871e81943f54e2a886a8b306af3c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -114,6 +114,13 @@
                 "sha256:7a4bd47eaf6596e1295ecb11361139febe29b084a87bf005bf899f9a42edc3c6"
             ],
             "version": "==0.14"
+        },
+        "filelock": {
+            "hashes": [
+                "sha256:b8d5ca5ca1c815e1574aee746650ea7301de63d87935b3463d26368b76e31633",
+                "sha256:d610c1bb404daf85976d7a82eb2ada120f04671007266b708606565dd03b5be6"
+            ],
+            "version": "==3.0.10"
         },
         "glob2": {
             "hashes": [
@@ -328,12 +335,34 @@
             ],
             "version": "==1.1.0"
         },
+        "toml": {
+            "hashes": [
+                "sha256:229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c",
+                "sha256:235682dd292d5899d361a811df37e04a8828a5b1da3115886b73cf81ebc9100e"
+            ],
+            "version": "==0.10.0"
+        },
+        "tox": {
+            "hashes": [
+                "sha256:513e32fdf2f9e2d583c2f248f47ba9886428c949f068ac54a0469cac55df5862",
+                "sha256:75fa30e8329b41b664585f5fb837e23ce1d7e6fa1f7811f2be571c990f9d911b"
+            ],
+            "index": "pypi",
+            "version": "==3.5.3"
+        },
         "urllib3": {
             "hashes": [
                 "sha256:61bf29cada3fc2fbefad4fdf059ea4bd1b4a86d2b6d15e1c7c0b582b9752fe39",
                 "sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22"
             ],
             "version": "==1.24.1"
+        },
+        "virtualenv": {
+            "hashes": [
+                "sha256:686176c23a538ecc56d27ed9d5217abd34644823d6391cbeb232f42bf722baad",
+                "sha256:f899fafcd92e1150f40c8215328be38ff24b519cd95357fa6e78e006c7638208"
+            ],
+            "version": "==16.1.0"
         }
     }
 }
