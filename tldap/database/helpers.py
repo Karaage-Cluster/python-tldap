@@ -297,6 +297,58 @@ def save_pwdpolicy(changes: LdapChanges) -> LdapChanges:
     return changes
 
 
+# PASSWORD_OBJECT - ds389
+
+def get_fields_password_object() -> List[tldap.fields.Field]:
+    fields = [
+        tldap.fields.CharField('accountUnlockTime'),
+        tldap.fields.CharField('nsRoleDN'),
+    ]
+    return fields
+
+
+def load_password_object(python_data: LdapObject, settings: dict) -> LdapObject:
+    def is_locked(python_data: LdapObject, settings: dict):
+        account_unlock_time = python_data['accountUnlockTime']
+        if account_unlock_time is not None:
+            return True
+        role = python_data['nsRoleDN']
+        locked_role = settings['LOCKED_ROLE']
+        if locked_role is not None and role == locked_role:
+            return True
+        return False
+
+    python_data = python_data.merge({
+        'locked': is_locked(python_data, settings)
+    })
+    return python_data
+
+
+def save_password_object(changes: LdapChanges, settings: dict) -> LdapChanges:
+    d = {}
+
+    if get_value(changes, 'locked') is None:
+        d['locked'] = False
+
+    changes = changes.merge(d)
+
+    d = {}
+
+    locked_role = settings['LOCKED_ROLE']
+
+    if 'locked' in changes:
+        locked = get_value(changes, 'locked')
+        if locked:
+            d['accountUnlockTime'] = '19700101000000Z'
+            d['nsRoleDN'] = locked_role
+        else:
+            d['accountUnlockTime'] = None
+            d['nsRoleDN'] = None
+
+    changes = changes.merge(d)
+    return changes
+
+
 # SHIBBOLETH
 
 def get_fields_shibboleth() -> List[tldap.fields.Field]:
