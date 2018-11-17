@@ -27,7 +27,6 @@ import sys
 import logging
 
 from .base import LDAPbase
-from ..compat import BASE
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class LDAPwrapper(LDAPbase):
     # Cache Management #
     ####################
 
-    def reset(self):
+    def reset(self, forceflushcache: bool=False) -> None:
         """
         Reset transaction back to original state, discarding all
         uncompleted transactions.
@@ -81,7 +80,7 @@ class LDAPwrapper(LDAPbase):
             lambda obj: obj.search(
                 dn,
                 '(objectclass=*)',
-                BASE,
+                ldap3.BASE,
                 attributes=['*', '+']))
         results = self._obj.response
         if len(results) < 1:

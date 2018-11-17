@@ -24,7 +24,6 @@ from typing import Optional, TypeVar, Callable, Tuple
 import ldap3
 import ldap3.core.exceptions as exceptions
 import logging
-from ..compat import SIMPLE
 
 from urllib.parse import urlparse
 
@@ -106,7 +105,7 @@ class LDAPbase(object):
         s = ldap3.Server(host, port=port, use_ssl=use_ssl, tls=tls)
         c = self._connection_class(
             s,  # client_strategy=ldap3.STRATEGY_SYNC_RESTARTABLE,
-            user=user, password=password, authentication=SIMPLE)
+            user=user, password=password, authentication=ldap3.SIMPLE)
         c.strategy.restartable_sleep_time = 0
         c.strategy.restartable_tries = 1
         c.raise_exceptions = True
