@@ -208,7 +208,7 @@ class NotLoadedList(NotLoaded):
         self._value = value
 
     def __repr__(self):
-        return f"<NotLoaded {self._table} {self._key}={self._value}>"
+        return f"<NotLoadedList {self._table} {self._key}={self._value}>"
 
     def load(self, database: Optional[Database]=None) -> List[LdapObject]:
         return self._load_list(self._table, self._key, self._value, database)
@@ -223,7 +223,7 @@ class NotLoadedListToList(NotLoaded):
         self._value = value
 
     def __repr__(self):
-        return f"<NotLoadedList {self._table} {self._key}={self._value}>"
+        return f"<NotLoadedListToList {self._table} {self._key}={self._value}>"
 
     def load(self, database: Optional[Database]=None) -> List[LdapObject]:
         result = [
