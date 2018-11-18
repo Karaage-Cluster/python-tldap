@@ -67,8 +67,6 @@ def set_object_class(changes: LdapChanges, object_class: List[str]) -> LdapChang
 
 
 def get_value(changes: LdapChanges, key: str) -> any:
-    if key.startswith("_"):
-        raise RuntimeError("This function should not be used for private values.")
     if key in changes:
         return changes[key]
     if key in changes._src:
