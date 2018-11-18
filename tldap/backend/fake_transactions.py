@@ -26,7 +26,7 @@ import tldap.modlist
 import sys
 import logging
 
-from .base import LDAPbase
+from .base import LdapBase
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class NO_SUCH_OBJECT(Exception):
 
 # wrapper class
 
-class LDAPwrapper(LDAPbase):
+class LDAPwrapper(LdapBase):
     """ The LDAP connection class. """
 
     def __init__(self, settings_dict):

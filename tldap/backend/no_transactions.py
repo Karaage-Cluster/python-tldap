@@ -18,12 +18,12 @@
 """ This module provides the LDAP functions with transaction support disabled,
 with a subset of the functions from the real ldap module. """
 
-from .base import LDAPbase
+from .base import LdapBase
 
 
 # wrapper class
 
-class LDAPwrapper(LDAPbase):
+class LDAPwrapper(LdapBase):
     """ The LDAP connection class. """
 
     ####################

@@ -24,7 +24,7 @@ import ldap3.core.exceptions
 import tldap.fields
 from tldap import Q
 
-from tldap.backend.base import LDAPbase
+from tldap.backend.base import LdapBase
 from tldap.dict import ImmutableDict
 from tldap.dn import dn2str, str2dn
 from tldap.exceptions import ObjectAlreadyExists, ObjectDoesNotExist, MultipleObjectsReturned

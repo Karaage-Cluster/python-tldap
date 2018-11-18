@@ -38,7 +38,7 @@ def _debug(*argv):
 Entity = TypeVar('Entity')
 
 
-class LDAPbase(object):
+class LdapBase(object):
     """ The vase LDAP connection class. """
 
     def __init__(self, settings_dict: dict) -> None:

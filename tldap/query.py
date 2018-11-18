@@ -20,7 +20,7 @@ import ldap3
 
 import tldap
 import tldap.fields
-from tldap.backend.base import LDAPbase
+from tldap.backend.base import LdapBase
 from tldap.filter import filter_format
 
 
@@ -151,7 +151,7 @@ def _get_search_params(query: Optional[tldap.Q], fields: List[tldap.fields.Field
 
 
 def search(
-        connection: LDAPbase, query: Optional[tldap.Q], fields: List[tldap.fields.Field],
+        connection: LdapBase, query: Optional[tldap.Q], fields: List[tldap.fields.Field],
         base_dn: str, object_classes: Set[str], pk: str) -> Iterator[Tuple[str, dict]]:
     field_names = [x.name for x in fields]
 
