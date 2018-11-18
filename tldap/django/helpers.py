@@ -18,13 +18,13 @@
 """ Django specific database helper functions. """
 
 from tldap import Q
-from tldap.database import LdapChanges, LdapObjectClass, get_one
+from tldap.database import LdapChanges, LdapObjectClass, get_one, Database
 from tldap.database.helpers import get_value
 from tldap.django.models import Counters
 from tldap.exceptions import ObjectDoesNotExist
 
 
-def _check_exists(table: LdapObjectClass, key: str, value: str):
+def _check_exists(database: Database, table: LdapObjectClass, key: str, value: str):
     """ Check if a given LDAP object exists. """
     try:
         get_one(table, Q(**{key: value}))
@@ -33,9 +33,10 @@ def _check_exists(table: LdapObjectClass, key: str, value: str):
         return False
 
 
-def save_account(changes: LdapChanges, table: LdapObjectClass, settings: dict) -> LdapChanges:
+def save_account(changes: LdapChanges, table: LdapObjectClass, database: Database) -> LdapChanges:
     """ Modify a changes to add an automatically generated uidNumber. """
     d = {}
+    settings = database.settings
 
     uid_number = get_value(changes, 'uidNumber')
     if uid_number is None:
@@ -43,16 +44,17 @@ def save_account(changes: LdapChanges, table: LdapObjectClass, settings: dict) -
         first = settings.get('UID_FIRST', 10000)
         d['uidNumber'] = Counters.get_and_increment(
             scheme, "uidNumber", first,
-            lambda n: not _check_exists(table, 'uidNumber', n)
+            lambda n: not _check_exists(database, table, 'uidNumber', n)
         )
 
     changes = changes.merge(d)
     return changes
 
 
-def save_group(changes: LdapChanges, table: LdapObjectClass, settings: dict) -> LdapChanges:
+def save_group(changes: LdapChanges, table: LdapObjectClass, database: Database) -> LdapChanges:
     """ Modify a changes to add an automatically generated gidNumber. """
     d = {}
+    settings = database.settings
 
     gid_number = get_value(changes, 'gidNumber')
     if gid_number is None:
@@ -60,7 +62,7 @@ def save_group(changes: LdapChanges, table: LdapObjectClass, settings: dict) -> 
         first = settings.get('GID_FIRST', 10000)
         d['gidNumber'] = Counters.get_and_increment(
             scheme, "gidNumber", first,
-            lambda n: not _check_exists(table, 'gidNumber', n)
+            lambda n: not _check_exists(database, table, 'gidNumber', n)
         )
 
     changes = changes.merge(d)

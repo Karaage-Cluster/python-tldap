@@ -19,12 +19,12 @@
 import base64
 import datetime
 from hashlib import sha1
-from typing import Iterator, List, Set
+from typing import List
 
 import tldap.exceptions
 import tldap.fields
 from tldap.database import LdapObject, LdapChanges, NotLoadedObject, NotLoadedList, \
-    NotLoadedListToList, LdapObjectClass
+    NotLoadedListToList, LdapObjectClass, Database
 from tldap.dn import str2dn, dn2str
 import tldap.ldap_passwd as ldap_passwd
 
@@ -323,8 +323,10 @@ def get_fields_password_object() -> List[tldap.fields.Field]:
     return fields
 
 
-def load_password_object(python_data: LdapObject, settings: dict) -> LdapObject:
-    def is_locked(python_data: LdapObject, settings: dict):
+def load_password_object(python_data: LdapObject, database: Database) -> LdapObject:
+    settings = database.settings
+
+    def is_locked():
         account_unlock_time = python_data['accountUnlockTime']
         if account_unlock_time is not None:
             return True
@@ -335,13 +337,14 @@ def load_password_object(python_data: LdapObject, settings: dict) -> LdapObject:
         return False
 
     python_data = python_data.merge({
-        'locked': is_locked(python_data, settings)
+        'locked': is_locked()
     })
     return python_data
 
 
-def save_password_object(changes: LdapChanges, settings: dict) -> LdapChanges:
+def save_password_object(changes: LdapChanges, database: Database) -> LdapChanges:
     d = {}
+    settings = database.settings
 
     if get_value(changes, 'locked') is None:
         d['locked'] = False
@@ -379,8 +382,9 @@ def load_shibboleth(python_data: LdapObject) -> LdapObject:
     return python_data
 
 
-def save_shibboleth(changes: LdapChanges, settings: dict) -> LdapChanges:
+def save_shibboleth(changes: LdapChanges, database: Database) -> LdapChanges:
     d = {}
+    settings = database.settings
 
     if 'uid' in changes:
         uid = get_value(changes, 'uid')

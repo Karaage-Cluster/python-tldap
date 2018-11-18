@@ -47,11 +47,11 @@ class Database:
         self._settings = settings
 
     @property
-    def connection(self):
+    def connection(self) -> LdapBase:
         return self._connection
 
     @property
-    def settings(self):
+    def settings(self) -> dict:
         return self._settings
 
 
@@ -91,15 +91,15 @@ class LdapObject(ImmutableDict):
         raise NotImplementedError()
 
     @classmethod
-    def get_search_options(cls, settings: dict) -> SearchOptions:
+    def get_search_options(cls, database: Database) -> SearchOptions:
         raise NotImplementedError()
 
     @classmethod
-    def on_load(cls, python_data: 'LdapObject', settings: dict) -> 'LdapObject':
+    def on_load(cls, python_data: 'LdapObject', database: Database) -> 'LdapObject':
         raise NotImplementedError()
 
     @classmethod
-    def on_save(cls, changes: 'LdapChanges', settings: dict) -> 'LdapChanges':
+    def on_save(cls, changes: 'LdapChanges', database: Database) -> 'LdapChanges':
         raise NotImplementedError()
 
     def __copy__(self: LdapObjectEntity) -> LdapObjectEntity:
@@ -281,9 +281,8 @@ def search(table: LdapObjectClass, query: Optional[Q]=None,
 
     database = get_database(database)
     connection = database.connection
-    settings = database.settings
 
-    search_options = table.get_search_options(settings)
+    search_options = table.get_search_options(database)
 
     iterator = tldap.query.search(
         connection=connection,
@@ -297,7 +296,7 @@ def search(table: LdapObjectClass, query: Optional[Q]=None,
     for dn, data in iterator:
         db_data = DbData(fields, data)
         python_data = _db_to_python(db_data, table, dn)
-        python_data = table.on_load(python_data, settings)
+        python_data = table.on_load(python_data, database)
         yield python_data
 
 
@@ -361,12 +360,11 @@ def save(changes: LdapChanges, database: Optional[Database]=None) -> LdapObject:
 
     database = get_database(database)
     connection = database.connection
-    settings = database.settings
 
     table = type(changes._src)
 
     # Run hooks on changes
-    changes = table.on_save(changes, settings)
+    changes = table.on_save(changes, database)
 
     # src dn   | changes dn | result         | action
     # ---------------------------------------|--------
@@ -421,7 +419,7 @@ def save(changes: LdapChanges, database: Optional[Database]=None) -> LdapObject:
     # get new values
     python_data = table(changes.src.to_dict())
     python_data = python_data.merge(changes.to_dict())
-    python_data = python_data.on_load(python_data, settings)
+    python_data = python_data.on_load(python_data, database)
     return python_data
 
 
