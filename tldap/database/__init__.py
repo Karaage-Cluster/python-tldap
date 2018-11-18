@@ -39,6 +39,33 @@ class SearchOptions:
         self.pk_field = pk_field
 
 
+class Database:
+    def __init__(self, connection: LdapBase, settings: Optional[dict]=None):
+        self._connection = connection
+        if settings is None:
+            settings = connection.settings_dict
+        self._settings = settings
+
+    @property
+    def connection(self):
+        return self._connection
+
+    @property
+    def settings(self):
+        return self._settings
+
+
+def get_default_database():
+    return Database(tldap.backend.connections['default'])
+
+
+def get_database(database: Optional[Database]) -> Database:
+    if database is None:
+        return get_default_database()
+    else:
+        return database
+
+
 LdapObjectEntity = TypeVar('LdapObjectEntity', bound='LdapObject')
 LdapObjectClass = Type['LdapObject']
 
@@ -143,19 +170,19 @@ class NotLoaded:
     def __repr__(self):
         raise NotImplementedError()
 
-    def load(self, connection_key: str='default') -> LdapObject or List[LdapObject]:
+    def load(self, database: Optional[Database]=None) -> LdapObject or List[LdapObject]:
         raise NotImplementedError()
 
     @staticmethod
-    def _load_one(table: LdapObjectClass, key: str, value: str, connection_key: str='default') -> LdapObject:
+    def _load_one(table: LdapObjectClass, key: str, value: str, database: Optional[Database]=None) -> LdapObject:
         q = Q(**{key: value})
-        result = get_one(table, q, connection_key)
+        result = get_one(table, q, database)
         return result
 
     @staticmethod
-    def _load_list(table: LdapObjectClass, key: str, value: str, connection_key: str='default') -> List[LdapObject]:
+    def _load_list(table: LdapObjectClass, key: str, value: str, database: Optional[Database]=None) -> List[LdapObject]:
         q = Q(**{key: value})
-        return list(search(table, q, connection_key))
+        return list(search(table, q, database))
 
 
 class NotLoadedObject(NotLoaded):
@@ -168,7 +195,7 @@ class NotLoadedObject(NotLoaded):
     def __repr__(self):
         return f"<NotLoaded {self._table} {self._key}={self._value}>"
 
-    def load(self, connection_key: str='default') -> LdapObject:
+    def load(self, database: Optional[Database]=None) -> LdapObject:
         return self._load_one(self._table, self._key, self._value)
 
 
@@ -183,8 +210,8 @@ class NotLoadedList(NotLoaded):
     def __repr__(self):
         return f"<NotLoaded {self._table} {self._key}={self._value}>"
 
-    def load(self, connection_key: str='default') -> List[LdapObject]:
-        return self._load_list(self._table, self._key, self._value, connection_key)
+    def load(self, database: Optional[Database]=None) -> List[LdapObject]:
+        return self._load_list(self._table, self._key, self._value, database)
 
 
 class NotLoadedListToList(NotLoaded):
@@ -198,9 +225,9 @@ class NotLoadedListToList(NotLoaded):
     def __repr__(self):
         return f"<NotLoadedList {self._table} {self._key}={self._value}>"
 
-    def load(self, connection_key: str='default') -> List[LdapObject]:
+    def load(self, database: Optional[Database]=None) -> List[LdapObject]:
         result = [
-            self._load_one(self._table, self._key, value, connection_key)
+            self._load_one(self._table, self._key, value, database)
             for value in self._value
         ]
         result = [value for value in result if value is not None]
@@ -246,12 +273,15 @@ def _python_to_db(changes: LdapChanges) -> DbChanges:
     return db_changes
 
 
-def search(table: LdapObjectClass, query: Optional[Q]=None, connection_key: str='default', base_dn: Optional[str]=None) -> Iterator[LdapObject]:
+def search(table: LdapObjectClass, query: Optional[Q]=None,
+           database: Optional[Database]=None, base_dn: Optional[str]=None) -> Iterator[LdapObject]:
     """ Search for a object of given type in the database. """
     fields = table.get_fields()
     db_fields = [field for field in fields if field.db_field]
-    connection = tldap.backend.connections[connection_key]
-    settings = connection.settings_dict
+
+    database = get_database(database)
+    connection = database.connection
+    settings = database.settings
 
     search_options = table.get_search_options(settings)
 
@@ -271,9 +301,10 @@ def search(table: LdapObjectClass, query: Optional[Q]=None, connection_key: str=
         yield python_data
 
 
-def get_one(table: LdapObjectClass, query: Q, connection_key: str='default', base_dn: Optional[str]=None) -> LdapObject:
+def get_one(table: LdapObjectClass, query: Optional[Q]=None,
+            database: Optional[Database]=None, base_dn: Optional[str]=None) -> LdapObject:
     """ Get exactly one result from the database or fail. """
-    results = search(table, query, connection_key, base_dn)
+    results = search(table, query, database, base_dn)
 
     try:
         result = next(results)
@@ -289,13 +320,13 @@ def get_one(table: LdapObjectClass, query: Q, connection_key: str='default', bas
     return result
 
 
-def preload(python_data: LdapObject, connection_key: str='default') -> LdapObject:
+def preload(python_data: LdapObject, database: Optional[Database]=None) -> LdapObject:
     """ Preload all NotLoaded fields in LdapObject. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
 
     changes = {
-        field.name: python_data[field.name].load(connection_key)
+        field.name: python_data[field.name].load(database)
         for field in fields
         if isinstance(python_data[field.name], NotLoaded)
     }
@@ -303,7 +334,7 @@ def preload(python_data: LdapObject, connection_key: str='default') -> LdapObjec
     return python_data.merge(changes)
 
 
-def insert(python_data: LdapObject, connection_key: str='default') -> LdapObject:
+def insert(python_data: LdapObject, database: Optional[Database]=None) -> LdapObject:
     """ Insert a new python_data object in the database. """
     assert isinstance(python_data, LdapObject)
 
@@ -313,7 +344,7 @@ def insert(python_data: LdapObject, connection_key: str='default') -> LdapObject
     empty_data = table()
     changes = get_changes(empty_data, python_data.to_dict())
 
-    return save(changes, connection_key)
+    return save(changes, database)
 
 
 def _get_mod(value: List[bytes]) -> Tuple[str, List[bytes]]:
@@ -324,12 +355,13 @@ def _get_mod(value: List[bytes]) -> Tuple[str, List[bytes]]:
         return ldap3.MODIFY_REPLACE, value
 
 
-def save(changes: LdapChanges, connection_key: str='default') -> LdapObject:
+def save(changes: LdapChanges, database: Optional[Database]=None) -> LdapObject:
     """ Save all changes in a LdapChanges. """
     assert isinstance(changes, LdapChanges)
 
-    connection = tldap.backend.connections[connection_key]
-    settings = connection.settings_dict
+    database = get_database(database)
+    connection = database.connection
+    settings = database.settings
 
     table = type(changes._src)
 
@@ -393,11 +425,14 @@ def save(changes: LdapChanges, connection_key: str='default') -> LdapObject:
     return python_data
 
 
-def delete(python_data: LdapObject, connection_key: str='default') -> None:
+def delete(python_data: LdapObject, database: Optional[Database]=None) -> None:
     """ Delete a LdapObject from the database. """
     dn = python_data['dn']
     assert dn is not None
-    connection = tldap.backend.connections[connection_key]
+
+    database = get_database(database)
+    connection = database.connection
+
     connection.delete(dn)
 
 
@@ -410,12 +445,14 @@ def get_field_by_name(table: LdapObjectClass, name: str) -> tldap.fields.Field:
     return f[0]
 
 
-def rename(python_data: LdapObject, new_base_dn=None, connection_key: str='default', **kwargs) -> LdapObject:
+def rename(python_data: LdapObject, new_base_dn=None, database: Optional[Database]=None, **kwargs) -> LdapObject:
     """ Move/rename a LdapObject in the database. """
     table = type(python_data)
     dn = python_data['dn']
     assert dn is not None
-    connection = tldap.backend.connections[connection_key]
+
+    database = get_database(database)
+    connection = database.connection
 
     # extract key and value from kwargs
     if len(kwargs) == 1:
