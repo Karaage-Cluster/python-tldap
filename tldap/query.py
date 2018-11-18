@@ -17,6 +17,7 @@
 from typing import List, Set, Iterator, Tuple, Optional
 
 import ldap3
+from ldap3.core.exceptions import LDAPNoSuchObjectResult
 
 import tldap
 import tldap.fields
@@ -157,8 +158,11 @@ def search(
 
     scope, search_filter = _get_search_params(query, fields, object_classes, pk)
 
-    results = connection.search(base_dn, scope, search_filter, field_names)
-    for result in results:
-        dn = result[0]
-        data = result[1]
-        yield dn, data
+    try:
+        results = connection.search(base_dn, scope, search_filter, field_names)
+        for result in results:
+            dn = result[0]
+            data = result[1]
+            yield dn, data
+    except LDAPNoSuchObjectResult:
+        pass
