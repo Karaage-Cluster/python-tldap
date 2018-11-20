@@ -4,10 +4,29 @@ from pytest_bdd import scenarios, when, then, parsers
 
 import tldap.database
 from tldap import Q
+import tldap.backend.base
 from tldap.exceptions import ObjectDoesNotExist
 from tests.database import Account
 
 scenarios('accounts.feature')
+
+
+@pytest.fixture
+def account(LDAP_ou):
+    account = Account({
+        'uid': 'tux',
+        'givenName': "Tux",
+        'sn': "Torvalds",
+        'cn': "Tux Torvalds",
+        'telephoneNumber': "000",
+        'mail': "tuz@example.org",
+        'o': "Linux Rules",
+        'userPassword': "silly",
+        'homeDirectory': "/home/tux",
+        'uidNumber': 10,
+        'gidNumber': 10,
+    })
+    yield tldap.database.insert(account)
 
 
 @when(parsers.cfparse('we create a account called {name}'))
@@ -105,3 +124,62 @@ def step_get_account_dn_not_found(LDAP_ou, name, dn):
 @then(parsers.cfparse('we should be able to find {count:d} accounts'))
 def step_count_accounts(LDAP_ou, count):
     assert count == len(list(tldap.database.search(Account, None)))
+
+
+def test_lock_account(account, LDAP: tldap.backend.base.LdapBase):
+    # Check account is unlocked.
+    assert account['locked'] is False
+    assert account['pwdAccountLockedTime'] is None
+    assert account['loginShell'] == "/bin/bash"
+    assert LDAP.check_password(account['dn'], 'silly') is True
+
+    # Lock account.
+    changes = tldap.database.get_changes(account, {'locked': True})
+    account = tldap.database.save(changes)
+
+    # Check account is locked.
+    assert account['locked'] is True
+    assert account['pwdAccountLockedTime'] == "000001010000Z"
+    assert account['loginShell'] == "/locked/bin/bash"
+
+    account = tldap.database.get_one(Account, Q(uid='tux'))
+
+    assert account['locked'] is True
+    assert account['pwdAccountLockedTime'] == "000001010000Z"
+    assert account['loginShell'] == "/locked/bin/bash"
+
+    assert LDAP.check_password(account['dn'], 'silly') is False
+
+    # Change the login shell
+    changes = tldap.database.get_changes(account, {'loginShell': '/bin/zsh'})
+    account = tldap.database.save(changes)
+
+    # Check the account is still locked.
+    assert account['locked'] is True
+    assert account['pwdAccountLockedTime'] == "000001010000Z"
+    assert account['loginShell'] == "/locked/bin/zsh"
+
+    account = tldap.database.get_one(Account, Q(uid='tux'))
+
+    assert account['locked'] == True
+    assert account['pwdAccountLockedTime'] == "000001010000Z"
+    assert account['loginShell'] == "/locked/bin/zsh"
+
+    assert LDAP.check_password(account['dn'], 'silly') is False
+
+    # Unlock the account.
+    changes = tldap.database.get_changes(account, {'locked': False})
+    account = tldap.database.save(changes)
+
+    # Check the account is now unlocked.
+    assert account['locked'] is False
+    assert account['pwdAccountLockedTime'] is None
+    assert account['loginShell'] == "/bin/zsh"
+
+    account = tldap.database.get_one(Account, Q(uid='tux'))
+
+    assert account['locked'] is False
+    assert account['pwdAccountLockedTime'] is None
+    assert account['loginShell'] == "/bin/zsh"
+
+    assert LDAP.check_password(account['dn'], 'silly') is True
