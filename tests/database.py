@@ -77,6 +77,16 @@ class Group(LdapObject):
         changes = helpers.rdn_to_dn(changes, 'cn', settings['LDAP_GROUP_BASE'])
         return changes
 
+    @classmethod
+    def add_member(cls, changes: LdapChanges, member: 'Account') -> LdapChanges:
+        assert isinstance(changes.src, cls)
+        return helpers.add_group_member(changes, member)
+
+    @classmethod
+    def remove_member(cls, changes: LdapChanges, member: 'Account') -> LdapChanges:
+        assert isinstance(changes.src, cls)
+        return helpers.remove_group_member(changes, member)
+
 
 class OU(LdapObject):
 

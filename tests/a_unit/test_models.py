@@ -738,7 +738,8 @@ class TestModelGroup:
         c.search = SearchMock()
 
         # Add person to group.
-        changes = tldap.database.get_changes(group1, {'members': [account1]})
+        changes = tldap.database.get_changes(group1, {})
+        changes = tests.database.Group.add_member(changes, account1)
         tldap.database.save(changes)
 
         # Assert that we made the correct calls to the backend.
@@ -751,13 +752,14 @@ class TestModelGroup:
         c.assert_has_calls(expected_calls)
 
     def test_remove_secondary_group(
-            self, mock_ldap, group2):
+            self, mock_ldap, account1, group2):
         """ Test removing secondary group from account. """
         c = mock_ldap
         c.search = SearchMock()
 
         # Add person to group.
-        changes = tldap.database.get_changes(group2, {'members': []})
+        changes = tldap.database.get_changes(group2, {})
+        changes = tests.database.Group.remove_member(changes, account1)
         tldap.database.save(changes)
 
         # Assert that we made the correct calls to the backend.

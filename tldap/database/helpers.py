@@ -271,6 +271,28 @@ def save_group(changes: LdapChanges) -> LdapChanges:
     return changes.merge(d)
 
 
+def add_group_member(changes: LdapChanges, member: LdapObject) -> LdapChanges:
+    add_uid = member['uid']
+    member_uid = get_value(changes, 'memberUid')
+    if add_uid not in member_uid:
+        # Do not use: member_uid += [add_uid]
+        # It will mutate member_uid.
+        member_uid = member_uid + [add_uid]
+    changes = changes.merge({
+        'memberUid': member_uid
+    })
+    return changes
+
+
+def remove_group_member(changes: LdapChanges, member: LdapObject) -> LdapChanges:
+    rm_uid = member['uid']
+    member_uid = get_value(changes, 'memberUid')
+    changes = changes.merge({
+        'memberUid': [uid for uid in member_uid if uid != rm_uid]
+    })
+    return changes
+
+
 # PWDPOLICY
 
 def get_fields_pwdpolicy() -> List[tldap.fields.Field]:
