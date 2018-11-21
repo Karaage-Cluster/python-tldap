@@ -13,4 +13,4 @@ install:
   - pipenv install --dev
 
 script:
-  - pipenv run ./setup.py test
+  - pipenv run python -m pytest
