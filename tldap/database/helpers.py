@@ -159,8 +159,9 @@ def load_account(python_data: LdapObject, group_table: LdapObjectClass) -> LdapO
     return python_data
 
 
-def save_account(changes: LdapChanges) -> LdapChanges:
+def save_account(changes: LdapChanges, database: Database) -> LdapChanges:
     d = {}
+    settings = database.settings
 
     if get_value(changes, 'locked') is None:
         d['locked'] = False
@@ -176,8 +177,9 @@ def save_account(changes: LdapChanges) -> LdapChanges:
         home_directory = get_value(changes, 'homeDirectory')
 
         if uid is not None:
+            spec = settings.get('HOME_DIRECTORY', "/home/{uid}s")
             if home_directory is None:
-                d['homeDirectory'] = '/home/%s' % uid
+                d['homeDirectory'] = spec.format(uid=uid)
 
     if 'locked' in changes or 'loginShell' in changes:
         locked = get_value(changes, 'locked')
@@ -192,12 +194,16 @@ def save_account(changes: LdapChanges) -> LdapChanges:
             if login_shell.startswith("/locked"):
                 d['loginShell'] = login_shell[7:]
 
-    if 'givenName' in changes or 'sn' in changes:
-        given_name = get_value(changes, 'givenName')
-        sn = get_value(changes, 'sn')
+    fields = ['givenName', 'sn', 'o']
+    if any(name in changes for name in fields):
+        values = {
+            name: get_value(changes, name)
+            for name in fields
+        }
 
-        if given_name is not None and sn is not None:
-            d['gecos'] = '%s %s' % (given_name, sn)
+        if all(value is not None for _, value in values.items()):
+            spec = settings.get('GECOS', "{givenName} {sn}")
+            d['gecos'] = spec.format(**values)
 
     if 'primary_group' in changes:
         group = get_value(changes, 'primary_group')
