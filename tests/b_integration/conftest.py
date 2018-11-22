@@ -40,9 +40,18 @@ def LDAP():
     delete(connection, f"uid=tux,{os.environ['LDAP_ACCOUNT_BASE']}")
     delete(connection, f"uid=tuz,{os.environ['LDAP_ACCOUNT_BASE']}")
     delete(connection, f"uid=tux,{os.environ['LDAP_GROUP_BASE']}")
+
     delete(connection, f"cn=tux,{os.environ['LDAP_GROUP_BASE']}")
     delete(connection, f"cn=tuz,{os.environ['LDAP_GROUP_BASE']}")
     delete(connection, f"cn=tux,{os.environ['LDAP_ACCOUNT_BASE']}")
+
+    delete(connection, f"uid=tux1,{os.environ['LDAP_ACCOUNT_BASE']}")
+    delete(connection, f"uid=tux2,{os.environ['LDAP_ACCOUNT_BASE']}")
+    delete(connection, f"uid=tux3,{os.environ['LDAP_ACCOUNT_BASE']}")
+
+    delete(connection, f"cn=penguins1,{os.environ['LDAP_GROUP_BASE']}")
+    delete(connection, f"cn=penguins2,{os.environ['LDAP_GROUP_BASE']}")
+    delete(connection, f"cn=penguins3,{os.environ['LDAP_GROUP_BASE']}")
 
 
 @pytest.fixture
