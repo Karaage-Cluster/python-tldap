@@ -81,7 +81,7 @@ class LDAPwrapper(LdapBase):
     # Functions needing Transactions #
     ##################################
 
-    def add(self, dn, modlist, onfailure=None):
+    def add(self, dn, modlist):
         """
         Add a DN to the LDAP database; See ldap module. Doesn't return a result
         if transactions enabled.
@@ -89,7 +89,7 @@ class LDAPwrapper(LdapBase):
 
         return self._do_with_retry(lambda obj: obj.add_s(dn, modlist))
 
-    def modify(self, dn, modlist, onfailure=None):
+    def modify(self, dn, modlist):
         """
         Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled.
@@ -105,7 +105,7 @@ class LDAPwrapper(LdapBase):
 
         return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
 
-    def delete(self, dn, onfailure=None):
+    def delete(self, dn):
         """
         delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
@@ -113,7 +113,7 @@ class LDAPwrapper(LdapBase):
 
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
-    def rename(self, dn, newrdn, newsuperior=None, onfailure=None):
+    def rename(self, dn, newrdn, newsuperior=None):
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.

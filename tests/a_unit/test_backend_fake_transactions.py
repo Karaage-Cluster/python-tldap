@@ -213,15 +213,13 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         with tldap.transaction.commit_on_success():
             c.add(dn, defaults.modlist)
             c.modify(dn, {
                 'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-                onfailure=onfailure)
+            )
             c.rollback()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -239,16 +237,14 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         with pytest.raises(RuntimeError):
             with tldap.transaction.commit_on_success():
                 c.add(dn, defaults.modlist)
                 c.modify(dn, {
                     'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-                    onfailure)
+                )
                 raise RuntimeError("testing failure")
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -266,17 +262,15 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
                     'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-                    onfailure=onfailure)
+                )
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -293,14 +287,12 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
                 'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-                onfailure=onfailure)
+            )
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -316,17 +308,15 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
                     "telephoneNumber": (ldap3.MODIFY_REPLACE, [b"222"])},
-                    onfailure=onfailure)
+                )
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -343,14 +333,12 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
                 'telephoneNumber': (ldap3.MODIFY_REPLACE, [b"222"])},
-                onfailure=onfailure)
+            )
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -366,17 +354,15 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
                     "telephoneNumber": (ldap3.MODIFY_DELETE, [b'000'])},
-                    onfailure=onfailure)
+                )
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -393,14 +379,12 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
                 "telephoneNumber": (ldap3.MODIFY_DELETE, [b'000'])},
-                onfailure=onfailure)
+            )
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -416,17 +400,15 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
                     "telephoneNumber": (ldap3.MODIFY_ADD, [b"111"])},
-                    onfailure=onfailure)
+                )
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -444,14 +426,12 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
                 'telephoneNumber': (ldap3.MODIFY_ADD, [b"111"])},
-                onfailure=onfailure)
+            )
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -471,20 +451,18 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
                     "sn": (ldap3.MODIFY_REPLACE, b"Milkshakes")},
-                    onfailure=onfailure)
+                )
                 c.modify(dn, {
                     "sn": (ldap3.MODIFY_REPLACE, [b"Bannas"])},
-                    onfailure=onfailure)
+                )
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_has_calls([call(), call()])
         expected_calls = [
             call.open(),
             call.bind(),
@@ -503,19 +481,17 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.rename(
                     dn, 'uid=tuz',
-                    onfailure=onfailure)
+                )
                 c.modify(dn2, {
                     "sn": (ldap3.MODIFY_REPLACE, [b"Tuz"])})
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -535,16 +511,14 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.rename(
                 dn, 'uid=tuz',
-                onfailure=onfailure)
+            )
             c.modify(dn2, {
                 'sn': (ldap3.MODIFY_REPLACE, [b"Tuz"])})
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -564,18 +538,16 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.rename(
                     dn,
                     "uid=tux", "ou=Groups,dc=python-ldap,dc=org",
-                    onfailure=onfailure)
+                )
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -592,15 +564,13 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.rename(
                 dn,
                 "uid=tux", new_base,
-                onfailure=onfailure)
+            )
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -615,15 +585,13 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
-                c.delete(dn, onfailure=onfailure)
+                c.delete(dn)
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
-        onfailure.assert_called_once_with()
         expected_calls = [
             call.open(),
             call.bind(),
@@ -640,12 +608,10 @@ class TestBackendFakeTransactions:
         search_response.add(dn, defaults.modlist)
 
         c = tldap.backend.connection
-        onfailure = mock.Mock()
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
-            c.delete(dn, onfailure=onfailure)
+            c.delete(dn)
 
-        onfailure.assert_not_called()
         expected_calls = [
             call.open(),
             call.bind(),
