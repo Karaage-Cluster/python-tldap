@@ -42,7 +42,7 @@ def raise_testfailure(place):
 
 # errors
 
-class NO_SUCH_OBJECT(Exception):
+class NoSuchObject(Exception):
     pass
 
 
@@ -84,7 +84,7 @@ class LDAPwrapper(LdapBase):
                 attributes=['*', '+']))
         results = self._obj.response
         if len(results) < 1:
-            raise NO_SUCH_OBJECT("No results finding current value")
+            raise NoSuchObject("No results finding current value")
         if len(results) > 1:
             raise RuntimeError("Too many results finding current value")
 
@@ -168,7 +168,7 @@ class LDAPwrapper(LdapBase):
             _debug("--> rollback failed")
             exc_class, exc, tb = sys.exc_info()
             raise tldap.exceptions.RollbackError(
-                "FATAL Unrecoverable rollback error: %r" % (exc))
+                "FATAL Unrecoverable rollback error: %r" % exc)
         finally:
             # reset everything to clean state
             _debug("--> rollback success")
@@ -233,7 +233,6 @@ class LDAPwrapper(LdapBase):
         for mod_type, l in six.iteritems(modlist):
             mod_op, mod_vals = l
 
-            reverse = None
             _debug("attribute:", mod_type)
             if mod_type in result:
                 _debug("attribute cache:", result[mod_type])
@@ -365,8 +364,7 @@ class LDAPwrapper(LdapBase):
         rdn = tldap.dn.dn2str(split_dn[0:1])
 
         # make newrdn fully qualified dn
-        tmplist = []
-        tmplist.append(split_newrdn[0])
+        tmplist = [split_newrdn[0]]
         if new_base_dn is not None:
             tmplist.extend(tldap.dn.str2dn(new_base_dn))
             old_base_dn = tldap.dn.dn2str(split_dn[1:])
@@ -393,10 +391,10 @@ class LDAPwrapper(LdapBase):
         _debug("fail")
 
         # on commit carry out action; on rollback reverse rename
-        def oncommit(obj):
+        def oncommit(_obj):
             raise_testfailure("commit")
 
-        def onrollback(obj):
+        def onrollback(_obj):
             raise_testfailure("rollback")
 
         return self._process(oncommit, onrollback, None)
