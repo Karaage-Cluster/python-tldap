@@ -6,7 +6,7 @@ from tests.django.database import Group
 
 
 @pytest.mark.django_db(transaction=True)
-def test_create(LDAP_ou):
+def test_create(ldap):
     """ Test create LDAP object. """
 
     # Create the object.
@@ -36,7 +36,7 @@ def test_create(LDAP_ou):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_create_with_reset(LDAP_ou):
+def test_create_with_reset(ldap):
     """ Test create LDAP object. """
 
     # Create the object.

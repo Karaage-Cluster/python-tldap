@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
+import os
 
 DEBUG = True
 SECRET_KEY = '5hvhpe6gv2t5x4$3dtq(w2v#vg@)sx4p3r_@wv%l41g!stslc*'
@@ -25,13 +26,13 @@ INSTALLED_APPS = [
 LDAP = {
     'default': {
         'ENGINE': 'tldap.backend.fake_transactions',
-        'URI': 'ldap://localhost:38911/',
-        'USER': 'cn=Manager,dc=python-ldap,dc=org',
-        'PASSWORD': 'password',
+        'URI': os.environ['LDAP_URL'],
+        'USER': os.environ['LDAP_DN'],
+        'PASSWORD': os.environ['LDAP_PASSWORD'],
         'USE_TLS': False,
         'TLS_CA': None,
-        'LDAP_ACCOUNT_BASE': 'ou=People, dc=python-ldap,dc=org',
-        'LDAP_GROUP_BASE': 'ou=Groups, dc=python-ldap,dc=org',
+        'LDAP_ACCOUNT_BASE': os.environ['LDAP_ACCOUNT_BASE'],
+        'LDAP_GROUP_BASE': os.environ['LDAP_GROUP_BASE'],
         'NUMBER_SCHEME': 'default',
     }
 }

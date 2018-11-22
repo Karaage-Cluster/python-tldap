@@ -37,7 +37,7 @@ class Account(LdapObject):
     def on_save(cls, changes: LdapChanges, database: Database) -> LdapChanges:
         settings = database.settings
         changes = helpers.save_person(changes)
-        changes = helpers.save_account(changes)
+        changes = helpers.save_account(changes, database)
         changes = helpers.save_shadow(changes)
         changes = helpers.save_pwdpolicy(changes)
         changes = helpers.set_object_class(changes, ['top', 'person', 'inetOrgPerson', 'organizationalPerson',

@@ -1,34 +1,32 @@
+import os
+
 from django.conf import settings
 import pytest
+from ldap3.core import exceptions
 
 import tldap.backend
 import tldap.database
-import tldap.test.slapd
-import tests.database
+
+
+def delete(connection, dn):
+    try:
+        connection.delete(dn)
+    except exceptions.LDAPNoSuchObjectResult:
+        pass
+
 
 @pytest.fixture
-def LDAP():
+def ldap():
     # Required because over tests will have overwritten these settings.
     tldap.backend.setup(settings.LDAP)
 
-    server = tldap.test.slapd.Slapd()
-    server.set_port(38911)
+    connection = tldap.backend.connections['default']
+    yield connection
 
-    server.start()
+    delete(connection, f"uid=tux1,{os.environ['LDAP_ACCOUNT_BASE']}")
+    delete(connection, f"uid=tux2,{os.environ['LDAP_ACCOUNT_BASE']}")
+    delete(connection, f"uid=tux3,{os.environ['LDAP_ACCOUNT_BASE']}")
 
-    yield tldap.backend.connections['default']
-
-    server.stop()
-
-
-@pytest.fixture
-def LDAP_ou(LDAP):
-    organizational_unit = tests.database.OU({
-        'dn': "ou=People, dc=python-ldap,dc=org"
-    })
-    tldap.database.insert(organizational_unit)
-
-    organizational_unit = tests.database.OU({
-        'dn': "ou=Groups, dc=python-ldap,dc=org"
-    })
-    tldap.database.insert(organizational_unit)
+    delete(connection, f"cn=penguins1,{os.environ['LDAP_GROUP_BASE']}")
+    delete(connection, f"cn=penguins2,{os.environ['LDAP_GROUP_BASE']}")
+    delete(connection, f"cn=penguins3,{os.environ['LDAP_GROUP_BASE']}")

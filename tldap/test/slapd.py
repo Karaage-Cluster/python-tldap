@@ -240,6 +240,16 @@ class Slapd:
             f.write(f'objectClass: pwdPolicy\n')
             f.write(f'pwdAttribute: userPassword\n')
             f.write(f'pwdLockout: TRUE\n')
+            f.write("\n")
+            f.write(f'dn: ou=People,{self.get_dn_suffix()}\n')
+            f.write(f'objectClass: top\n')
+            f.write(f'objectClass: OrganizationalUnit\n')
+            f.write(f'ou: People\n')
+            f.write("\n")
+            f.write(f'dn: ou=Groups,{self.get_dn_suffix()}\n')
+            f.write(f'objectClass: top\n')
+            f.write(f'objectClass: OrganizationalUnit\n')
+            f.write(f'ou: Groups\n')
 
         config_path = os.path.join(self._tmpdir, "slapd.conf")
         subprocess.check_call(["/usr/sbin/slapadd", "-n", "1", "-f", config_path, "-l", p])
@@ -393,6 +403,7 @@ class Slapd:
         # RFC 2849: LDIF format
         # unfold
         lines = []
+        output = output.decode("utf_8")
         for line in output.split('\n'):
             if line.startswith(' '):
                 lines[-1] = lines[-1] + line[1:]
@@ -443,17 +454,39 @@ Slapd.check_paths()
 def test() -> None:
     logging.basicConfig(level=logging.DEBUG)
     slapd = Slapd()
-    print("Starting slapd...")
-    slapd.start()
-    print("Contents of LDAP server follow:\n")
-    for dn, attrs in slapd.ldap_search():
-        print("dn: " + dn)
-        for name, val in attrs:
-            print(name + ": " + val)
-        print("")
-    print(slapd.get_url())
-    slapd.wait()
+    try:
+        print("Starting slapd...")
+        slapd.start()
+
+        print("Contents of LDAP server follow:\n")
+        for dn, attrs in slapd.ldap_search():
+            print("dn: " + dn)
+            for name, val in attrs:
+                print(name + ": " + val)
+            print("")
+
+        if len(sys.argv) > 1:
+            args = sys.argv[1:]
+            env = {
+                **os.environ,
+                'LDAP_URL': slapd.get_url(),
+                'LDAP_DN': slapd.get_root_dn(),
+                'LDAP_PASSWORD': slapd.get_root_password(),
+                'LDAP_ACCOUNT_BASE':  f"ou=People,{slapd.get_dn_suffix()}",
+                'LDAP_GROUP_BASE':  f"ou=Groups,{slapd.get_dn_suffix()}",
+            }
+            print(f"Running command {args}...")
+            subprocess.check_call(args, env=env)
+
+        print("Contents of LDAP server follow:\n")
+        for dn, attrs in slapd.ldap_search():
+            print("dn: " + dn)
+            for name, val in attrs:
+                print(name + ": " + val)
+            print("")
+    finally:
+        slapd.stop()
 
 
-if __name__ == '__main__' and sys.argv == ['run']:
+if __name__ == '__main__':
     test()
