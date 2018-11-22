@@ -305,10 +305,6 @@ class Slapd:
                 # posix.kill(self._proc.pid, signal.SIGTERM)
                 # posix.kill(self._proc.pid, signal.SIGKILL)
             self.wait()
-        if self._tmpdir is not None:
-            import shutil
-            shutil.rmtree(self._tmpdir)
-            self._tmpdir = None
 
     def restart(self) -> None:
         """
@@ -329,10 +325,11 @@ class Slapd:
         if self._proc is not None:
             self._log.info("slapd terminated")
             self._proc = None
-            try:
-                os.remove(self._proc_config)
-            except os.error:
-                self._log.debug("could not remove %s", self._proc_config)
+            self._proc_config = None
+        if self._tmpdir is not None:
+            import shutil
+            shutil.rmtree(self._tmpdir)
+            self._tmpdir = None
 
     def _test_configuration(self) -> None:
         self._log.debug("testing configuration")
