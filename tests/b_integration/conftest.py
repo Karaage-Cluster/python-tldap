@@ -18,8 +18,8 @@ def delete(connection, dn):
 
 
 @pytest.fixture
-def LDAP():
-    LDAP = {
+def settings():
+    return {
         'default': {
             'ENGINE': 'tldap.backend.fake_transactions',
             'URI': os.environ['LDAP_URL'],
@@ -32,7 +32,10 @@ def LDAP():
         }
     }
 
-    tldap.backend.setup(LDAP)
+
+@pytest.fixture
+def ldap(settings):
+    tldap.backend.setup(settings)
 
     connection = tldap.backend.connections['default']
     yield connection
@@ -55,28 +58,23 @@ def LDAP():
 
 
 @pytest.fixture
-def LDAP_ou(LDAP):
-    pass
-
-
-@pytest.fixture
 def context():
     return {}
 
 
 @when('we enter a transaction')
-def step_start_transaction(LDAP_ou):
+def step_start_transaction(ldap):
     transaction.enter_transaction_management()
 
 
 @when('we commit the transaction')
-def step_commit_transaction(LDAP_ou):
+def step_commit_transaction(ldap):
     transaction.commit()
     transaction.leave_transaction_management()
 
 
 @when('we rollback the transaction')
-def step_rollback_transaction(LDAP_ou):
+def step_rollback_transaction(ldap):
     transaction.rollback()
     transaction.leave_transaction_management()
 

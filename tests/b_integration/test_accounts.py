@@ -12,7 +12,7 @@ scenarios('accounts.feature')
 
 
 @pytest.fixture
-def account(LDAP_ou):
+def account(ldap):
     account = Account({
         'uid': 'tux',
         'givenName': "Tux",
@@ -30,7 +30,7 @@ def account(LDAP_ou):
 
 
 @when(parsers.cfparse('we create a account called {name}'))
-def step_create_account(LDAP_ou, name):
+def step_create_account(ldap, name):
     """ Test if we can create a account. """
     account = Account({
         'uid': name,
@@ -49,7 +49,7 @@ def step_create_account(LDAP_ou, name):
 
 
 @when(parsers.cfparse('we modify a account called {name}'))
-def step_modify_account(LDAP_ou, name):
+def step_modify_account(ldap, name):
     """ Test if we can modify a account. """
     account = tldap.database.get_one(Account, Q(uid=name))
     changes = tldap.database.get_changes(account, {
@@ -62,76 +62,76 @@ def step_modify_account(LDAP_ou, name):
 
 
 @when(parsers.cfparse('we rename a account called {name} to {new_name}'))
-def step_rename_account(LDAP_ou, name, new_name):
+def step_rename_account(ldap, name, new_name):
     """ Test if we can rename a account. """
     account = tldap.database.get_one(Account, Q(uid=name))
     tldap.database.rename(account, uid=new_name)
 
 
 @when(parsers.cfparse('we move a account called {name} to {new_dn}'))
-def step_move_account(LDAP_ou, name, new_dn):
+def step_move_account(ldap, name, new_dn):
     """ Test if we can move a account. """
     account = tldap.database.get_one(Account, Q(uid=name))
     tldap.database.rename(account, new_dn)
 
 
 @when(parsers.cfparse('we delete a account called {name}'))
-def step_delete_account(LDAP_ou, name):
+def step_delete_account(ldap, name):
     """ Test if we can delete a account. """
     account = tldap.database.get_one(Account, Q(uid=name))
     tldap.database.delete(account)
 
 
 @then('we should be able to search for a account')
-def step_search_account(LDAP_ou):
+def step_search_account(ldap):
     """ Test we can search. """
     list(tldap.database.search(Account))
 
 
 @then('we should not be able to search for a account')
-def step_not_search_account(LDAP_ou):
+def step_not_search_account(ldap):
     """ Test we can search. """
     with pytest.raises(exceptions.LDAPInvalidCredentialsResult):
         list(tldap.database.search(Account))
 
 
 @then(parsers.cfparse('we should be able to get a account called {name}'))
-def step_get_account_success(LDAP_ou, context, name):
+def step_get_account_success(ldap, context, name):
     account = tldap.database.get_one(Account, Q(uid=name))
     context['obj'] = account
     print("get", account['cn'])
 
 
 @then(parsers.cfparse('we should not be able to get a account called {name}'))
-def step_get_account_not_found(LDAP_ou, name):
+def step_get_account_not_found(ldap, name):
     with pytest.raises(ObjectDoesNotExist):
         tldap.database.get_one(Account, Q(uid=name))
 
 
 @then(parsers.cfparse(
     'we should be able to get a account at dn {dn} called {name}'))
-def step_get_account_dn_success(LDAP_ou, context, name, dn):
+def step_get_account_dn_success(ldap, context, name, dn):
     context['obj'] = tldap.database.get_one(Account, Q(uid=name), base_dn=dn)
 
 
 @then(parsers.cfparse(
     'we should not be able to get a account at dn {dn} called {name}'))
-def step_get_account_dn_not_found(LDAP_ou, name, dn):
+def step_get_account_dn_not_found(ldap, name, dn):
     with pytest.raises(ObjectDoesNotExist):
         tldap.database.get_one(Account, Q(uid=name), base_dn=dn)
 
 
 @then(parsers.cfparse('we should be able to find {count:d} accounts'))
-def step_count_accounts(LDAP_ou, count):
+def step_count_accounts(ldap, count):
     assert count == len(list(tldap.database.search(Account, None)))
 
 
-def test_lock_account(account, LDAP: tldap.backend.base.LdapBase):
+def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
     # Check account is unlocked.
     assert account['locked'] is False
     assert account['pwdAccountLockedTime'] is None
     assert account['loginShell'] == "/bin/bash"
-    assert LDAP.check_password(account['dn'], 'silly') is True
+    assert ldap.check_password(account['dn'], 'silly') is True
 
     # Lock account.
     changes = tldap.database.get_changes(account, {'locked': True})
@@ -148,7 +148,7 @@ def test_lock_account(account, LDAP: tldap.backend.base.LdapBase):
     assert account['pwdAccountLockedTime'] == "000001010000Z"
     assert account['loginShell'] == "/locked/bin/bash"
 
-    assert LDAP.check_password(account['dn'], 'silly') is False
+    assert ldap.check_password(account['dn'], 'silly') is False
 
     # Change the login shell
     changes = tldap.database.get_changes(account, {'loginShell': '/bin/zsh'})
@@ -165,7 +165,7 @@ def test_lock_account(account, LDAP: tldap.backend.base.LdapBase):
     assert account['pwdAccountLockedTime'] == "000001010000Z"
     assert account['loginShell'] == "/locked/bin/zsh"
 
-    assert LDAP.check_password(account['dn'], 'silly') is False
+    assert ldap.check_password(account['dn'], 'silly') is False
 
     # Unlock the account.
     changes = tldap.database.get_changes(account, {'locked': False})
@@ -182,4 +182,4 @@ def test_lock_account(account, LDAP: tldap.backend.base.LdapBase):
     assert account['pwdAccountLockedTime'] is None
     assert account['loginShell'] == "/bin/zsh"
 
-    assert LDAP.check_password(account['dn'], 'silly') is True
+    assert ldap.check_password(account['dn'], 'silly') is True

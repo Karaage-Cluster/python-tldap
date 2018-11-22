@@ -11,7 +11,7 @@ scenarios('groups.feature')
 
 
 @when(parsers.cfparse('we create a group called {name}'))
-def step_create_group(LDAP_ou, name):
+def step_create_group(ldap, name):
     """ Test if we can create a group. """
     group = Group({
         'cn': name,
@@ -22,7 +22,7 @@ def step_create_group(LDAP_ou, name):
 
 
 @when(parsers.cfparse('we modify a group called {name}'))
-def step_modify_group(LDAP_ou, name):
+def step_modify_group(ldap, name):
     """ Test if we can modify a group. """
     group = tldap.database.get_one(Group, Q(cn=name))
     changes = tldap.database.get_changes(group, {'gidNumber': 11})
@@ -32,64 +32,64 @@ def step_modify_group(LDAP_ou, name):
 
 
 @when(parsers.cfparse('we rename a group called {name} to {new_name}'))
-def step_rename_group(LDAP_ou, name, new_name):
+def step_rename_group(ldap, name, new_name):
     """ Test if we can rename a group. """
     group = tldap.database.get_one(Group, Q(cn=name))
     tldap.database.rename(group, cn=new_name)
 
 
 @when(parsers.cfparse('we move a group called {name} to {new_dn}'))
-def step_move_group(LDAP_ou, name, new_dn):
+def step_move_group(ldap, name, new_dn):
     """ Test if we can move a group. """
     group = tldap.database.get_one(Group, Q(cn=name))
     tldap.database.rename(group, new_dn)
 
 
 @when(parsers.cfparse('we delete a group called {name}'))
-def step_delete_group(LDAP_ou, name):
+def step_delete_group(ldap, name):
     """ Test if we can delete a group. """
     group = tldap.database.get_one(Group, Q(cn=name))
     tldap.database.delete(group)
 
 
 @then('we should be able to search for a group')
-def step_search_group(LDAP_ou):
+def step_search_group(ldap):
     """ Test we can search. """
 
 
 @then('we should not be able to search for a group')
-def step_not_search_group(LDAP_ou):
+def step_not_search_group(ldap):
     """ Test we can search. """
     with pytest.raises(exceptions.LDAPInvalidCredentialsResult):
         list(tldap.database.search(Group))
 
 
 @then(parsers.cfparse('we should be able to get a group called {name}'))
-def step_get_group_success(LDAP_ou, context, name):
+def step_get_group_success(ldap, context, name):
     group = tldap.database.get_one(Group, Q(cn=name))
     context['obj'] = group
     print("get", group['cn'])
 
 
 @then(parsers.cfparse('we should not be able to get a group called {name}'))
-def step_get_group_not_found(LDAP_ou, name):
+def step_get_group_not_found(ldap, name):
     with pytest.raises(ObjectDoesNotExist):
         tldap.database.get_one(Group, Q(cn=name))
 
 
 @then(parsers.cfparse(
     'we should be able to get a group at dn {dn} called {name}'))
-def step_get_group_dn_success(LDAP_ou, context, name, dn):
+def step_get_group_dn_success(ldap, context, name, dn):
     context['obj'] = tldap.database.get_one(Group, Q(cn=name), base_dn=dn)
 
 
 @then(parsers.cfparse(
     'we should not be able to get a group at dn {dn} called {name}'))
-def step_get_group_dn_not_found(LDAP_ou, name, dn):
+def step_get_group_dn_not_found(ldap, name, dn):
     with pytest.raises(ObjectDoesNotExist):
         tldap.database.get_one(Group, Q(cn=name), base_dn=dn)
 
 
 @then(parsers.cfparse('we should be able to find {count:d} groups'))
-def step_count_groups(LDAP_ou, count):
+def step_count_groups(ldap, count):
     assert count == len(list(tldap.database.search(Group)))
