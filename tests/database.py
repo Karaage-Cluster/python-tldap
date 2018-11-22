@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import tldap.fields
@@ -13,7 +14,12 @@ class Account(LdapObject):
         fields += helpers.get_fields_person()
         fields += helpers.get_fields_account()
         fields += helpers.get_fields_shadow()
-        fields += helpers.get_fields_pwdpolicy()
+
+        if os.environ['LDAP_TYPE'] == "openldap":
+            fields += helpers.get_fields_pwdpolicy()
+        elif os.environ['LDAP_TYPE'] == 'ds389':
+            fields += helpers.get_fields_password_object()
+
         return fields
 
     @classmethod
@@ -30,7 +36,12 @@ class Account(LdapObject):
         python_data = helpers.load_person(python_data, Group)
         python_data = helpers.load_account(python_data, Group)
         python_data = helpers.load_shadow(python_data)
-        python_data = helpers.load_pwdpolicy(python_data)
+
+        if os.environ['LDAP_TYPE'] == "openldap":
+            python_data = helpers.load_pwdpolicy(python_data)
+        elif os.environ['LDAP_TYPE'] == 'ds389':
+            python_data = helpers.load_password_object(python_data)
+
         return python_data
 
     @classmethod
@@ -39,7 +50,12 @@ class Account(LdapObject):
         changes = helpers.save_person(changes)
         changes = helpers.save_account(changes, database)
         changes = helpers.save_shadow(changes)
-        changes = helpers.save_pwdpolicy(changes)
+
+        if os.environ['LDAP_TYPE'] == "openldap":
+            changes = helpers.save_pwdpolicy(changes)
+        elif os.environ['LDAP_TYPE'] == 'ds389':
+            changes = helpers.load_password_object(changes)
+
         changes = helpers.set_object_class(changes, ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
                                                      'shadowAccount', 'posixAccount', 'pwdPolicy'])
         changes = helpers.rdn_to_dn(changes, 'uid', settings['LDAP_ACCOUNT_BASE'])

@@ -469,6 +469,7 @@ def test() -> None:
             args = sys.argv[1:]
             env = {
                 **os.environ,
+                'LDAP_TYPE': "openldap",
                 'LDAP_URL': slapd.get_url(),
                 'LDAP_DN': slapd.get_root_dn(),
                 'LDAP_PASSWORD': slapd.get_root_password(),
