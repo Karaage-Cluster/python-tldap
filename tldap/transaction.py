@@ -167,7 +167,7 @@ class Transaction(object):
             self.__enter__()
             try:
                 res = func(*args, **kwargs)
-            except:
+            except:  # noqa: E722
                 self.__exit__(*sys.exc_info())
                 raise
             else:
@@ -214,7 +214,7 @@ def commit_on_success(using=None):
                 if is_dirty(using=using):
                     try:
                         commit(using=using)
-                    except:
+                    except:  # noqa: E722
                         rollback(using=using)
                         raise
         finally:

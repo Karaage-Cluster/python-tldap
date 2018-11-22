@@ -25,4 +25,4 @@ DEFAULT_LDAP_ALIAS
     Alias for default LDAP connection.
 """
 
-from tldap.query_utils import Q
+from tldap.query_utils import Q  # noqa: F401

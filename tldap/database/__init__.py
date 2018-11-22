@@ -40,7 +40,7 @@ class SearchOptions:
 
 
 class Database:
-    def __init__(self, connection: LdapBase, settings: Optional[dict]=None):
+    def __init__(self, connection: LdapBase, settings: Optional[dict] = None):
         self._connection = connection
         if settings is None:
             settings = connection.settings_dict
@@ -73,7 +73,7 @@ LdapObjectClass = Type['LdapObject']
 class LdapObject(ImmutableDict):
     """ A high level python representation of a LDAP object. """
 
-    def __init__(self, d: Optional[dict]=None) -> None:
+    def __init__(self, d: Optional[dict] = None) -> None:
         fields = self.get_fields()
         field_names = set(f.name for f in fields)
 
@@ -112,7 +112,7 @@ LdapChangesEntity = TypeVar('LdapChangesEntity', bound='LdapChanges')
 class LdapChanges(ImmutableDict):
     """ Represents a set of changes to an LdapObject. """
 
-    def __init__(self, fields: List[tldap.fields.Field], src: LdapObject, d: Optional[dict]=None) -> None:
+    def __init__(self, fields: List[tldap.fields.Field], src: LdapObject, d: Optional[dict] = None) -> None:
         self._fields = fields
         self._src = src
         field_names = set(f.name for f in fields)
@@ -140,7 +140,7 @@ DbDataEntity = TypeVar('DbDataEntity', bound='DbData')
 class DbData(ImmutableDict):
     """ Represents an LDAP object at low level without any translations. """
 
-    def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict]=None) -> None:
+    def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict] = None) -> None:
         self._fields = fields
         field_names = set(f.name for f in fields if f.db_field)
         super().__init__(field_names, d)
@@ -155,7 +155,7 @@ DbChangesEntity = TypeVar('DbChangesEntity', bound='DbChanges')
 class DbChanges(ImmutableDict):
     """ Represents an set of changes to an LDAP object at low level without any translations. """
 
-    def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict]=None) -> None:
+    def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict] = None) -> None:
         self._fields = fields
         field_names = set(f.name for f in fields if f.db_field)
         super().__init__(field_names, d)
@@ -170,17 +170,18 @@ class NotLoaded:
     def __repr__(self):
         raise NotImplementedError()
 
-    def load(self, database: Optional[Database]=None) -> LdapObject or List[LdapObject]:
+    def load(self, database: Optional[Database] = None) -> LdapObject or List[LdapObject]:
         raise NotImplementedError()
 
     @staticmethod
-    def _load_one(table: LdapObjectClass, key: str, value: str, database: Optional[Database]=None) -> LdapObject:
+    def _load_one(table: LdapObjectClass, key: str, value: str, database: Optional[Database] = None) -> LdapObject:
         q = Q(**{key: value})
         result = get_one(table, q, database)
         return result
 
     @staticmethod
-    def _load_list(table: LdapObjectClass, key: str, value: str, database: Optional[Database]=None) -> List[LdapObject]:
+    def _load_list(table: LdapObjectClass, key: str, value: str,
+                   database: Optional[Database] = None) -> List[LdapObject]:
         q = Q(**{key: value})
         return list(search(table, q, database))
 
@@ -195,7 +196,7 @@ class NotLoadedObject(NotLoaded):
     def __repr__(self):
         return f"<NotLoaded {self._table} {self._key}={self._value}>"
 
-    def load(self, database: Optional[Database]=None) -> LdapObject:
+    def load(self, database: Optional[Database] = None) -> LdapObject:
         return self._load_one(self._table, self._key, self._value)
 
 
@@ -210,7 +211,7 @@ class NotLoadedList(NotLoaded):
     def __repr__(self):
         return f"<NotLoadedList {self._table} {self._key}={self._value}>"
 
-    def load(self, database: Optional[Database]=None) -> List[LdapObject]:
+    def load(self, database: Optional[Database] = None) -> List[LdapObject]:
         return self._load_list(self._table, self._key, self._value, database)
 
 
@@ -225,7 +226,7 @@ class NotLoadedListToList(NotLoaded):
     def __repr__(self):
         return f"<NotLoadedListToList {self._table} {self._key}={self._value}>"
 
-    def load(self, database: Optional[Database]=None) -> List[LdapObject]:
+    def load(self, database: Optional[Database] = None) -> List[LdapObject]:
         result = [
             self._load_one(self._table, self._key, value, database)
             for value in self._value
@@ -273,8 +274,8 @@ def _python_to_db(changes: LdapChanges) -> DbChanges:
     return db_changes
 
 
-def search(table: LdapObjectClass, query: Optional[Q]=None,
-           database: Optional[Database]=None, base_dn: Optional[str]=None) -> Iterator[LdapObject]:
+def search(table: LdapObjectClass, query: Optional[Q] = None,
+           database: Optional[Database] = None, base_dn: Optional[str] = None) -> Iterator[LdapObject]:
     """ Search for a object of given type in the database. """
     fields = table.get_fields()
     db_fields = [field for field in fields if field.db_field]
@@ -300,8 +301,8 @@ def search(table: LdapObjectClass, query: Optional[Q]=None,
         yield python_data
 
 
-def get_one(table: LdapObjectClass, query: Optional[Q]=None,
-            database: Optional[Database]=None, base_dn: Optional[str]=None) -> LdapObject:
+def get_one(table: LdapObjectClass, query: Optional[Q] = None,
+            database: Optional[Database] = None, base_dn: Optional[str] = None) -> LdapObject:
     """ Get exactly one result from the database or fail. """
     results = search(table, query, database, base_dn)
 
@@ -319,7 +320,7 @@ def get_one(table: LdapObjectClass, query: Optional[Q]=None,
     return result
 
 
-def preload(python_data: LdapObject, database: Optional[Database]=None) -> LdapObject:
+def preload(python_data: LdapObject, database: Optional[Database] = None) -> LdapObject:
     """ Preload all NotLoaded fields in LdapObject. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
@@ -333,7 +334,7 @@ def preload(python_data: LdapObject, database: Optional[Database]=None) -> LdapO
     return python_data.merge(changes)
 
 
-def insert(python_data: LdapObject, database: Optional[Database]=None) -> LdapObject:
+def insert(python_data: LdapObject, database: Optional[Database] = None) -> LdapObject:
     """ Insert a new python_data object in the database. """
     assert isinstance(python_data, LdapObject)
 
@@ -354,7 +355,7 @@ def _get_mod(value: List[bytes]) -> Tuple[str, List[bytes]]:
         return ldap3.MODIFY_REPLACE, value
 
 
-def save(changes: LdapChanges, database: Optional[Database]=None) -> LdapObject:
+def save(changes: LdapChanges, database: Optional[Database] = None) -> LdapObject:
     """ Save all changes in a LdapChanges. """
     assert isinstance(changes, LdapChanges)
 
@@ -423,7 +424,7 @@ def save(changes: LdapChanges, database: Optional[Database]=None) -> LdapObject:
     return python_data
 
 
-def delete(python_data: LdapObject, database: Optional[Database]=None) -> None:
+def delete(python_data: LdapObject, database: Optional[Database] = None) -> None:
     """ Delete a LdapObject from the database. """
     dn = python_data['dn']
     assert dn is not None
@@ -443,7 +444,8 @@ def get_field_by_name(table: LdapObjectClass, name: str) -> tldap.fields.Field:
     return f[0]
 
 
-def rename(python_data: LdapObject, new_base_dn=None, database: Optional[Database]=None, **kwargs) -> LdapObject:
+def rename(python_data: LdapObject, new_base_dn: str = None,
+           database: Optional[Database] = None, **kwargs) -> LdapObject:
     """ Move/rename a LdapObject in the database. """
     table = type(python_data)
     dn = python_data['dn']

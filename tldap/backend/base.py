@@ -117,7 +117,7 @@ class LdapBase(object):
 
         try:
             c.bind()
-        except:
+        except:  # noqa: E722
             c.unbind()
             raise
 
@@ -193,7 +193,7 @@ class LdapBase(object):
     # Cache Management #
     ####################
 
-    def reset(self, forceflushcache: bool=False) -> None:
+    def reset(self, forceflushcache: bool = False) -> None:
         """
         Reset transaction back to original state, discarding all
         uncompleted transactions.
@@ -272,7 +272,7 @@ class LdapBase(object):
         """
         raise NotImplementedError()
 
-    def rename(self, dn: str, newrdn: str, newsuperior: Optional[str]=None, onfailure=None):
+    def rename(self, dn: str, newrdn: str, newsuperior: Optional[str] = None, onfailure=None):
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.

@@ -26,7 +26,7 @@ import ldap3.utils.conv
 import tldap.dict
 
 
-def _list_dict(l: Iterator[str], case_insensitive: bool=False):
+def _list_dict(l: Iterator[str], case_insensitive: bool = False):
     """
     return a dictionary with all items of l being the keys of the dictionary
 
@@ -48,7 +48,7 @@ def escape_list(bytes_list):
     return bytes_list
 
 
-def addModlist(entry: dict, ignore_attr_types: Optional[List[str]]=None) -> Dict[str, List[bytes]]:
+def addModlist(entry: dict, ignore_attr_types: Optional[List[str]] = None) -> Dict[str, List[bytes]]:
     """Build modify list for call of method LDAPObject.add()"""
     ignore_attr_types = _list_dict(map(str.lower, (ignore_attr_types or [])))
     modlist: Dict[str, List[bytes]] = {}
@@ -64,7 +64,8 @@ def addModlist(entry: dict, ignore_attr_types: Optional[List[str]]=None) -> Dict
 
 
 def modifyModlist(
-        old_entry: dict, new_entry: dict, ignore_attr_types=None, ignore_oldexistent: bool=False)-> Dict[str, Tuple[str, List[bytes]]]:
+        old_entry: dict, new_entry: dict, ignore_attr_types: Optional[List[str]] = None,
+        ignore_oldexistent: bool = False)-> Dict[str, Tuple[str, List[bytes]]]:
     """
     Build differential modify list for calling LDAPObject.modify()/modify_s()
 

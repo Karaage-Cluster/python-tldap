@@ -45,7 +45,7 @@ def delete_directory_content(path: str) -> None:
 LOCALHOST = '127.0.0.1'
 
 
-def is_port_in_use(port: int, host: str=LOCALHOST) -> bool:
+def is_port_in_use(port: int, host: str = LOCALHOST) -> bool:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     result = sock.connect_ex((host, int(port)))
     sock.close()
@@ -54,7 +54,7 @@ def is_port_in_use(port: int, host: str=LOCALHOST) -> bool:
     return False
 
 
-def find_available_tcp_port(host: str=LOCALHOST) -> int:
+def find_available_tcp_port(host: str = LOCALHOST) -> int:
     s = socket.socket()
     s.bind((host, 0))
     port = s.getsockname()[1]
@@ -356,7 +356,7 @@ class Slapd:
             raise RuntimeError("configuration test failed")
         self._log.debug("configuration seems ok")
 
-    def ldap_add(self, ldif: str, extra_args: Optional[List]=None) -> None:
+    def ldap_add(self, ldif: str, extra_args: Optional[List] = None) -> None:
         """Runs ldapadd on this slapd instance, passing it the ldif content"""
         if extra_args is None:
             extra_args = []
@@ -373,11 +373,11 @@ class Slapd:
         if p.wait() != 0:
             raise RuntimeError("ldapadd process failed")
 
-    def ldap_search(self, base: Optional[str]=None,
-                   filter: str='(objectClass=*)',
-                   attrs: Optional[List[str]]=None,
-                   scope: str='sub',
-                   extra_args: Optional[List[str]]=None):
+    def ldap_search(self, base: Optional[str] = None,
+                    filter: str = '(objectClass=*)',
+                    attrs: Optional[List[str]] = None,
+                    scope: str = 'sub',
+                    extra_args: Optional[List[str]] = None):
         if base is None:
             base = self.get_dn_suffix()
         if attrs is None:

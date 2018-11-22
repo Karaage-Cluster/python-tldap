@@ -459,15 +459,15 @@ class SidField(Field):
             raise tldap.exceptions.ValidationError(
                 "%r should be a bytes" % self.name)
 
-        l = len(value) - 8
-        if l % 4 != 0:
+        length = len(value) - 8
+        if length % 4 != 0:
             raise tldap.exceptions.ValidationError("Invalid sid")
 
-        l = l // 4
+        length = length // 4
 
-        array = struct.unpack('<bbbbbbbb' + 'I' * l, value)
+        array = struct.unpack('<bbbbbbbb' + 'I' * length, value)
 
-        if array[1] != l:
+        if array[1] != length:
             raise tldap.exceptions.ValidationError("Invalid sid")
 
         if array[2:7] != (0, 0, 0, 0, 0):
@@ -482,15 +482,15 @@ class SidField(Field):
         assert isinstance(value, str)
 
         array = value.split("-")
-        l = len(array) - 3
+        length = len(array) - 3
 
-        assert l >= 0
+        assert length >= 0
         assert array[0] == 'S'
 
-        array = array[1:2] + [l, 0, 0, 0, 0, 0] + array[2:]
+        array = array[1:2] + [length, 0, 0, 0, 0, 0] + array[2:]
         array = [int(i) for i in array]
 
-        return struct.pack('<bbbbbbbb' + 'I' * l, *array)
+        return struct.pack('<bbbbbbbb' + 'I' * length, *array)
 
     def value_validate(self, value):
         """
@@ -503,9 +503,9 @@ class SidField(Field):
             raise tldap.exceptions.ValidationError("Invalid sid")
 
         array = value.split("-")
-        l = len(array) - 3
+        length = len(array) - 3
 
-        if l < 1:
+        if length < 1:
             raise tldap.exceptions.ValidationError("Invalid sid")
 
         if array.pop(0) != "S":

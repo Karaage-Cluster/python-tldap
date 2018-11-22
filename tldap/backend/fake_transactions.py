@@ -60,7 +60,7 @@ class LDAPwrapper(LdapBase):
     # Cache Management #
     ####################
 
-    def reset(self, forceflushcache: bool=False) -> None:
+    def reset(self, forceflushcache: bool = False) -> None:
         """
         Reset transaction back to original state, discarding all
         uncompleted transactions.
@@ -164,7 +164,7 @@ class LDAPwrapper(LdapBase):
                 if onfailure is not None:
                     onfailure()
 
-        except:
+        except:  # noqa: E722
             _debug("--> rollback failed")
             exc_class, exc, tb = sys.exc_info()
             raise tldap.exceptions.RollbackError(

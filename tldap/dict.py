@@ -26,7 +26,7 @@ class CaseInsensitiveDict:
     retrieval. Needs to be supplied with a set of allowed keys.
     """
 
-    def __init__(self, allowed_keys: Set[str], d: Optional[dict]=None) -> None:
+    def __init__(self, allowed_keys: Set[str], d: Optional[dict] = None) -> None:
         self._lc: Dict[str, str] = {
             value.lower(): value for value in allowed_keys
         }
@@ -64,7 +64,7 @@ class CaseInsensitiveDict:
         else:
             return self._dict.__contains__(key)
 
-    def get(self, key: str, default: any=None):
+    def get(self, key: str, default: any = None):
         try:
             key = self._fix_key(key)
         except KeyError:
@@ -89,7 +89,7 @@ class ImmutableDict:
     """
     Immutable dictionary that cannot be changed without creating a new instance.
     """
-    def __init__(self, allowed_keys: Optional[Set[str]]=None, d: Optional[dict]=None) -> None:
+    def __init__(self, allowed_keys: Optional[Set[str]] = None, d: Optional[dict] = None) -> None:
         self._allowed_keys = allowed_keys
         self._dict = CaseInsensitiveDict(allowed_keys)
         if d is not None:
@@ -99,7 +99,7 @@ class ImmutableDict:
     def __getitem__(self, key: str):
         return self._dict.__getitem__(key)
 
-    def get(self, key: str, default: any=None):
+    def get(self, key: str, default: any = None):
         return self._dict.get(key, default)
 
     def __contains__(self, key: str):

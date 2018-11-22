@@ -15,4 +15,5 @@ install:
   - pipenv install --dev
 
 script:
+  - pipenv run flake8 tldap
   - pipenv run python -m tldap.test.slapd python -m pytest
