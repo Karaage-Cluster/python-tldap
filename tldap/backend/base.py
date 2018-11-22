@@ -244,14 +244,14 @@ class LdapBase(object):
     # Functions needing Transactions #
     ##################################
 
-    def add(self, dn: str, modlist: dict, onfailure=None):
+    def add(self, dn: str, modlist: dict):
         """
         Add a DN to the LDAP database; See ldap module. Doesn't return a result
         if transactions enabled.
         """
         raise NotImplementedError()
 
-    def modify(self, dn: str, modlist: dict, onfailure=None):
+    def modify(self, dn: str, modlist: dict):
         """
         Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled.
@@ -265,14 +265,14 @@ class LdapBase(object):
         """
         raise NotImplementedError()
 
-    def delete(self, dn: str, onfailure=None):
+    def delete(self, dn: str):
         """
         delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
         """
         raise NotImplementedError()
 
-    def rename(self, dn: str, newrdn: str, newsuperior: Optional[str] = None, onfailure=None):
+    def rename(self, dn: str, newrdn: str, newsuperior: Optional[str] = None):
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
