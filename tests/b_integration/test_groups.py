@@ -4,6 +4,7 @@ from pytest_bdd import scenarios, when, then, parsers
 
 import tldap.database
 from tldap import Q
+from tldap.django.models import Counters
 from tldap.exceptions import ObjectDoesNotExist
 from tests.database import Group
 
@@ -93,3 +94,67 @@ def step_get_group_dn_not_found(ldap, name, dn):
 @then(parsers.cfparse('we should be able to find {count:d} groups'))
 def step_count_groups(ldap, count):
     assert count == len(list(tldap.database.search(Group)))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_create(ldap):
+    """ Test create LDAP object. """
+
+    # Create the object.
+    group_1 = Group({
+        'cn': 'penguins1',
+        'memberUid': [],
+    })
+
+    group_1 = tldap.database.insert(group_1)
+    assert group_1['gidNumber'] == 10000
+
+    group_2 = Group({
+        'cn': 'penguins2',
+        'memberUid': [],
+    })
+
+    group_2 = tldap.database.insert(group_2)
+    assert group_2['gidNumber'] == 10001
+
+    group_3 = Group({
+        'cn': 'penguins3',
+        'memberUid': [],
+    })
+
+    group_3 = tldap.database.insert(group_3)
+    assert group_3['gidNumber'] == 10002
+
+
+@pytest.mark.django_db(transaction=True)
+def test_create_with_reset(ldap):
+    """ Test create LDAP object. """
+
+    # Create the object.
+    group_1 = Group({
+        'cn': 'penguins1',
+        'memberUid': [],
+    })
+
+    group_1 = tldap.database.insert(group_1)
+    assert group_1['gidNumber'] == 10000
+
+    Counters.objects.all().delete()
+
+    group_2 = Group({
+        'cn': 'penguins2',
+        'memberUid': [],
+    })
+
+    group_2 = tldap.database.insert(group_2)
+    assert group_2['gidNumber'] == 10001
+
+    Counters.objects.all().delete()
+
+    group_3 = Group({
+        'cn': 'penguins3',
+        'memberUid': [],
+    })
+
+    group_3 = tldap.database.insert(group_3)
+    assert group_3['gidNumber'] == 10002

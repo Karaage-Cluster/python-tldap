@@ -121,6 +121,7 @@ def defaults(group1):
 
     values.account_attributes = {
         'uid': "tux",
+        'uidNumber': 10,
         'givenName': "Tux",
         'sn': "Torvalds",
         'cn': "Tux Torvalds",

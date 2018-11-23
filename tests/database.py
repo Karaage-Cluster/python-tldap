@@ -3,6 +3,7 @@ from typing import List
 
 import tldap.fields
 from tldap.database import helpers, LdapObject, LdapChanges, SearchOptions, Database
+import tldap.django.helpers as dhelpers
 
 
 class Account(LdapObject):
@@ -61,6 +62,7 @@ class Account(LdapObject):
             changes = helpers.save_password_object(changes)
             classes = classes + ['passwordObject']
 
+        changes = dhelpers.save_account(changes, Account, database)
         changes = helpers.set_object_class(changes, classes)
         changes = helpers.rdn_to_dn(changes, 'uid', settings['LDAP_ACCOUNT_BASE'])
         return changes
@@ -93,6 +95,7 @@ class Group(LdapObject):
     def on_save(cls, changes: LdapChanges, database: Database) -> LdapChanges:
         settings = database.settings
         changes = helpers.save_group(changes)
+        changes = dhelpers.save_group(changes, Group, database)
         changes = helpers.set_object_class(changes, ['top', 'posixGroup'])
         changes = helpers.rdn_to_dn(changes, 'cn', settings['LDAP_GROUP_BASE'])
         return changes

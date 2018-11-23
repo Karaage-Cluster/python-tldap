@@ -29,6 +29,7 @@ def settings():
             'TLS_CA': None,
             'LDAP_ACCOUNT_BASE': os.environ['LDAP_ACCOUNT_BASE'],
             'LDAP_GROUP_BASE': os.environ['LDAP_GROUP_BASE'],
+            'NUMBER_SCHEME': 'default',
         }
     }
 
