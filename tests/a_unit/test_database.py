@@ -86,39 +86,6 @@ def defaults(group1):
     """ Get globals for all model tests. """
 
     values = Defaults()
-    # values.person = test_schemas.person
-    # values.DoesNotExist = values.person.DoesNotExist
-    # values.AlreadyExists = values.person.AlreadyExists
-    # values.get = values.person.objects.get
-    # values.get_or_create = values.person.objects.get_or_create
-    # values.all_person_attributes = {
-    #     'st', 'labeledURI', 'userPKCS12', 'postOfficeBox', 'l',
-    #     'internationaliSDNNumber', 'manager', 'mobile', 'objectClass',
-    #     'physicalDeliveryOfficeName', 'preferredDeliveryMethod', 'postalCode',
-    #     'departmentNumber', 'ou', 'homePhone', 'userPassword',
-    #     'teletexTerminalIdentifier', 'givenName', 'x121Address',
-    #     'x500uniqueIdentifier', 'jpegPhoto', 'employeeNumber', 'cn',
-    #     'preferredLanguage', 'carLicense', 'uid', 'seeAlso', 'audio',
-    #     'homePostalAddress', 'mail', 'description', 'destinationIndicator',
-    #     'sn', 'roomNumber', 'businessCategory', 'userSMIMECertificate',
-    #     'userCertificate', 'street', 'pager', 'employeeType', 'initials',
-    #     'secretary', 'telexNumber', 'o', 'photo', 'facsimileTelephoneNumber',
-    #     'title', 'displayName', 'postalAddress', 'telephoneNumber'}
-
-    # values.account = test_schemas.account
-    # values.group = test_schemas.group
-
-    # values.person_attributes = {
-    #     'uid': "tux",
-    #     'givenName': "Tux",
-    #     'sn': "Torvalds",
-    #     'cn': "Tux Torvalds",
-    #     'telephoneNumber': "000",
-    #     'mail': "tuz@example.org",
-    #     'o': "Linux Rules",
-    #     'userPassword': "silly",
-    # }
-
     values.account_attributes = {
         'uid': "tux",
         'uidNumber': 10,
@@ -202,62 +169,6 @@ class CheckInstance(TestObject):
         return '<type %s>' % self._type
 
 
-# def get_expected_initial_db_values():
-#     """ Get initial db values for new account. """
-#     return {
-#         'audio': [],
-#         'businessCategory': [],
-#         'carLicense': [],
-#         'cn': [],
-#         'departmentNumber': [],
-#         'description': [],
-#         'destinationIndicator': [],
-#         'displayName': [],
-#         'employeeNumber': [],
-#         'employeeType': [],
-#         'facsimileTelephoneNumber': [],
-#         'givenName': [],
-#         'homePhone': [],
-#         'homePostalAddress': [],
-#         'initials': [],
-#         'internationaliSDNNumber': [],
-#         'jpegPhoto': [],
-#         'l': [],
-#         'labeledURI': [],
-#         'mail': [],
-#         'manager': [],
-#         'mobile': [],
-#         'o': [],
-#         'objectClass': [],
-#         'ou': [],
-#         'pager': [],
-#         'photo': [],
-#         'physicalDeliveryOfficeName': [],
-#         'postOfficeBox': [],
-#         'postalAddress': [],
-#         'postalCode': [],
-#         'preferredDeliveryMethod': [],
-#         'preferredLanguage': [],
-#         'roomNumber': [],
-#         'secretary': [],
-#         'seeAlso': [],
-#         'sn': [],
-#         'st': [],
-#         'street': [],
-#         'telephoneNumber': [],
-#         'teletexTerminalIdentifier': [],
-#         'telexNumber': [],
-#         'title': [],
-#         'uid': [],
-#         'userCertificate': [],
-#         'userPKCS12': [],
-#         'userPassword': [],
-#         'userSMIMECertificate': [],
-#         'x121Address': [],
-#         'x500uniqueIdentifier': [],
-#     }
-
-
 def _get_db_value(value):
     """ Convert value into db value. """
     if isinstance(value, str):
@@ -270,19 +181,6 @@ def _get_db_value(value):
         assert False
 
     return result
-
-
-# def z_get_db_values(updates):
-#     """ Convert values into db values. """
-#     result = {}
-#
-#     for key, value in updates.items():
-#         if isinstance(value, list):
-#             result[key] = [_get_db_value(v) for v in value]
-#         else:
-#             result[key] = [value.encode("UTF-8")]
-#
-#     return result
 
 
 def get_python_expected_values(updates):
@@ -370,36 +268,6 @@ def get_db_expected_values(updates, table: tldap.database.LdapObjectClass):
         result[key] = UnorderedList(value)
 
     return result
-
-
-# def z_update_expected_db_values(db_values, updates):
-#     """ Update db values with updates. """
-#     result = dict(db_values)
-#
-#     for key, value in updates.items():
-#         if value is mock.ANY:
-#             result[key] = mock.ANY
-#         elif value is None:
-#             result[key] = []
-#         elif isinstance(value, list):
-#             result[key] = unordered_list(value)
-#         elif isinstance(value, int):
-#             result[key] = unordered_list([b"%d" % value])
-#         else:
-#             result[key] = unordered_list([value.encode("UTF-8")])
-#
-#     return result
-#
-#
-# def z_get_testable_values(values):
-#     """ Convert db values into something we can use for testing. """
-#     result = {}
-#
-#     for key, value in values.items():
-#         assert isinstance(value, list)
-#         result[key] = unordered_list(value)
-#
-#     return result
 
 
 class TestModelAccount:
@@ -506,6 +374,34 @@ class TestModelAccount:
         # Assert caches are correct.
         for key, value in python_expected_values.items():
             assert account[key] == value, key
+
+    def test_search_by_dn(self, mock_ldap, account1):
+        """ Test getting a person. """
+        c = mock_ldap
+        c.search = SearchMock()
+
+        c.search.add_result(
+            b"entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", account1)
+
+        person = tldap.database.get_one(
+            tests.database.Account,
+            Q(dn="uid=tux, ou=People, dc=python-ldap,dc=org"))
+        assert person['uid'] == "tux"
+
+        expected_calls = [(
+            'ou=People, dc=python-ldap,dc=org',
+            'SUBTREE',
+            b'(&'
+            b'(objectClass=inetOrgPerson)'
+            b'(objectClass=organizationalPerson)'
+            b'(objectClass=person)'
+            b'(entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org)'
+            b')',
+            mock.ANY,
+            None
+        )]
+        assert c.search.calls == expected_calls
+
 
     def test_delete(self, mock_ldap, account1):
         """ Test delete LDAP object. """
@@ -810,95 +706,3 @@ class TestModelGroup:
         group = groups[0]
         for key in ["cn", "description", "gidNumber"]:
             assert group[key] == group2[key], key
-
-
-class TestModelQuery:
-    def test_query_get_person(self, mock_ldap, account1):
-        """ Test getting a person. """
-        c = mock_ldap
-        c.search = SearchMock()
-
-        c.search.add_result(
-            b"entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org", account1)
-
-        person = tldap.database.get_one(
-            tests.database.Account,
-            Q(dn="uid=tux, ou=People, dc=python-ldap,dc=org"))
-        assert person['uid'] == "tux"
-
-        expected_calls = [(
-            'ou=People, dc=python-ldap,dc=org',
-            'SUBTREE',
-            b'(&'
-            b'(objectClass=inetOrgPerson)'
-            b'(objectClass=organizationalPerson)'
-            b'(objectClass=person)'
-            b'(entryDN:=uid=tux, ou=People, dc=python-ldap,dc=org)'
-            b')',
-            mock.ANY,
-            None
-        )]
-        assert c.search.calls == expected_calls
-
-    def test_filter_normal(self):
-        """ Test filter. """
-        ldap_filter = tldap.query.get_filter(
-            tldap.Q(uid='tux'),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(uid=tux)"
-
-    def test_filter_backslash(self):
-        """ Test filter with backslash. """
-        ldap_filter = tldap.query.get_filter(
-            tldap.Q(uid='t\\ux'),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(uid=t\\5cux)"
-
-    def test_filter_negated(self):
-        """ Test filter with negated value. """
-        ldap_filter = tldap.query.get_filter(
-            ~tldap.Q(uid='tux'),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(!(uid=tux))"
-
-    def test_filter_or_2(self):
-        """ Test filter with OR condition. """
-        ldap_filter = tldap.query.get_filter(
-            tldap.Q(uid='tux') | tldap.Q(uid='tuz'),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
-
-    def test_filter_or_3(self):
-        """ Test filter with OR condition """
-        ldap_filter = tldap.query.get_filter(
-            tldap.Q() | tldap.Q(uid='tux') | tldap.Q(uid='tuz'),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(|(uid=tux)(uid=tuz))"
-
-    def test_filter_and(self):
-        """ Test filter with AND condition. """
-        ldap_filter = tldap.query.get_filter(
-            tldap.Q() & tldap.Q(uid='tux') & tldap.Q(uid='tuz'),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(&(uid=tux)(uid=tuz))"
-
-    def test_filter_and_or(self):
-        """ Test filter with AND and OR condition. """
-        ldap_filter = tldap.query.get_filter(
-            tldap.Q(uid='tux') & (tldap.Q(uid='tuz') | tldap.Q(uid='meow')),
-            tests.database.Account.get_fields(),
-            "uid"
-        )
-        assert ldap_filter == b"(&(uid=tux)(|(uid=tuz)(uid=meow)))"
