@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 import datetime
+import os
 from typing import Optional, List
 
 import mock
@@ -40,7 +41,7 @@ class SearchMock:
         self.calls = []
         self.results = []
 
-    def add_result(self, search: bytes, obj):
+    def add_result(self, search: bytes, obj: tldap.database.LdapObject):
         assert isinstance(search, bytes)
         self.results.append((b"(%s)" % search, obj))
 
@@ -54,7 +55,7 @@ class SearchMock:
         for search, obj in self.results:
             if search in filterstr:
                 results.append(
-                    (obj['dn'], get_db_values(obj.to_dict()))
+                    (obj['dn'], get_db_values(obj.to_dict(), type(obj)))
                 )
         return results
 
@@ -298,7 +299,7 @@ def get_python_expected_values(updates):
     return result
 
 
-def get_db_values(updates):
+def get_db_values(updates, table: tldap.database.LdapObjectClass):
     """ Convert values into something we can compare against db values. """
     result = {}
 
@@ -342,14 +343,27 @@ def get_db_values(updates):
         else:
             result[key] = [value.encode("UTF-8")]
 
+    if issubclass(table, tests.database.Account):
+        if os.environ['LDAP_TYPE'] == 'openldap':
+            result['objectClass'] = [
+                b'top', b'person', b'inetOrgPerson', b'organizationalPerson',
+                b'shadowAccount', b'posixAccount', b'pwdPolicy',
+            ]
+            result['pwdAttribute'] = [b'userPassword']
+        elif os.environ['LDAP_TYPE'] == 'ds389':
+            result['objectClass'] = [
+                b'top', b'person', b'inetOrgPerson', b'organizationalPerson',
+                b'shadowAccount', b'posixAccount', b'passwordObject',
+            ]
+
     return result
 
 
-def get_db_expected_values(updates):
+def get_db_expected_values(updates, table: tldap.database.LdapObjectClass):
     """ Convert values into something we can compare against db values. """
     result = {}
 
-    updates = get_db_values(updates)
+    updates = get_db_values(updates, table)
 
     for key, value in updates.items():
         result[key] = UnorderedList(value)
@@ -401,18 +415,14 @@ class TestModelAccount:
         # Simulate required attributes that should be added.
         expected_values = dict(account_attributes)
         expected_values.update({
-            'objectClass':
-                ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
-                 'shadowAccount', 'posixAccount', 'pwdPolicy'],
             'gecos': "Tux Torvalds",
             'displayName': "Tux Torvalds",
             'shadowLastChange': mock.ANY,
             'userPassword': mock.ANY,
             'dn': "uid=tux,ou=People,dc=python-ldap,dc=org",
-            'pwdAttribute': 'userPassword',
         })
         python_expected_values = get_python_expected_values(expected_values)
-        db_expected_values = get_db_expected_values(expected_values)
+        db_expected_values = get_db_expected_values(expected_values, tests.database.Account)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
@@ -441,18 +451,14 @@ class TestModelAccount:
         # Simulate required attributes that should be added.
         expected_values = dict(account_attributes)
         expected_values.update({
-            'objectClass':
-                ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
-                 'shadowAccount', 'posixAccount', 'pwdPolicy'],
             'gecos': "Tux Torvalds",
             'displayName': "Tux Torvalds",
             'shadowLastChange': mock.ANY,
             'userPassword': mock.ANY,
             'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org",
-            'pwdAttribute': 'userPassword',
         })
         python_expected_values = get_python_expected_values(expected_values)
-        db_expected_values = get_db_expected_values(expected_values)
+        db_expected_values = get_db_expected_values(expected_values, tests.database.Account)
 
         # Assert that we made the correct calls to the backend.
         expected_calls = [
@@ -488,15 +494,11 @@ class TestModelAccount:
         account_attributes = defaults.account_attributes
         expected_values = dict(account_attributes)
         expected_values.update({
-            'objectClass':
-                ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
-                 'shadowAccount', 'posixAccount', 'pwdPolicy'],
             'gecos': "Tux Torvalds",
             'displayName': "Tux Torvalds",
             'shadowLastChange': mock.ANY,
             'userPassword': mock.ANY,
             'dn': "uid=tux,ou=People,dc=python-ldap,dc=org",
-            'pwdAttribute': 'userPassword',
         })
         python_expected_values = get_python_expected_values(expected_values)
 

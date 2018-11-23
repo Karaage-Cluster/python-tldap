@@ -32,7 +32,7 @@ class Account(LdapObject):
         )
 
     @classmethod
-    def on_load(cls, python_data: LdapObject, _database: Database) -> LdapObject:
+    def on_load(cls, python_data: LdapObject, database: Database) -> LdapObject:
         python_data = helpers.load_person(python_data, Group)
         python_data = helpers.load_account(python_data, Group)
         python_data = helpers.load_shadow(python_data)
@@ -51,13 +51,17 @@ class Account(LdapObject):
         changes = helpers.save_account(changes, database)
         changes = helpers.save_shadow(changes)
 
+        classes = ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
+                   'shadowAccount', 'posixAccount']
+
         if os.environ['LDAP_TYPE'] == "openldap":
             changes = helpers.save_pwdpolicy(changes)
+            classes = classes + ['pwdPolicy']
         elif os.environ['LDAP_TYPE'] == 'ds389':
-            changes = helpers.load_password_object(changes)
+            changes = helpers.save_password_object(changes)
+            classes = classes + ['passwordObject']
 
-        changes = helpers.set_object_class(changes, ['top', 'person', 'inetOrgPerson', 'organizationalPerson',
-                                                     'shadowAccount', 'posixAccount', 'pwdPolicy'])
+        changes = helpers.set_object_class(changes, classes)
         changes = helpers.rdn_to_dn(changes, 'uid', settings['LDAP_ACCOUNT_BASE'])
         return changes
 

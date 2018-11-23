@@ -65,6 +65,8 @@ class LdapBase(object):
             return True
         except exceptions.LDAPInvalidCredentialsResult:
             return False
+        except exceptions.LDAPUnwillingToPerformResult:
+            return False
 
     def _connect(self, user: str, password: str) -> ldap3.Connection:
         settings = self.settings_dict

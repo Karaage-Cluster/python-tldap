@@ -345,24 +345,18 @@ def save_pwdpolicy(changes: LdapChanges) -> LdapChanges:
 
 def get_fields_password_object() -> List[tldap.fields.Field]:
     fields = [
-        tldap.fields.CharField('accountUnlockTime'),
-        tldap.fields.CharField('nsRoleDN'),
+        tldap.fields.CharField('nsAccountLock'),
     ]
     return fields
 
 
-def load_password_object(python_data: LdapObject, database: Database) -> LdapObject:
-    settings = database.settings
-
+def load_password_object(python_data: LdapObject) -> LdapObject:
     def is_locked():
-        account_unlock_time = python_data['accountUnlockTime']
-        if account_unlock_time is not None:
-            return True
-        role = python_data['nsRoleDN']
-        locked_role = settings['LOCKED_ROLE']
-        if locked_role is not None and role == locked_role:
-            return True
-        return False
+        account_lock = python_data['nsAccountLock']
+        if account_lock is None:
+            return False
+        else:
+            return account_lock.lower() == 'true'
 
     python_data = python_data.merge({
         'locked': is_locked()
@@ -370,9 +364,8 @@ def load_password_object(python_data: LdapObject, database: Database) -> LdapObj
     return python_data
 
 
-def save_password_object(changes: LdapChanges, database: Database) -> LdapChanges:
+def save_password_object(changes: LdapChanges) -> LdapChanges:
     d = {}
-    settings = database.settings
 
     if get_value(changes, 'locked') is None:
         d['locked'] = False
@@ -381,16 +374,12 @@ def save_password_object(changes: LdapChanges, database: Database) -> LdapChange
 
     d = {}
 
-    locked_role = settings['LOCKED_ROLE']
-
     if 'locked' in changes:
         locked = get_value(changes, 'locked')
         if locked:
-            d['accountUnlockTime'] = '19700101000000Z'
-            d['nsRoleDN'] = locked_role
+            d['nsAccountLock'] = "TRUE"
         else:
-            d['accountUnlockTime'] = None
-            d['nsRoleDN'] = None
+            d['nsAccountLock'] = None
 
     changes = changes.merge(d)
     return changes

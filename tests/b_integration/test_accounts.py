@@ -1,3 +1,5 @@
+import os
+
 from ldap3.core import exceptions
 import pytest
 from pytest_bdd import scenarios, when, then, parsers
@@ -129,7 +131,6 @@ def step_count_accounts(ldap, count):
 def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
     # Check account is unlocked.
     assert account['locked'] is False
-    assert account['pwdAccountLockedTime'] is None
     assert account['loginShell'] == "/bin/bash"
     assert ldap.check_password(account['dn'], 'silly') is True
 
@@ -139,13 +140,11 @@ def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
 
     # Check account is locked.
     assert account['locked'] is True
-    assert account['pwdAccountLockedTime'] == "000001010000Z"
     assert account['loginShell'] == "/locked/bin/bash"
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
     assert account['locked'] is True
-    assert account['pwdAccountLockedTime'] == "000001010000Z"
     assert account['loginShell'] == "/locked/bin/bash"
 
     assert ldap.check_password(account['dn'], 'silly') is False
@@ -156,13 +155,11 @@ def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
 
     # Check the account is still locked.
     assert account['locked'] is True
-    assert account['pwdAccountLockedTime'] == "000001010000Z"
     assert account['loginShell'] == "/locked/bin/zsh"
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
     assert account['locked'] == True
-    assert account['pwdAccountLockedTime'] == "000001010000Z"
     assert account['loginShell'] == "/locked/bin/zsh"
 
     assert ldap.check_password(account['dn'], 'silly') is False
@@ -173,13 +170,49 @@ def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
 
     # Check the account is now unlocked.
     assert account['locked'] is False
-    assert account['pwdAccountLockedTime'] is None
     assert account['loginShell'] == "/bin/zsh"
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
     assert account['locked'] is False
-    assert account['pwdAccountLockedTime'] is None
     assert account['loginShell'] == "/bin/zsh"
+
+    assert ldap.check_password(account['dn'], 'silly') is True
+
+
+@pytest.mark.skipif(os.environ['LDAP_TYPE'] != 'openldap', reason="Require OpenLDAP")
+def test_lock_account_openldap(account, ldap: tldap.backend.base.LdapBase):
+    # Check account is unlocked.
+    assert account['locked'] is False
+    assert account['pwdAccountLockedTime'] is None
+    assert ldap.check_password(account['dn'], 'silly') is True
+
+    # Lock account.
+    changes = tldap.database.get_changes(account, {'locked': True})
+    account = tldap.database.save(changes)
+
+    # Check account is locked.
+    assert account['locked'] is True
+    assert account['pwdAccountLockedTime'] == "000001010000Z"
+
+    account = tldap.database.get_one(Account, Q(uid='tux'))
+
+    assert account['locked'] is True
+    assert account['pwdAccountLockedTime'] == "000001010000Z"
+
+    assert ldap.check_password(account['dn'], 'silly') is False
+
+    # Unlock the account.
+    changes = tldap.database.get_changes(account, {'locked': False})
+    account = tldap.database.save(changes)
+
+    # Check the account is now unlocked.
+    assert account['locked'] is False
+    assert account['pwdAccountLockedTime'] is None
+
+    account = tldap.database.get_one(Account, Q(uid='tux'))
+
+    assert account['locked'] is False
+    assert account['pwdAccountLockedTime'] is None
 
     assert ldap.check_password(account['dn'], 'silly') is True
