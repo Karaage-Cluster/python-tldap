@@ -166,21 +166,6 @@ class LdapChanges(ImmutableDict):
         return self._src
 
 
-DbDataEntity = TypeVar('DbDataEntity', bound='DbData')
-
-
-class DbData(ImmutableDict):
-    """ Represents an LDAP object at low level without any translations. """
-
-    def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict] = None) -> None:
-        self._fields = fields
-        field_names = set(f.name for f in fields if f.db_field)
-        super().__init__(field_names, d)
-
-    def __copy__(self: DbDataEntity) -> DbDataEntity:
-        return self.__class__(self._fields, self._dict)
-
-
 class NotLoaded:
     """ Base class to represent a related field that has not been loaded. """
 
@@ -261,7 +246,7 @@ def get_changes(python_data: LdapObject, d: dict) -> LdapChanges:
     return changes
 
 
-def _db_to_python(db_data: DbData, table: LdapObjectClass, dn: str) -> LdapObject:
+def _db_to_python(db_data: dict, table: LdapObjectClass, dn: str) -> LdapObject:
     """ Convert a DbDate object to a LdapObject. """
     fields = table.get_fields()
 
@@ -332,8 +317,7 @@ def search(table: LdapObjectClass, query: Optional[Q] = None,
     )
 
     for dn, data in iterator:
-        db_data = DbData(fields, data)
-        python_data = _db_to_python(db_data, table, dn)
+        python_data = _db_to_python(data, table, dn)
         python_data = table.on_load(python_data, database)
         yield python_data
 
