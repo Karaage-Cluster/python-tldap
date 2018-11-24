@@ -18,7 +18,7 @@
 """ Django specific database helper functions. """
 
 from tldap import Q
-from tldap.database import LdapChanges, LdapObjectClass, get_one, Database
+from tldap.database import Changeset, LdapObjectClass, get_one, Database
 from tldap.database.helpers import get_value
 from tldap.django.models import Counters
 from tldap.exceptions import ObjectDoesNotExist
@@ -33,7 +33,7 @@ def _check_exists(database: Database, table: LdapObjectClass, key: str, value: s
         return False
 
 
-def save_account(changes: LdapChanges, table: LdapObjectClass, database: Database) -> LdapChanges:
+def save_account(changes: Changeset, table: LdapObjectClass, database: Database) -> Changeset:
     """ Modify a changes to add an automatically generated uidNumber. """
     d = {}
     settings = database.settings
@@ -51,7 +51,7 @@ def save_account(changes: LdapChanges, table: LdapObjectClass, database: Databas
     return changes
 
 
-def save_group(changes: LdapChanges, table: LdapObjectClass, database: Database) -> LdapChanges:
+def save_group(changes: Changeset, table: LdapObjectClass, database: Database) -> Changeset:
     """ Modify a changes to add an automatically generated gidNumber. """
     d = {}
     settings = database.settings

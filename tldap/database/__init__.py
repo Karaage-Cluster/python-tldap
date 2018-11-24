@@ -99,20 +99,20 @@ class LdapObject(ImmutableDict):
         raise NotImplementedError()
 
     @classmethod
-    def on_save(cls, changes: 'LdapChanges', database: Database) -> 'LdapChanges':
+    def on_save(cls, changes: 'Changeset', database: Database) -> 'Changeset':
         raise NotImplementedError()
 
     def __copy__(self: LdapObjectEntity) -> LdapObjectEntity:
         return self.__class__(self._dict)
 
 
-LdapChangesEntity = TypeVar('LdapChangesEntity', bound='LdapChanges')
+ChangesetEntity = TypeVar('ChangesetEntity', bound='Changeset')
 
 
 Operation = ldap3.MODIFY_ADD or ldap3.MODIFY_REPLACE or ldap3.MODIFY_DELETE
 
 
-class LdapChanges(ImmutableDict):
+class Changeset(ImmutableDict):
     """ Represents a set of changes to an LdapObject. """
 
     def __init__(self, fields: List[tldap.fields.Field], src: LdapObject, d: Optional[dict] = None) -> None:
@@ -122,7 +122,7 @@ class LdapChanges(ImmutableDict):
         field_names = set(f.name for f in fields)
         super().__init__(field_names, d)
 
-    def __copy__(self: LdapChangesEntity) -> LdapChangesEntity:
+    def __copy__(self: ChangesetEntity) -> ChangesetEntity:
         return self.__class__(self._fields, self._src, self._dict)
 
     @property
@@ -237,12 +237,12 @@ class NotLoadedListToList(NotLoaded):
         return result
 
 
-def get_changes(python_data: LdapObject, d: dict) -> LdapChanges:
+def get_changes(python_data: LdapObject, d: dict) -> Changeset:
     """ Generate changes object for ldap object. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
 
-    changes = LdapChanges(fields, src=python_data, d=d)
+    changes = Changeset(fields, src=python_data, d=d)
     return changes
 
 
@@ -261,7 +261,7 @@ def _db_to_python(db_data: dict, table: LdapObjectClass, dn: str) -> LdapObject:
     return python_data
 
 
-def _python_to_mod_new(changes: LdapChanges) -> Dict[str, List[List[bytes]]]:
+def _python_to_mod_new(changes: Changeset) -> Dict[str, List[List[bytes]]]:
     """ Convert a LdapChanges object to a modlist for add operation. """
     table: LdapObjectClass = type(changes.src)
     fields = table.get_fields()
@@ -277,7 +277,7 @@ def _python_to_mod_new(changes: LdapChanges) -> Dict[str, List[List[bytes]]]:
     return result
 
 
-def _python_to_mod_modify(changes: LdapChanges) -> Dict[str, List[Tuple[Operation, List[bytes]]]]:
+def _python_to_mod_modify(changes: Changeset) -> Dict[str, List[Tuple[Operation, List[bytes]]]]:
     """ Convert a LdapChanges object to a modlist for a modify operation. """
     table: LdapObjectClass = type(changes.src)
     changes = changes.changes
@@ -368,9 +368,9 @@ def insert(python_data: LdapObject, database: Optional[Database] = None) -> Ldap
     return save(changes, database)
 
 
-def save(changes: LdapChanges, database: Optional[Database] = None) -> LdapObject:
+def save(changes: Changeset, database: Optional[Database] = None) -> LdapObject:
     """ Save all changes in a LdapChanges. """
-    assert isinstance(changes, LdapChanges)
+    assert isinstance(changes, Changeset)
 
     database = get_database(database)
     connection = database.connection

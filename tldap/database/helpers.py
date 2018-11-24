@@ -23,13 +23,13 @@ from typing import List
 
 import tldap.exceptions
 import tldap.fields
-from tldap.database import LdapObject, LdapChanges, NotLoadedObject, NotLoadedList, \
+from tldap.database import LdapObject, Changeset, NotLoadedObject, NotLoadedList, \
     NotLoadedListToList, LdapObjectClass, Database
 from tldap.dn import str2dn, dn2str
 import tldap.ldap_passwd as ldap_passwd
 
 
-def rdn_to_dn(changes: LdapChanges, name: str, base_dn: str) -> LdapChanges:
+def rdn_to_dn(changes: Changeset, name: str, base_dn: str) -> Changeset:
     """ Convert the rdn to a fully qualified DN for the specified LDAP
     connection.
 
@@ -60,13 +60,13 @@ def rdn_to_dn(changes: LdapChanges, name: str, base_dn: str) -> LdapChanges:
     return changes.set('dn', new_dn)
 
 
-def set_object_class(changes: LdapChanges, object_class: List[str]) -> LdapChanges:
+def set_object_class(changes: Changeset, object_class: List[str]) -> Changeset:
     if get_value(changes, 'objectClass') is None:
         changes = changes.set('objectClass', object_class)
     return changes
 
 
-def get_value(changes: LdapChanges, key: str) -> any:
+def get_value(changes: Changeset, key: str) -> any:
     if key in changes:
         return changes[key]
     if key in changes._src:
@@ -102,7 +102,7 @@ def load_person(python_data: LdapObject, group_table: LdapObjectClass) -> LdapOb
     return python_data
 
 
-def save_person(changes: LdapChanges) -> LdapChanges:
+def save_person(changes: Changeset) -> Changeset:
     d = dict()
 
     if 'givenName' in changes or 'sn' in changes:
@@ -159,7 +159,7 @@ def load_account(python_data: LdapObject, group_table: LdapObjectClass) -> LdapO
     return python_data
 
 
-def save_account(changes: LdapChanges, database: Database) -> LdapChanges:
+def save_account(changes: Changeset, database: Database) -> Changeset:
     d = {}
     settings = database.settings
 
@@ -227,7 +227,7 @@ def load_shadow(python_data: LdapObject) -> LdapObject:
     return python_data
 
 
-def save_shadow(changes: LdapChanges) -> LdapChanges:
+def save_shadow(changes: Changeset) -> Changeset:
     if 'password' in changes:
         changes = changes.merge({
             'shadowLastChange': datetime.datetime.now().date()
@@ -257,7 +257,7 @@ def load_group(python_data: LdapObject, account_table: LdapObjectClass) -> LdapO
     return python_data.merge(d)
 
 
-def save_group(changes: LdapChanges) -> LdapChanges:
+def save_group(changes: Changeset) -> Changeset:
     d = {}
 
     changes = changes.merge(d)
@@ -277,7 +277,7 @@ def save_group(changes: LdapChanges) -> LdapChanges:
     return changes.merge(d)
 
 
-def add_group_member(changes: LdapChanges, member: LdapObject) -> LdapChanges:
+def add_group_member(changes: Changeset, member: LdapObject) -> Changeset:
     add_uid = member['uid']
     member_uid = get_value(changes, 'memberUid')
     if add_uid not in member_uid:
@@ -290,7 +290,7 @@ def add_group_member(changes: LdapChanges, member: LdapObject) -> LdapChanges:
     return changes
 
 
-def remove_group_member(changes: LdapChanges, member: LdapObject) -> LdapChanges:
+def remove_group_member(changes: Changeset, member: LdapObject) -> Changeset:
     rm_uid = member['uid']
     member_uid = get_value(changes, 'memberUid')
     changes = changes.merge({
@@ -316,7 +316,7 @@ def load_pwdpolicy(python_data: LdapObject) -> LdapObject:
     return python_data
 
 
-def save_pwdpolicy(changes: LdapChanges) -> LdapChanges:
+def save_pwdpolicy(changes: Changeset) -> Changeset:
     d = {}
 
     if get_value(changes, 'locked') is None:
@@ -364,7 +364,7 @@ def load_password_object(python_data: LdapObject) -> LdapObject:
     return python_data
 
 
-def save_password_object(changes: LdapChanges) -> LdapChanges:
+def save_password_object(changes: Changeset) -> Changeset:
     d = {}
 
     if get_value(changes, 'locked') is None:
@@ -399,7 +399,7 @@ def load_shibboleth(python_data: LdapObject) -> LdapObject:
     return python_data
 
 
-def save_shibboleth(changes: LdapChanges, database: Database) -> LdapChanges:
+def save_shibboleth(changes: Changeset, database: Database) -> Changeset:
     d = {}
     settings = database.settings
 

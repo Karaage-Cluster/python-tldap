@@ -2,7 +2,7 @@ import os
 from typing import List
 
 import tldap.fields
-from tldap.database import helpers, LdapObject, LdapChanges, SearchOptions, Database
+from tldap.database import helpers, LdapObject, Changeset, SearchOptions, Database
 import tldap.django.helpers as dhelpers
 
 
@@ -46,7 +46,7 @@ class Account(LdapObject):
         return python_data
 
     @classmethod
-    def on_save(cls, changes: LdapChanges, database: Database) -> LdapChanges:
+    def on_save(cls, changes: Changeset, database: Database) -> Changeset:
         settings = database.settings
         changes = helpers.save_person(changes)
         changes = helpers.save_account(changes, database)
@@ -92,7 +92,7 @@ class Group(LdapObject):
         return python_data
 
     @classmethod
-    def on_save(cls, changes: LdapChanges, database: Database) -> LdapChanges:
+    def on_save(cls, changes: Changeset, database: Database) -> Changeset:
         settings = database.settings
         changes = helpers.save_group(changes)
         changes = dhelpers.save_group(changes, Group, database)
@@ -101,12 +101,12 @@ class Group(LdapObject):
         return changes
 
     @classmethod
-    def add_member(cls, changes: LdapChanges, member: 'Account') -> LdapChanges:
+    def add_member(cls, changes: Changeset, member: 'Account') -> Changeset:
         assert isinstance(changes.src, cls)
         return helpers.add_group_member(changes, member)
 
     @classmethod
-    def remove_member(cls, changes: LdapChanges, member: 'Account') -> LdapChanges:
+    def remove_member(cls, changes: Changeset, member: 'Account') -> Changeset:
         assert isinstance(changes.src, cls)
         return helpers.remove_group_member(changes, member)
 
@@ -132,6 +132,6 @@ class OU(LdapObject):
         return python_data
 
     @classmethod
-    def on_save(cls, changes: LdapChanges, _database: Database) -> LdapChanges:
+    def on_save(cls, changes: Changeset, _database: Database) -> Changeset:
         changes = helpers.set_object_class(changes, ['top', 'organizationalUnit'])
         return changes
