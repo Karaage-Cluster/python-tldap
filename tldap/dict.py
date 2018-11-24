@@ -35,7 +35,7 @@ class CaseInsensitiveDict:
             for k, v in d.items():
                 self[k] = v
 
-    def _fix_key(self, key: str) -> str:
+    def fix_key(self, key: str) -> str:
         key = key.lower()
 
         if key not in self._lc:
@@ -44,21 +44,21 @@ class CaseInsensitiveDict:
         return self._lc[key.lower()]
 
     def __setitem__(self, key: str, value: any):
-        key = self._fix_key(key)
+        key = self.fix_key(key)
         self._dict.__setitem__(key, value)
 
     def __delitem__(self, key: str):
-        key = self._fix_key(key)
+        key = self.fix_key(key)
         del self._lc[key]
         self._dict.__delitem__(key)
 
     def __getitem__(self, key: str):
-        key = self._fix_key(key)
+        key = self.fix_key(key)
         return self._dict.__getitem__(key)
 
     def __contains__(self, key: str):
         try:
-            key = self._fix_key(key)
+            key = self.fix_key(key)
         except KeyError:
             return False
         else:
@@ -66,7 +66,7 @@ class CaseInsensitiveDict:
 
     def get(self, key: str, default: any = None):
         try:
-            key = self._fix_key(key)
+            key = self.fix_key(key)
         except KeyError:
             return default
         else:
@@ -98,6 +98,9 @@ class ImmutableDict:
 
     def __getitem__(self, key: str):
         return self._dict.__getitem__(key)
+
+    def fix_key(self, key: str) -> str:
+        return self._dict.fix_key(key)
 
     def get(self, key: str, default: any = None):
         return self._dict.get(key, default)

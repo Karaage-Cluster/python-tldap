@@ -216,8 +216,8 @@ class TestBackendFakeTransactions:
         with tldap.transaction.commit_on_success():
             c.add(dn, defaults.modlist)
             c.modify(dn, {
-                'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-            )
+                'sn': [(ldap3.MODIFY_REPLACE, [b"Gates"])]
+            })
             c.rollback()
 
         expected_calls = [
@@ -225,8 +225,8 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Gates'])]}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Torvalds'])]}),
             call.delete(dn)
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
@@ -241,8 +241,8 @@ class TestBackendFakeTransactions:
             with tldap.transaction.commit_on_success():
                 c.add(dn, defaults.modlist)
                 c.modify(dn, {
-                    'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-                )
+                    'sn': [(ldap3.MODIFY_REPLACE, [b"Gates"])]
+                })
                 raise RuntimeError("testing failure")
 
         expected_calls = [
@@ -250,8 +250,8 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Gates'])]}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Torvalds'])]}),
             call.delete(dn)
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
@@ -266,8 +266,8 @@ class TestBackendFakeTransactions:
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
-                    'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-                )
+                    'sn': [(ldap3.MODIFY_REPLACE, [b"Gates"])]
+                })
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
@@ -276,8 +276,8 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Gates'])]}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Torvalds'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -290,15 +290,15 @@ class TestBackendFakeTransactions:
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
-                'sn': (ldap3.MODIFY_REPLACE, [b"Gates"])},
-            )
+                'sn': [(ldap3.MODIFY_REPLACE, [b"Gates"])]
+            })
 
         expected_calls = [
             call.open(),
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Gates'])}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Gates'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -312,8 +312,8 @@ class TestBackendFakeTransactions:
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
-                    "telephoneNumber": (ldap3.MODIFY_REPLACE, [b"222"])},
-                )
+                    "telephoneNumber": [(ldap3.MODIFY_REPLACE, [b"222"])]
+                })
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
@@ -322,8 +322,8 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_REPLACE', [b'222'])}),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_REPLACE', [b'000'])}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_REPLACE', [b'222'])]}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_REPLACE', [b'000'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -336,15 +336,15 @@ class TestBackendFakeTransactions:
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
-                'telephoneNumber': (ldap3.MODIFY_REPLACE, [b"222"])},
-            )
+                'telephoneNumber': [(ldap3.MODIFY_REPLACE, [b"222"])]
+            })
 
         expected_calls = [
             call.open(),
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_REPLACE', [b'222'])}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_REPLACE', [b'222'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -358,8 +358,8 @@ class TestBackendFakeTransactions:
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
-                    "telephoneNumber": (ldap3.MODIFY_DELETE, [b'000'])},
-                )
+                    "telephoneNumber": [(ldap3.MODIFY_DELETE, [b'000'])]
+                })
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
@@ -368,8 +368,8 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_DELETE', [b'000'])}),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_ADD', [b'000'])}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_DELETE', [b'000'])]}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_ADD', [b'000'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -382,15 +382,15 @@ class TestBackendFakeTransactions:
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
-                "telephoneNumber": (ldap3.MODIFY_DELETE, [b'000'])},
-            )
+                "telephoneNumber": [(ldap3.MODIFY_DELETE, [b'000'])]
+            })
 
         expected_calls = [
             call.open(),
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_DELETE', [b'000'])}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_DELETE', [b'000'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -404,8 +404,8 @@ class TestBackendFakeTransactions:
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
-                    "telephoneNumber": (ldap3.MODIFY_ADD, [b"111"])},
-                )
+                    "telephoneNumber": [(ldap3.MODIFY_ADD, [b"111"])]
+                })
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
@@ -414,8 +414,8 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_ADD', [b'111'])}),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_DELETE', [b'111'])}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_ADD', [b'111'])]}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_DELETE', [b'111'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -429,15 +429,15 @@ class TestBackendFakeTransactions:
         c.add(dn, defaults.modlist)
         with tldap.transaction.commit_on_success():
             c.modify(dn, {
-                'telephoneNumber': (ldap3.MODIFY_ADD, [b"111"])},
-            )
+                'telephoneNumber': [(ldap3.MODIFY_ADD, [b"111"])]
+            })
 
         expected_calls = [
             call.open(),
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'telephoneNumber': ('MODIFY_ADD', [b'111'])}),
+            call.modify(dn, {'telephoneNumber': [('MODIFY_ADD', [b'111'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -455,11 +455,11 @@ class TestBackendFakeTransactions:
         with pytest.raises(tldap.exceptions.TestFailure):
             with tldap.transaction.commit_on_success():
                 c.modify(dn, {
-                    "sn": (ldap3.MODIFY_REPLACE, b"Milkshakes")},
-                )
+                    "sn": [(ldap3.MODIFY_REPLACE, b"Milkshakes")]
+                })
                 c.modify(dn, {
-                    "sn": (ldap3.MODIFY_REPLACE, [b"Bannas"])},
-                )
+                    "sn": [(ldap3.MODIFY_REPLACE, [b"Bannas"])]
+                })
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
@@ -468,9 +468,9 @@ class TestBackendFakeTransactions:
             call.bind(),
             call.add(dn, None, defaults.modlist),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', b'Milkshakes')}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', b'Milkshakes')]}),
             call.search(dn, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn, {'sn': ('MODIFY_REPLACE', [b'Bannas'])}),
+            call.modify(dn, {'sn': [('MODIFY_REPLACE', [b'Bannas'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 
@@ -488,7 +488,8 @@ class TestBackendFakeTransactions:
                     dn, 'uid=tuz',
                 )
                 c.modify(dn2, {
-                    "sn": (ldap3.MODIFY_REPLACE, [b"Tuz"])})
+                    "sn": [(ldap3.MODIFY_REPLACE, [b"Tuz"])]
+                })
                 c.fail()  # raises TestFailure during commit causing rollback
                 c.commit()
 
@@ -498,8 +499,8 @@ class TestBackendFakeTransactions:
             call.add(dn, None, defaults.modlist),
             call.modify_dn(dn, 'uid=tuz', new_superior=None),
             call.search(dn2, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn2, {'sn': ('MODIFY_REPLACE', [b'Tuz'])}),
-            call.modify(dn2, {'sn': ('MODIFY_REPLACE', [b'Torvalds'])}),
+            call.modify(dn2, {'sn': [('MODIFY_REPLACE', [b'Tuz'])]}),
+            call.modify(dn2, {'sn': [('MODIFY_REPLACE', [b'Torvalds'])]}),
             call.modify_dn(dn2, 'uid=tux', new_superior=None),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
@@ -517,7 +518,8 @@ class TestBackendFakeTransactions:
                 dn, 'uid=tuz',
             )
             c.modify(dn2, {
-                'sn': (ldap3.MODIFY_REPLACE, [b"Tuz"])})
+                'sn': [(ldap3.MODIFY_REPLACE, [b"Tuz"])]
+            })
 
         expected_calls = [
             call.open(),
@@ -525,7 +527,7 @@ class TestBackendFakeTransactions:
             call.add(dn, None, defaults.modlist),
             call.modify_dn(dn, 'uid=tuz', new_superior=None),
             call.search(dn2, '(objectclass=*)', 'BASE', attributes=ANY),
-            call.modify(dn2, {'sn': ('MODIFY_REPLACE', [b'Tuz'])}),
+            call.modify(dn2, {'sn': [('MODIFY_REPLACE', [b'Tuz'])]}),
         ]
         defaults.mock_connection.assert_has_calls(expected_calls)
 

@@ -16,7 +16,7 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 """ High level database interaction. """
-from typing import List, Iterator, TypeVar, Optional, Type, Set, Tuple
+from typing import List, Iterator, TypeVar, Optional, Type, Set, Tuple, Any, Dict
 
 import ldap3.core
 import ldap3.core.exceptions
@@ -109,24 +109,56 @@ class LdapObject(ImmutableDict):
 LdapChangesEntity = TypeVar('LdapChangesEntity', bound='LdapChanges')
 
 
+Operation = ldap3.MODIFY_ADD or ldap3.MODIFY_REPLACE or ldap3.MODIFY_DELETE
+
+
 class LdapChanges(ImmutableDict):
     """ Represents a set of changes to an LdapObject. """
 
     def __init__(self, fields: List[tldap.fields.Field], src: LdapObject, d: Optional[dict] = None) -> None:
         self._fields = fields
         self._src = src
+        self._changes: Dict[str, List[Tuple[Operation, Any]]] = {}
         field_names = set(f.name for f in fields)
         super().__init__(field_names, d)
 
     def __copy__(self: LdapChangesEntity) -> LdapChangesEntity:
         return self.__class__(self._fields, self._src, self._dict)
 
+    @property
+    def changes(self) -> Dict[str, List[Tuple[Operation, Any]]]:
+        return self._changes
+
     def _set(self, key: str, value: any) -> None:
+        key = self.fix_key(key)
+
         previous_value = self._src[key]
         if value != previous_value:
             self._dict[key] = value
         elif key in self._dict:
             del self._dict[key]
+
+        operation: Operation = ldap3.MODIFY_REPLACE
+        if value is None or value == []:
+            operation = ldap3.MODIFY_DELETE
+
+        if key in self._changes:
+            this_list = self._changes[key]
+            (this_operation, _) = this_list[-1]
+            if operation == ldap3.MODIFY_REPLACE and this_operation == ldap3.MODIFY_REPLACE:
+                new_list = this_list[:-1]
+            else:
+                new_list = this_list
+        else:
+            new_list = []
+
+        new_list = new_list + [
+            (operation, value)
+        ]
+        self._changes = {
+            **self._changes,
+            key: new_list
+        }
         return
 
     @property
@@ -146,21 +178,6 @@ class DbData(ImmutableDict):
         super().__init__(field_names, d)
 
     def __copy__(self: DbDataEntity) -> DbDataEntity:
-        return self.__class__(self._fields, self._dict)
-
-
-DbChangesEntity = TypeVar('DbChangesEntity', bound='DbChanges')
-
-
-class DbChanges(ImmutableDict):
-    """ Represents an set of changes to an LDAP object at low level without any translations. """
-
-    def __init__(self, fields: List[tldap.fields.Field], d: Optional[dict] = None) -> None:
-        self._fields = fields
-        field_names = set(f.name for f in fields if f.db_field)
-        super().__init__(field_names, d)
-
-    def __copy__(self: DbChangesEntity) -> DbChangesEntity:
         return self.__class__(self._fields, self._dict)
 
 
@@ -259,19 +276,39 @@ def _db_to_python(db_data: DbData, table: LdapObjectClass, dn: str) -> LdapObjec
     return python_data
 
 
-def _python_to_db(changes: LdapChanges) -> DbChanges:
-    """ Convert a LdapChanges object to a DbChanges object. """
+def _python_to_mod_new(changes: LdapChanges) -> Dict[str, List[List[bytes]]]:
+    """ Convert a LdapChanges object to a modlist for add operation. """
     table: LdapObjectClass = type(changes.src)
     fields = table.get_fields()
 
-    db_changes_dict = {
-        field.name: field.to_db(changes[field.name])
-        for field in fields
-        if field.name in changes and field.db_field
-    }
+    result: Dict[str, List[List[bytes]]] = {}
 
-    db_changes = DbChanges(fields, db_changes_dict)
-    return db_changes
+    for field in fields:
+        if field.name in changes and field.db_field:
+            value = field.to_db(changes[field.name])
+            if len(value) > 0:
+                result[field.name] = value
+
+    return result
+
+
+def _python_to_mod_modify(changes: LdapChanges) -> Dict[str, List[Tuple[Operation, List[bytes]]]]:
+    """ Convert a LdapChanges object to a modlist for a modify operation. """
+    table: LdapObjectClass = type(changes.src)
+    changes = changes.changes
+
+    result: Dict[str, List[Tuple[Operation, List[bytes]]]] = {}
+    for key, l in changes.items():
+        field = get_field_by_name(table, key)
+
+        if field.db_field:
+            new_list = [
+                (operation, field.to_db(value))
+                for operation, value in l
+            ]
+            result[key] = new_list
+
+    return result
 
 
 def search(table: LdapObjectClass, query: Optional[Q] = None,
@@ -347,14 +384,6 @@ def insert(python_data: LdapObject, database: Optional[Database] = None) -> Ldap
     return save(changes, database)
 
 
-def _get_mod(value: List[bytes]) -> Tuple[str, List[bytes]]:
-    """ Get the LDAP operation for this value. """
-    if len(value) == 0:
-        return ldap3.MODIFY_DELETE, []
-    else:
-        return ldap3.MODIFY_REPLACE, value
-
-
 def save(changes: LdapChanges, database: Optional[Database] = None) -> LdapObject:
     """ Save all changes in a LdapChanges. """
     assert isinstance(changes, LdapChanges)
@@ -389,27 +418,16 @@ def save(changes: LdapChanges, database: Optional[Database] = None) -> LdapObjec
 
     assert dn is not None
 
-    # Generate DB changes.
-    db_changes = _python_to_db(changes)
-
     if create:
         # Add new entry
-        mod_list = {
-            name: value
-            for name, value in db_changes.items()
-            if len(value) > 0
-        }
+        mod_list = _python_to_mod_new(changes)
         try:
             connection.add(dn, mod_list)
         except ldap3.core.exceptions.LDAPEntryAlreadyExistsResult:
             raise ObjectAlreadyExists(
                 "Object with dn %r already exists doing add" % dn)
     else:
-        # Modify existing entry.
-        mod_list = {
-            name: _get_mod(value)
-            for name, value in db_changes.items()
-        }
+        mod_list = _python_to_mod_modify(changes)
         if len(mod_list) > 0:
             try:
                 connection.modify(dn, mod_list)

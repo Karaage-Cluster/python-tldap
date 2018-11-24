@@ -492,7 +492,7 @@ class TestModelAccount:
         expected_calls = [
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'title': ('MODIFY_REPLACE', [b'Superior'])},
+                {'title': [('MODIFY_REPLACE', [b'Superior'])]},
             )
         ]
         c.assert_has_calls(expected_calls)
@@ -514,7 +514,8 @@ class TestModelAccount:
         c = mock_ldap
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'sn': "Gates"})
+        changes = tldap.database.get_changes(account1, {'sn': "Closed"})
+        changes = changes.merge({'sn': "Gates"})
         account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.
@@ -532,10 +533,10 @@ class TestModelAccount:
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
                 {
-                    'cn': ('MODIFY_REPLACE', [b'Tux Gates']),
-                    'displayName': ('MODIFY_REPLACE', [b'Tux Gates']),
-                    'gecos': ('MODIFY_REPLACE', [b'Tux Gates']),
-                    'sn': ('MODIFY_REPLACE', [b'Gates']),
+                    'cn': [('MODIFY_REPLACE', [b'Tux Gates'])],
+                    'displayName': [('MODIFY_REPLACE', [b'Tux Gates'])],
+                    'gecos': [('MODIFY_REPLACE', [b'Tux Gates'])],
+                    'sn': [('MODIFY_REPLACE', [b'Gates'])],
                 },
             )
         ]
@@ -584,7 +585,7 @@ class TestModelAccount:
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
                 {
-                    'telephoneNumber': ('MODIFY_DELETE', []),
+                    'telephoneNumber': [('MODIFY_DELETE', [])],
                 },
             )
         ]
@@ -610,7 +611,7 @@ class TestModelGroup:
         expected_calls = [
             mock.call.modify(
                 'uid=tux,ou=People,dc=python-ldap,dc=org',
-                {'gidNumber': ('MODIFY_REPLACE', [b'11'])},
+                {'gidNumber': [('MODIFY_REPLACE', [b'11'])]},
             )
         ]
         c.assert_has_calls(expected_calls)
@@ -645,7 +646,7 @@ class TestModelGroup:
         expected_calls = [
             mock.call.modify(
                 'cn=group1,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_REPLACE', [b'tux'])},
+                {'memberUid': [('MODIFY_REPLACE', [b'tux'])]},
             )
         ]
         c.assert_has_calls(expected_calls)
@@ -665,7 +666,7 @@ class TestModelGroup:
         expected_calls = [
             mock.call.modify(
                 'cn=group2,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': ('MODIFY_DELETE', [])},
+                {'memberUid': [('MODIFY_DELETE', [])]},
             )
         ]
         c.assert_has_calls(expected_calls)
