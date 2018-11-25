@@ -38,11 +38,11 @@ def rdn_to_dn(changes: Changeset, name: str, base_dn: str) -> Changeset:
     :param base_dn: The base_dn to lookup.
     :return: fully qualified DN.
     """
-    dn = get_value(changes, 'dn')
+    dn = changes.get_value_as_single('dn')
     if dn is not None:
         return changes
 
-    value = get_value(changes, name)
+    value = changes.get_value_as_single(name)
     if value is None:
         raise tldap.exceptions.ValidationError(
             "Cannot use %s in dn as it is None" % name)
@@ -61,13 +61,9 @@ def rdn_to_dn(changes: Changeset, name: str, base_dn: str) -> Changeset:
 
 
 def set_object_class(changes: Changeset, object_class: List[str]) -> Changeset:
-    if len(get_value(changes, 'objectClass')) == 0:
+    if len(changes.get_value_as_list('objectClass')) == 0:
         changes = changes.set('objectClass', object_class)
     return changes
-
-
-def get_value(changes: Changeset, key: str) -> any:
-    return changes.get_value_as_single(key)
 
 
 # PERSON
@@ -102,19 +98,19 @@ def save_person(changes: Changeset) -> Changeset:
     d = dict()
 
     if 'givenName' in changes or 'sn' in changes:
-        given_name = get_value(changes, 'givenName')
-        sn = get_value(changes, 'sn')
+        given_name = changes.get_value_as_single('givenName')
+        sn = changes.get_value_as_single('sn')
 
         if given_name is not None and sn is not None:
             d['displayName'] = '%s %s' % (given_name, sn)
             d['cn'] = d['displayName']
 
     if 'password' in changes:
-        password = get_value(changes, 'password')
+        password = changes.get_value_as_single('password')
         d["userPassword"] = ldap_passwd.encode_password(password)
 
     if 'groups' in changes:
-        groups = get_value(changes, 'groups')
+        groups = changes.get_value_as_list('groups')
         if len(groups) > 0:
             raise RuntimeError("Cannot register changes in groups on people.")
 
@@ -161,18 +157,18 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
     d = {}
     settings = database.settings
 
-    if get_value(changes, 'locked') is None:
+    if changes.get_value_as_single('locked') is None:
         d['locked'] = False
 
-    if get_value(changes, 'loginShell') is None:
+    if changes.get_value_as_single('loginShell') is None:
         d['loginShell'] = '/bin/bash'
 
     changes = changes.merge(d)
 
     d = {}
     if 'uid' in changes:
-        uid = get_value(changes, 'uid')
-        home_directory = get_value(changes, 'homeDirectory')
+        uid = changes.get_value_as_single('uid')
+        home_directory = changes.get_value_as_single('homeDirectory')
 
         if uid is not None:
             spec = settings.get('HOME_DIRECTORY', "/home/{uid}s")
@@ -180,8 +176,8 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
                 d['homeDirectory'] = spec.format(uid=uid)
 
     if 'locked' in changes or 'loginShell' in changes:
-        locked = get_value(changes, 'locked')
-        login_shell = get_value(changes, 'loginShell')
+        locked = changes.get_value_as_single('locked')
+        login_shell = changes.get_value_as_single('loginShell')
 
         if locked is None:
             pass
@@ -195,7 +191,7 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
     fields = ['givenName', 'sn', 'o']
     if any(name in changes for name in fields):
         values = {
-            name: get_value(changes, name)
+            name: changes.get_value_as_single(name)
             for name in fields
         }
 
@@ -204,7 +200,7 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
             d['gecos'] = spec.format(**values)
 
     if 'primary_group' in changes:
-        group = get_value(changes, 'primary_group')
+        group = changes.get_value_as_single('primary_group')
         assert group.get_as_single('gidNumber') is not None
         d['gidNumber'] = group.get_as_single('gidNumber')
 
@@ -266,13 +262,13 @@ def save_group(changes: Changeset) -> Changeset:
     d = {}
 
     if 'cn' in changes:
-        cn = get_value(changes, 'cn')
-        description = get_value(changes, 'description')
+        cn = changes.get_value_as_single('cn')
+        description = changes.get_value_as_single('description')
         if description is None:
             d['description'] = cn
 
     if 'members' in changes:
-        members = get_value(changes, 'members')
+        members = changes.get_value_as_list('members')
         d['memberUid'] = [v.get_as_single('uid') for v in members]
 
     return changes.merge(d)
@@ -280,7 +276,7 @@ def save_group(changes: Changeset) -> Changeset:
 
 def add_group_member(changes: Changeset, member: LdapObject) -> Changeset:
     add_uid = member.get_as_single('uid')
-    member_uid = get_value(changes, 'memberUid')
+    member_uid = changes.get_value_as_list('memberUid')
     if add_uid not in member_uid:
         changes = changes.force_add('memberUid', [add_uid])
     return changes
@@ -288,7 +284,7 @@ def add_group_member(changes: Changeset, member: LdapObject) -> Changeset:
 
 def remove_group_member(changes: Changeset, member: LdapObject) -> Changeset:
     rm_uid = member.get_as_single('uid')
-    member_uid = get_value(changes, 'memberUid')
+    member_uid = changes.get_value_as_list('memberUid')
     if rm_uid in member_uid:
         changes = changes.force_delete('memberUid', [rm_uid])
     return changes
@@ -314,19 +310,19 @@ def load_pwdpolicy(python_data: LdapObject) -> LdapObject:
 def save_pwdpolicy(changes: Changeset) -> Changeset:
     d = {}
 
-    if get_value(changes, 'locked') is None:
+    if changes.get_value_as_single('locked') is None:
         d['locked'] = False
 
     changes = changes.merge(d)
 
     d = {}
 
-    pwd_attribute = get_value(changes, 'pwdAttribute')
+    pwd_attribute = changes.get_value_as_single('pwdAttribute')
     if pwd_attribute is None:
         d['pwdAttribute'] = 'userPassword'
 
     if 'locked' in changes:
-        locked = get_value(changes, 'locked')
+        locked = changes.get_value_as_single('locked')
         if locked:
             d['pwdAccountLockedTime'] = ['000001010000Z']
         else:
@@ -362,7 +358,7 @@ def load_password_object(python_data: LdapObject) -> LdapObject:
 def save_password_object(changes: Changeset) -> Changeset:
     d = {}
 
-    if get_value(changes, 'locked') is None:
+    if changes.get_value_as_single('locked') is None:
         d['locked'] = False
 
     changes = changes.merge(d)
@@ -370,7 +366,7 @@ def save_password_object(changes: Changeset) -> Changeset:
     d = {}
 
     if 'locked' in changes:
-        locked = get_value(changes, 'locked')
+        locked = changes.get_value_as_single('locked')
         if locked:
             d['nsAccountLock'] = "TRUE"
         else:
@@ -399,8 +395,8 @@ def save_shibboleth(changes: Changeset, database: Database) -> Changeset:
     settings = database.settings
 
     if 'uid' in changes:
-        uid = get_value(changes, 'uid')
-        token = get_value(changes, 'auEduPersonSharedToken')
+        uid = changes.get_value_as_single('uid')
+        token = changes.get_value_as_single('auEduPersonSharedToken')
         if token is None:
             entity_id = settings['SHIBBOLETH_URL']
             salt = settings['SHIBBOLETH_SALT']
@@ -408,7 +404,7 @@ def save_shibboleth(changes: Changeset, database: Database) -> Changeset:
             d['auEduPersonSharedToken'] = token
 
     if 'locked' in changes:
-        locked = get_value(changes, 'locked')
+        locked = changes.get_value_as_single('locked')
         if locked:
             d['eduPersonAffiliation'] = 'affiliate'
         else:

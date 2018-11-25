@@ -83,6 +83,7 @@ def _python_to_list(value: Any) -> NotLoadedListType:
 
 
 def _list_to_python(field: tldap.fields.Field, value: NotLoadedListType) -> Any:
+    assert not field.is_list
     assert isinstance(value, (list, NotLoadedList))
 
     if not field.is_list:

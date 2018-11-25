@@ -19,7 +19,6 @@
 
 from tldap import Q
 from tldap.database import Changeset, LdapObjectClass, get_one, Database
-from tldap.database.helpers import get_value
 from tldap.django.models import Counters
 from tldap.exceptions import ObjectDoesNotExist
 
@@ -38,7 +37,7 @@ def save_account(changes: Changeset, table: LdapObjectClass, database: Database)
     d = {}
     settings = database.settings
 
-    uid_number = get_value(changes, 'uidNumber')
+    uid_number = changes.get_value_as_single('uidNumber')
     if uid_number is None:
         scheme = settings['NUMBER_SCHEME']
         first = settings.get('UID_FIRST', 10000)
@@ -56,7 +55,7 @@ def save_group(changes: Changeset, table: LdapObjectClass, database: Database) -
     d = {}
     settings = database.settings
 
-    gid_number = get_value(changes, 'gidNumber')
+    gid_number = changes.get_value_as_single('gidNumber')
     if gid_number is None:
         scheme = settings['NUMBER_SCHEME']
         first = settings.get('GID_FIRST', 10000)

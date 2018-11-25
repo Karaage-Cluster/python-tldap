@@ -54,10 +54,7 @@ class SearchMock:
         results = []
         for search, obj in self.results:
             if search in filterstr:
-                obj_values = {
-                    key: obj.get_as_single(key)
-                    for key in obj.keys()
-                }
+                obj_values = obj.to_dict()
                 results.append(
                     (obj['dn'], get_db_values(obj_values, type(obj)))
                 )
@@ -209,6 +206,16 @@ def get_db_values(updates, table: tldap.database.LdapObjectClass):
     result = {}
 
     for key, value in updates.items():
+        field = table.get_fields()[key]
+
+        if isinstance(value, list) and not field.is_list:
+            if len(value) == 1:
+                value = value[0]
+            elif len(value) == 0:
+                value = None
+            else:
+                assert False, value
+
         if key == "dn":
             pass
         elif key == "password":
