@@ -26,7 +26,7 @@ def step_create_group(ldap, name):
 def step_modify_group(ldap, name):
     """ Test if we can modify a group. """
     group = tldap.database.get_one(Group, Q(cn=name))
-    changes = tldap.database.get_changes(group, {'gidNumber': 11})
+    changes = tldap.database.changeset(group, {'gidNumber': 11})
     tldap.database.save(changes)
     group = tldap.database.get_one(Group, Q(cn=name))
     print("modify", group['cn'])

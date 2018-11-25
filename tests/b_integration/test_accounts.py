@@ -55,7 +55,7 @@ def step_create_account(ldap, name):
 def step_modify_account(ldap, name):
     """ Test if we can modify a account. """
     account = tldap.database.get_one(Account, Q(uid=name))
-    changes = tldap.database.get_changes(account, {
+    changes = tldap.database.changeset(account, {
         'sn': "Tux",
         'givenName': "Super",
     })
@@ -246,7 +246,7 @@ def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
     assert ldap.check_password(account.get_as_single('dn'), 'silly') is True
 
     # Lock account.
-    changes = tldap.database.get_changes(account, {'locked': True})
+    changes = tldap.database.changeset(account, {'locked': True})
     account = tldap.database.save(changes)
 
     # Check account is locked.
@@ -261,7 +261,7 @@ def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
     assert ldap.check_password(account.get_as_single('dn'), 'silly') is False
 
     # Change the login shell
-    changes = tldap.database.get_changes(account, {'loginShell': '/bin/zsh'})
+    changes = tldap.database.changeset(account, {'loginShell': '/bin/zsh'})
     account = tldap.database.save(changes)
 
     # Check the account is still locked.
@@ -276,7 +276,7 @@ def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
     assert ldap.check_password(account.get_as_single('dn'), 'silly') is False
 
     # Unlock the account.
-    changes = tldap.database.get_changes(account, {'locked': False})
+    changes = tldap.database.changeset(account, {'locked': False})
     account = tldap.database.save(changes)
 
     # Check the account is now unlocked.
@@ -299,7 +299,7 @@ def test_lock_account_openldap(account, ldap: tldap.backend.base.LdapBase):
     assert ldap.check_password(account.get_as_single('dn'), 'silly') is True
 
     # Lock account.
-    changes = tldap.database.get_changes(account, {'locked': True})
+    changes = tldap.database.changeset(account, {'locked': True})
     account = tldap.database.save(changes)
 
     # Check account is locked.
@@ -314,7 +314,7 @@ def test_lock_account_openldap(account, ldap: tldap.backend.base.LdapBase):
     assert ldap.check_password(account.get_as_single('dn'), 'silly') is False
 
     # Unlock the account.
-    changes = tldap.database.get_changes(account, {'locked': False})
+    changes = tldap.database.changeset(account, {'locked': False})
     account = tldap.database.save(changes)
 
     # Check the account is now unlocked.

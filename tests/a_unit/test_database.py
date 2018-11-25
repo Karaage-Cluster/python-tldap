@@ -483,7 +483,7 @@ class TestModelAccount:
         c = mock_ldap
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'title': "Superior"})
+        changes = tldap.database.changeset(account1, {'title': "Superior"})
         account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.
@@ -510,7 +510,7 @@ class TestModelAccount:
     def test_replace_dn(self, account1):
         """ Test replace LDAP attribute. """
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org"})
+        changes = tldap.database.changeset(account1, {'dn': "uid=penguin,ou=People,dc=python-ldap,dc=org"})
         with pytest.raises(RuntimeError):
             tldap.database.save(changes)
 
@@ -519,7 +519,7 @@ class TestModelAccount:
         c = mock_ldap
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'sn': "Closed"})
+        changes = tldap.database.changeset(account1, {'sn': "Closed"})
         changes = changes.merge({'sn': "Gates"})
         account1 = tldap.database.save(changes)
 
@@ -556,16 +556,16 @@ class TestModelAccount:
         """ Test replace LDAP attribute. """
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'sn': "Torvalds"})
+        changes = tldap.database.changeset(account1, {'sn': "Torvalds"})
         assert 'sn' not in changes
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {})
+        changes = tldap.database.changeset(account1, {})
         changes = changes.set('sn', "Torvalds")
         assert 'sn' not in changes
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {})
+        changes = tldap.database.changeset(account1, {})
         changes = changes.merge({'sn': "Torvalds"})
         assert 'sn' not in changes
 
@@ -573,7 +573,7 @@ class TestModelAccount:
         """ Test replace LDAP attribute with invalid value. """
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'gidNumber': "Torvalds"})
+        changes = tldap.database.changeset(account1, {'gidNumber': "Torvalds"})
 
         assert not changes.is_valid
         assert changes.errors == ["gidNumber: should be a integer."]
@@ -587,7 +587,7 @@ class TestModelAccount:
         c = mock_ldap
 
         # Replace the attribute.
-        changes = tldap.database.get_changes(account1, {'telephoneNumber': None})
+        changes = tldap.database.changeset(account1, {'telephoneNumber': None})
         account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.
@@ -621,7 +621,7 @@ class TestModelGroup:
         c = mock_ldap
 
         # Add person to group.
-        changes = tldap.database.get_changes(account1, {'primary_group': group2})
+        changes = tldap.database.changeset(account1, {'primary_group': group2})
         tldap.database.save(changes)
 
         # Assert that we made the correct calls to the backend.
@@ -655,7 +655,7 @@ class TestModelGroup:
         c.search = SearchMock()
 
         # Add person to group.
-        changes = tldap.database.get_changes(group1, {})
+        changes = tldap.database.changeset(group1, {})
         changes = tests.database.Group.add_member(changes, account1)
         tldap.database.save(changes)
 
@@ -675,7 +675,7 @@ class TestModelGroup:
         c.search = SearchMock()
 
         # Add person to group.
-        changes = tldap.database.get_changes(group2, {})
+        changes = tldap.database.changeset(group2, {})
         changes = tests.database.Group.remove_member(changes, account1)
         tldap.database.save(changes)
 

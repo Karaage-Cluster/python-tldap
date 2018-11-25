@@ -363,7 +363,7 @@ class NotLoadedList(NotLoaded):
         return self._load_list(self._table, self._key, self._value, database)
 
 
-def get_changes(python_data: LdapObject, d: dict) -> Changeset:
+def changeset(python_data: LdapObject, d: dict) -> Changeset:
     """ Generate changes object for ldap object. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
@@ -514,7 +514,7 @@ def insert(python_data: LdapObject, database: Optional[Database] = None) -> Ldap
 
     # ADD NEW ENTRY
     empty_data = table()
-    changes = get_changes(empty_data, python_data.to_dict())
+    changes = changeset(empty_data, python_data.to_dict())
 
     return save(changes, database)
 
