@@ -19,12 +19,12 @@
 import base64
 import datetime
 from hashlib import sha1
-from typing import List
+from typing import List, Dict
 
 import tldap.exceptions
 import tldap.fields
 from tldap.database import LdapObject, Changeset, NotLoadedObject, NotLoadedList, \
-    NotLoadedListToList, LdapObjectClass, Database
+    LdapObjectClass, Database
 from tldap.dn import str2dn, dn2str
 import tldap.ldap_passwd as ldap_passwd
 
@@ -61,43 +61,39 @@ def rdn_to_dn(changes: Changeset, name: str, base_dn: str) -> Changeset:
 
 
 def set_object_class(changes: Changeset, object_class: List[str]) -> Changeset:
-    if get_value(changes, 'objectClass') is None:
+    if len(get_value(changes, 'objectClass')) == 0:
         changes = changes.set('objectClass', object_class)
     return changes
 
 
 def get_value(changes: Changeset, key: str) -> any:
-    if key in changes:
-        return changes[key]
-    if key in changes._src:
-        return changes._src[key]
-    return None
+    return changes.get_value(key)
 
 
 # PERSON
 
-def get_fields_person() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.CharField('cn', required=True),
-        tldap.fields.CharField('displayName', required=True),
-        tldap.fields.CharField('givenName'),
-        tldap.fields.CharField('mail'),
-        tldap.fields.CharField('sn', required=True),
-        tldap.fields.CharField('telephoneNumber'),
-        tldap.fields.CharField('title'),
-        tldap.fields.CharField('uid'),
-        tldap.fields.CharField('userPassword'),
-        tldap.fields.FakeField('password'),
-        tldap.fields.FakeField('locked'),
-        tldap.fields.FakeField('groups'),
-    ]
+def get_fields_person() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'cn': tldap.fields.CharField(required=True),
+        'displayName': tldap.fields.CharField(required=True),
+        'givenName': tldap.fields.CharField(),
+        'mail': tldap.fields.CharField(),
+        'sn': tldap.fields.CharField(required=True),
+        'telephoneNumber': tldap.fields.CharField(),
+        'title': tldap.fields.CharField(),
+        'uid': tldap.fields.CharField(),
+        'userPassword': tldap.fields.CharField(),
+        'password': tldap.fields.FakeField(),
+        'locked': tldap.fields.FakeField(),
+        'groups': tldap.fields.FakeField(max_instances=None),
+    }
     return fields
 
 
 def load_person(python_data: LdapObject, group_table: LdapObjectClass) -> LdapObject:
     python_data = python_data.merge({
         'password': None,
-        'groups': NotLoadedList(table=group_table, key="memberUid", value=python_data["uid"])
+        'groups': NotLoadedList(table=group_table, key="memberUid", value=python_data.get_as_single("uid"))
     })
     return python_data
 
@@ -114,7 +110,8 @@ def save_person(changes: Changeset) -> Changeset:
             d['cn'] = d['displayName']
 
     if 'password' in changes:
-        d["userPassword"] = ldap_passwd.encode_password(changes['password'])
+        password = get_value(changes, 'password')
+        d["userPassword"] = ldap_passwd.encode_password(password)
 
     if 'groups' in changes:
         groups = get_value(changes, 'groups')
@@ -124,36 +121,37 @@ def save_person(changes: Changeset) -> Changeset:
     return changes.merge(d)
 
 
-def get_fields_common() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.FakeField('dn', required=True, max_instances=1),
-        tldap.fields.CharField('objectClass', required=True, max_instances=None),
-    ]
+def get_fields_common() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'dn': tldap.fields.FakeField(required=True, max_instances=1),
+        'objectClass': tldap.fields.CharField(required=True, max_instances=None),
+    }
     return fields
 
 
 # ACCOUNT
 
-def get_fields_account() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.CharField('gecos'),
-        tldap.fields.CharField('loginShell'),
-        tldap.fields.CharField('homeDirectory'),
-        tldap.fields.CharField('o'),
-        tldap.fields.IntegerField('gidNumber'),
-        tldap.fields.IntegerField('uidNumber'),
-        tldap.fields.FakeField('primary_group'),
-    ]
+def get_fields_account() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'gecos': tldap.fields.CharField(),
+        'loginShell': tldap.fields.CharField(),
+        'homeDirectory': tldap.fields.CharField(),
+        'o': tldap.fields.CharField(),
+        'gidNumber': tldap.fields.IntegerField(),
+        'uidNumber': tldap.fields.IntegerField(),
+        'primary_group': tldap.fields.FakeField(),
+    }
     return fields
 
 
 def load_account(python_data: LdapObject, group_table: LdapObjectClass) -> LdapObject:
     d = {
-        'locked': python_data['loginShell'].startswith("/locked"),
+        'locked': python_data.get_as_single('loginShell').startswith("/locked"),
     }
 
     if 'gidNumber' in python_data:
-        d['primary_group'] = NotLoadedObject(table=group_table, key='gidNumber', value=python_data['gidNumber'])
+        d['primary_group'] = NotLoadedObject(
+            table=group_table, key='gidNumber', value=python_data.get_as_single('gidNumber'))
 
     python_data = python_data.merge(d)
     return python_data
@@ -207,8 +205,8 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
 
     if 'primary_group' in changes:
         group = get_value(changes, 'primary_group')
-        assert group['gidNumber'] is not None
-        d['gidNumber'] = group['gidNumber']
+        assert group.get_as_single('gidNumber') is not None
+        d['gidNumber'] = group.get_as_single('gidNumber')
 
     changes = changes.merge(d)
     return changes
@@ -216,10 +214,10 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
 
 # SHADOW
 
-def get_fields_shadow() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.DaysSinceEpochField('shadowLastChange')
-    ]
+def get_fields_shadow() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'shadowLastChange': tldap.fields.DaysSinceEpochField()
+    }
     return fields
 
 
@@ -237,14 +235,14 @@ def save_shadow(changes: Changeset) -> Changeset:
 
 # GROUP
 
-def get_fields_group() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.CharField('cn'),
-        tldap.fields.CharField('description'),
-        tldap.fields.IntegerField('gidNumber'),
-        tldap.fields.CharField('memberUid', max_instances=None),
-        tldap.fields.FakeField('members'),
-    ]
+def get_fields_group() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'cn': tldap.fields.CharField(),
+        'description': tldap.fields.CharField(),
+        'gidNumber': tldap.fields.IntegerField(),
+        'memberUid': tldap.fields.CharField(max_instances=None),
+        'members': tldap.fields.FakeField(max_instances=None),
+    }
     return fields
 
 
@@ -252,7 +250,10 @@ def load_group(python_data: LdapObject, account_table: LdapObjectClass) -> LdapO
     d = {}
 
     if 'gidNumber' in python_data:
-        d['members'] = NotLoadedListToList(table=account_table, key='uid', value=python_data['memberUid'])
+        d['members'] = [
+            NotLoadedObject(table=account_table, key='uid', value=uid)
+            for uid in python_data.get_as_list('memberUid')
+        ]
 
     return python_data.merge(d)
 
@@ -272,46 +273,40 @@ def save_group(changes: Changeset) -> Changeset:
 
     if 'members' in changes:
         members = get_value(changes, 'members')
-        d['memberUid'] = [v['uid'] for v in members]
+        d['memberUid'] = [v.get_as_single('uid') for v in members]
 
     return changes.merge(d)
 
 
 def add_group_member(changes: Changeset, member: LdapObject) -> Changeset:
-    add_uid = member['uid']
+    add_uid = member.get_as_single('uid')
     member_uid = get_value(changes, 'memberUid')
     if add_uid not in member_uid:
-        # Do not use: member_uid += [add_uid]
-        # It will mutate member_uid.
-        member_uid = member_uid + [add_uid]
-    changes = changes.merge({
-        'memberUid': member_uid
-    })
+        changes = changes.force_add('memberUid', [add_uid])
     return changes
 
 
 def remove_group_member(changes: Changeset, member: LdapObject) -> Changeset:
-    rm_uid = member['uid']
+    rm_uid = member.get_as_single('uid')
     member_uid = get_value(changes, 'memberUid')
-    changes = changes.merge({
-        'memberUid': [uid for uid in member_uid if uid != rm_uid]
-    })
+    if rm_uid in member_uid:
+        changes = changes.force_delete('memberUid', [rm_uid])
     return changes
 
 
 # PWDPOLICY
 
-def get_fields_pwdpolicy() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.CharField('pwdAttribute'),
-        tldap.fields.CharField('pwdAccountLockedTime'),
-    ]
+def get_fields_pwdpolicy() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'pwdAttribute': tldap.fields.CharField(),
+        'pwdAccountLockedTime': tldap.fields.CharField(max_instances=None),
+    }
     return fields
 
 
 def load_pwdpolicy(python_data: LdapObject) -> LdapObject:
     python_data = python_data.merge({
-        'locked': python_data['pwdAccountLockedTime'] is not None,
+        'locked': len(python_data['pwdAccountLockedTime']) > 0,
     })
     return python_data
 
@@ -333,9 +328,9 @@ def save_pwdpolicy(changes: Changeset) -> Changeset:
     if 'locked' in changes:
         locked = get_value(changes, 'locked')
         if locked:
-            d['pwdAccountLockedTime'] = '000001010000Z'
+            d['pwdAccountLockedTime'] = ['000001010000Z']
         else:
-            d['pwdAccountLockedTime'] = None
+            d['pwdAccountLockedTime'] = []
 
     changes = changes.merge(d)
     return changes
@@ -343,16 +338,16 @@ def save_pwdpolicy(changes: Changeset) -> Changeset:
 
 # PASSWORD_OBJECT - ds389
 
-def get_fields_password_object() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.CharField('nsAccountLock'),
-    ]
+def get_fields_password_object() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'nsAccountLock': tldap.fields.CharField(),
+    }
     return fields
 
 
 def load_password_object(python_data: LdapObject) -> LdapObject:
     def is_locked():
-        account_lock = python_data['nsAccountLock']
+        account_lock = python_data.get_as_single('nsAccountLock')
         if account_lock is None:
             return False
         else:
@@ -387,11 +382,11 @@ def save_password_object(changes: Changeset) -> Changeset:
 
 # SHIBBOLETH
 
-def get_fields_shibboleth() -> List[tldap.fields.Field]:
-    fields = [
-        tldap.fields.CharField('auEduPersonSharedToken'),
-        tldap.fields.CharField('eduPersonAffiliation'),
-    ]
+def get_fields_shibboleth() -> Dict[str, tldap.fields.Field]:
+    fields = {
+        'auEduPersonSharedToken': tldap.fields.CharField(),
+        'eduPersonAffiliation': tldap.fields.CharField(),
+    }
     return fields
 
 

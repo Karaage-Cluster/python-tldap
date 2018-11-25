@@ -31,6 +31,9 @@ from tldap.exceptions import ObjectAlreadyExists, ObjectDoesNotExist, MultipleOb
 import tldap.query
 
 
+NotLoadedListType = List[Any] or 'NotLoadedList'
+
+
 class SearchOptions:
     """ Application specific search options. """
     def __init__(self, base_dn: str, object_class: Set[str], pk_field: str) -> None:
@@ -66,6 +69,36 @@ def get_database(database: Optional[Database]) -> Database:
         return database
 
 
+def _python_to_list(value: Any) -> NotLoadedListType:
+    if isinstance(value, NotLoadedList):
+        return value
+    elif isinstance(value, list):
+        return value
+    elif isinstance(value, set):
+        return list(value)
+    elif value is None:
+        return []
+    else:
+        return [value]
+
+
+def _list_to_python(field: tldap.fields.Field, value: NotLoadedListType) -> Any:
+    assert isinstance(value, (list, NotLoadedList))
+
+    if not field.is_list:
+        if isinstance(value, NotLoadedList):
+            new_value = value
+        elif len(value) == 0:
+            new_value = None
+        elif len(value) == 1:
+            new_value = value[0]
+        else:
+            raise RuntimeError("Non-list value has more then 1 value.")
+    else:
+        new_value = value
+    return new_value
+
+
 LdapObjectEntity = TypeVar('LdapObjectEntity', bound='LdapObject')
 LdapObjectClass = Type['LdapObject']
 
@@ -74,11 +107,11 @@ class LdapObject(ImmutableDict):
     """ A high level python representation of a LDAP object. """
 
     def __init__(self, d: Optional[dict] = None) -> None:
-        fields = self.get_fields()
-        field_names = set(f.name for f in fields)
+        self._fields = self.get_fields()
+        field_names = set(self._fields.keys())
 
-        python_data = {
-            field_name: None
+        python_data: Dict[str, NotLoadedListType] = {
+            field_name: []
             for field_name in field_names
         }
         if d is not None:
@@ -87,7 +120,7 @@ class LdapObject(ImmutableDict):
         super().__init__(field_names, python_data)
 
     @classmethod
-    def get_fields(cls) -> List[tldap.fields.Field]:
+    def get_fields(cls) -> Dict[str, tldap.fields.Field]:
         raise NotImplementedError()
 
     @classmethod
@@ -102,8 +135,28 @@ class LdapObject(ImmutableDict):
     def on_save(cls, changes: 'Changeset', database: Database) -> 'Changeset':
         raise NotImplementedError()
 
+    def _set(self, key: str, value: NotLoadedListType) -> None:
+        value = _python_to_list(value)
+        return super()._set(key, value)
+
     def __copy__(self: LdapObjectEntity) -> LdapObjectEntity:
         return self.__class__(self._dict)
+
+    # def __getitem__(self, key: str) -> Any:
+    #     raise Moew()
+    #     value = self._dict[key]
+    #     key = self.fix_key(key)
+    #     field = self._fields[key]
+    #     return _list_to_python(field, value)
+
+    def get_as_single(self, key: str) -> Any:
+        value = self._dict[key]
+        key = self.fix_key(key)
+        field = self._fields[key]
+        return _list_to_python(field, value)
+
+    def get_as_list(self, key: str) -> NotLoadedListType:
+        return self._dict[key]
 
 
 ChangesetEntity = TypeVar('ChangesetEntity', bound='Changeset')
@@ -115,51 +168,144 @@ Operation = ldap3.MODIFY_ADD or ldap3.MODIFY_REPLACE or ldap3.MODIFY_DELETE
 class Changeset(ImmutableDict):
     """ Represents a set of changes to an LdapObject. """
 
-    def __init__(self, fields: List[tldap.fields.Field], src: LdapObject, d: Optional[dict] = None) -> None:
+    def __init__(self, fields: Dict[str, tldap.fields.Field], src: LdapObject, d: Optional[dict] = None) -> None:
         self._fields = fields
         self._src = src
-        self._changes: Dict[str, List[Tuple[Operation, Any]]] = {}
-        field_names = set(f.name for f in fields)
+        self._changes: Dict[str, List[Tuple[Operation, List[Any]]]] = {}
+        self._errors: List[str] = []
+        field_names = set(fields.keys())
         super().__init__(field_names, d)
 
     def __copy__(self: ChangesetEntity) -> ChangesetEntity:
-        return self.__class__(self._fields, self._src, self._dict)
+        copy = self.__class__(self._fields, self._src, self._dict)
+        copy._changes = self._changes
+        return copy
+
+    def get_value(self, key: str) -> any:
+        key = self.fix_key(key)
+        if key in self._dict:
+            field = self._fields[key]
+            return _list_to_python(field, self._dict[key])
+        else:
+            return self._src.get_as_single(key)
+
+    def get_value_as_list(self, key: str) -> List[Any]:
+        if key in self._dict:
+            return self._dict[key]
+        else:
+            return self._src.get_as_list(key)
 
     @property
-    def changes(self) -> Dict[str, List[Tuple[Operation, Any]]]:
+    def changes(self) -> Dict[str, List[Tuple[Operation, List[Any]]]]:
         return self._changes
 
-    def _set(self, key: str, value: any) -> None:
+    @staticmethod
+    def _python_to_list(value: Any) -> List[Any]:
+        value_list = _python_to_list(value)
+        if isinstance(value_list, NotLoaded):
+            raise RuntimeError("Unexpected NotLoaded value in Changeset.")
+        for value in value_list:
+            if isinstance(value, NotLoaded):
+                raise RuntimeError("Unexpected NotLoaded value in Changeset.")
+        return value_list
+
+    def _set(self, key: str, value: Any) -> None:
+        old_value = self.get_value_as_list(key)
+        value_list = self._python_to_list(value)
+
+        if value_list != old_value:
+
+            operation: Operation = ldap3.MODIFY_REPLACE
+            if value is None or value == []:
+                operation = ldap3.MODIFY_DELETE
+
+            self._add_mod(key, operation, value_list, overwrite=True)
+            self._replay_mod(key, operation, value_list)
+        return
+
+    def force_add(self, key: str, value: Any) -> 'Changeset':
+        value_list = self._python_to_list(value)
+        clone = self.__copy__()
+        clone._add_mod(key, ldap3.MODIFY_ADD, value_list)
+        clone._replay_mod(key, ldap3.MODIFY_ADD, value_list)
+        return clone
+
+    def force_replace(self, key: str, value: Any) -> 'Changeset':
+        value_list = self._python_to_list(value)
+        clone = self.__copy__()
+        clone._add_mod(key, ldap3.MODIFY_REPLACE, value_list)
+        clone._replay_mod(key, ldap3.MODIFY_REPLACE, value_list)
+        return clone
+
+    def force_delete(self, key: str, value: Any) -> 'Changeset':
+        value_list = self._python_to_list(value)
+        clone = self.__copy__()
+        clone._add_mod(key, ldap3.MODIFY_DELETE, value_list)
+        clone._replay_mod(key, ldap3.MODIFY_DELETE, value_list)
+        return clone
+
+    def _add_mod(self, key: str, operation: Operation, new_value_list: List[Any], overwrite=False) -> None:
+        if any(isinstance(value, list) for value in new_value_list):
+            raise RuntimeError("Got list inside a list.")
+
         key = self.fix_key(key)
 
-        previous_value = self._src[key]
-        if value != previous_value:
-            self._dict[key] = value
-        elif key in self._dict:
-            del self._dict[key]
-
-        operation: Operation = ldap3.MODIFY_REPLACE
-        if value is None or value == []:
-            operation = ldap3.MODIFY_DELETE
-
         if key in self._changes:
-            this_list = self._changes[key]
-            (this_operation, _) = this_list[-1]
-            if operation == ldap3.MODIFY_REPLACE and this_operation == ldap3.MODIFY_REPLACE:
-                new_list = this_list[:-1]
+            if overwrite:
+                new_list = []
             else:
-                new_list = this_list
+                new_list = self._changes[key]
         else:
             new_list = []
 
-        new_list = new_list + [
-            (operation, value)
-        ]
+        new_list = new_list + [(operation, new_value_list)]
+
         self._changes = {
             **self._changes,
             key: new_list
         }
-        return
+
+    def _replay_mod(self, key: str, operation: Operation, new_value_list: List[Any]):
+        if any(isinstance(value, list) for value in new_value_list):
+            raise RuntimeError("Got list inside a list.")
+
+        key = self.fix_key(key)
+
+        old_value_list = self.get_value_as_list(key)
+
+        if operation == ldap3.MODIFY_ADD:
+            assert isinstance(new_value_list, list)
+            for value in new_value_list:
+                if value not in old_value_list:
+                    old_value_list.append(value)
+            if len(old_value_list) == 0:
+                raise RuntimeError("Can't add 0 items.")
+
+        elif operation == ldap3.MODIFY_REPLACE:
+            old_value_list = new_value_list
+
+        elif operation == ldap3.MODIFY_DELETE:
+            if len(new_value_list) == 0:
+                old_value_list = []
+            else:
+                for value in new_value_list:
+                    old_value_list.remove(value)
+
+        self._dict[key] = old_value_list
+
+        field = self._fields[key]
+        try:
+            field.validate(old_value_list)
+        except tldap.exceptions.ValidationError as e:
+            self._errors.append(f"{key}: {e}.")
+
+    @property
+    def is_valid(self) -> bool:
+        return len(self._errors) == 0
+
+    @property
+    def errors(self) -> List[str]:
+        return self._errors
 
     @property
     def src(self) -> LdapObject:
@@ -196,7 +342,7 @@ class NotLoadedObject(NotLoaded):
         self._value = value
 
     def __repr__(self):
-        return f"<NotLoaded {self._table} {self._key}={self._value}>"
+        return f"<NotLoadedObject {self._table} {self._key}={self._value}>"
 
     def load(self, database: Optional[Database] = None) -> LdapObject:
         return self._load_one(self._table, self._key, self._value)
@@ -217,31 +363,10 @@ class NotLoadedList(NotLoaded):
         return self._load_list(self._table, self._key, self._value, database)
 
 
-class NotLoadedListToList(NotLoaded):
-    """ Represents a list of objects that needs to be loaded via a list of key values. """
-
-    def __init__(self, *, table: LdapObjectClass, key: str, value: List[str]):
-        self._table = table
-        self._key = key
-        self._value = value
-
-    def __repr__(self):
-        return f"<NotLoadedListToList {self._table} {self._key}={self._value}>"
-
-    def load(self, database: Optional[Database] = None) -> List[LdapObject]:
-        result = [
-            self._load_one(self._table, self._key, value, database)
-            for value in self._value
-        ]
-        result = [value for value in result if value is not None]
-        return result
-
-
 def get_changes(python_data: LdapObject, d: dict) -> Changeset:
     """ Generate changes object for ldap object. """
     table: LdapObjectClass = type(python_data)
     fields = table.get_fields()
-
     changes = Changeset(fields, src=python_data, d=d)
     return changes
 
@@ -251,8 +376,8 @@ def _db_to_python(db_data: dict, table: LdapObjectClass, dn: str) -> LdapObject:
     fields = table.get_fields()
 
     python_data = table({
-        field.name: field.to_python(db_data[field.name])
-        for field in fields
+        name: field.to_python(db_data[name])
+        for name, field in fields.items()
         if field.db_field
     })
     python_data = python_data.merge({
@@ -268,11 +393,11 @@ def _python_to_mod_new(changes: Changeset) -> Dict[str, List[List[bytes]]]:
 
     result: Dict[str, List[List[bytes]]] = {}
 
-    for field in fields:
-        if field.name in changes and field.db_field:
-            value = field.to_db(changes[field.name])
+    for name, field in fields.items():
+        if field.db_field:
+            value = field.to_db(changes.get_value_as_list(name))
             if len(value) > 0:
-                result[field.name] = value
+                result[name] = value
 
     return result
 
@@ -284,7 +409,7 @@ def _python_to_mod_modify(changes: Changeset) -> Dict[str, List[Tuple[Operation,
 
     result: Dict[str, List[Tuple[Operation, List[bytes]]]] = {}
     for key, l in changes.items():
-        field = get_field_by_name(table, key)
+        field = _get_field_by_name(table, key)
 
         if field.db_field:
             new_list = [
@@ -300,7 +425,11 @@ def search(table: LdapObjectClass, query: Optional[Q] = None,
            database: Optional[Database] = None, base_dn: Optional[str] = None) -> Iterator[LdapObject]:
     """ Search for a object of given type in the database. """
     fields = table.get_fields()
-    db_fields = [field for field in fields if field.db_field]
+    db_fields = {
+        name: field
+        for name, field in fields.items()
+        if field.db_field
+    }
 
     database = get_database(database)
     connection = database.connection
@@ -343,14 +472,36 @@ def get_one(table: LdapObjectClass, query: Optional[Q] = None,
 
 def preload(python_data: LdapObject, database: Optional[Database] = None) -> LdapObject:
     """ Preload all NotLoaded fields in LdapObject. """
-    table: LdapObjectClass = type(python_data)
-    fields = table.get_fields()
 
-    changes = {
-        field.name: python_data[field.name].load(database)
-        for field in fields
-        if isinstance(python_data[field.name], NotLoaded)
-    }
+    changes = {}
+
+    # Load objects within lists.
+    def preload_item(value: Any) -> Any:
+        if isinstance(value, NotLoaded):
+            return value.load(database)
+        else:
+            return value
+
+    for name in python_data.keys():
+        value_list = python_data.get_as_list(name)
+
+        # Check for errors.
+        if isinstance(value_list, NotLoadedObject):
+            raise RuntimeError(f"{key}: Unexpected NotLoadedObject outside list.")
+
+        elif isinstance(value_list, NotLoadedList):
+            value_list = value_list.load(database)
+
+        else:
+            if any(isinstance(v, NotLoadedList) for v in value_list):
+                raise RuntimeError(f"{key}: Unexpected NotLoadedList in list.")
+            elif any(isinstance(v, NotLoadedObject) for v in value_list):
+                value_list = [preload_item(value) for value in value_list]
+            else:
+                value_list = None
+
+        if value_list is not None:
+            changes[name] = value_list
 
     return python_data.merge(changes)
 
@@ -372,6 +523,9 @@ def save(changes: Changeset, database: Optional[Database] = None) -> LdapObject:
     """ Save all changes in a LdapChanges. """
     assert isinstance(changes, Changeset)
 
+    if not changes.is_valid:
+        raise RuntimeError(f"Changeset has errors {changes.errors}.")
+
     database = get_database(database)
     connection = database.connection
 
@@ -387,14 +541,15 @@ def save(changes: Changeset, database: Optional[Database] = None) -> LdapObject:
     # provided | None       | use src dn     | modify
     # provided | provided   | error          | error
 
-    if changes.src['dn'] is None and 'dn' not in changes:
+    src_dn = changes.src.get_as_single('dn')
+    if src_dn is None and 'dn' not in changes:
         raise RuntimeError("No DN was given")
-    elif changes.src['dn'] is None and 'dn' in changes:
-        dn = changes['dn']
+    elif src_dn is None and 'dn' in changes:
+        dn = changes.get_value('dn')
         assert dn is not None
         create = True
-    elif changes.src['dn'] is not None and 'dn' not in changes:
-        dn = changes.src['dn']
+    elif src_dn is not None and 'dn' not in changes:
+        dn = src_dn
         assert dn is not None
         create = False
     else:
@@ -428,7 +583,7 @@ def save(changes: Changeset, database: Optional[Database] = None) -> LdapObject:
 
 def delete(python_data: LdapObject, database: Optional[Database] = None) -> None:
     """ Delete a LdapObject from the database. """
-    dn = python_data['dn']
+    dn = python_data.get_as_single('dn')
     assert dn is not None
 
     database = get_database(database)
@@ -437,20 +592,17 @@ def delete(python_data: LdapObject, database: Optional[Database] = None) -> None
     connection.delete(dn)
 
 
-def get_field_by_name(table: LdapObjectClass, name: str) -> tldap.fields.Field:
+def _get_field_by_name(table: LdapObjectClass, name: str) -> tldap.fields.Field:
     """ Lookup a field by its name. """
     fields = table.get_fields()
-    f = [field for field in fields if field.name == name]
-    if len(f) < 0:
-        raise ValueError("Cannot find field %s " % name)
-    return f[0]
+    return fields[name]
 
 
 def rename(python_data: LdapObject, new_base_dn: str = None,
            database: Optional[Database] = None, **kwargs) -> LdapObject:
     """ Move/rename a LdapObject in the database. """
     table = type(python_data)
-    dn = python_data['dn']
+    dn = python_data.get_as_single('dn')
     assert dn is not None
 
     database = get_database(database)
@@ -463,7 +615,7 @@ def rename(python_data: LdapObject, new_base_dn: str = None,
         # work out the new rdn of the object
         split_new_rdn = [[(name, value, 1)]]
 
-        field = get_field_by_name(table, name)
+        field = _get_field_by_name(table, name)
         assert field.db_field
 
         python_data = python_data.merge({

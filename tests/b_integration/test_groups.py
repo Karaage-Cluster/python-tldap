@@ -107,7 +107,7 @@ def test_create(ldap):
     })
 
     group_1 = tldap.database.insert(group_1)
-    assert group_1['gidNumber'] == 10000
+    assert group_1['gidNumber'] == [10000]
 
     group_2 = Group({
         'cn': 'penguins2',
@@ -115,7 +115,7 @@ def test_create(ldap):
     })
 
     group_2 = tldap.database.insert(group_2)
-    assert group_2['gidNumber'] == 10001
+    assert group_2['gidNumber'] == [10001]
 
     group_3 = Group({
         'cn': 'penguins3',
@@ -123,7 +123,7 @@ def test_create(ldap):
     })
 
     group_3 = tldap.database.insert(group_3)
-    assert group_3['gidNumber'] == 10002
+    assert group_3['gidNumber'] == [10002]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -137,7 +137,7 @@ def test_create_with_reset(ldap):
     })
 
     group_1 = tldap.database.insert(group_1)
-    assert group_1['gidNumber'] == 10000
+    assert group_1['gidNumber'] == [10000]
 
     Counters.objects.all().delete()
 
@@ -147,7 +147,7 @@ def test_create_with_reset(ldap):
     })
 
     group_2 = tldap.database.insert(group_2)
-    assert group_2['gidNumber'] == 10001
+    assert group_2['gidNumber'] == [10001]
 
     Counters.objects.all().delete()
 
@@ -157,4 +157,4 @@ def test_create_with_reset(ldap):
     })
 
     group_3 = tldap.database.insert(group_3)
-    assert group_3['gidNumber'] == 10002
+    assert group_3['gidNumber'] == [10002]

@@ -83,5 +83,5 @@ def step_rollback_transaction(ldap):
 @then(parsers.cfparse(
     'we should be able confirm the {attribute} attribute is {value}'))
 def step_confirm_attribute(context, attribute, value):
-    actual_value = context['obj'][attribute]
+    actual_value = context['obj'].get_as_single(attribute)
     assert str(actual_value) == value, attribute

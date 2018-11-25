@@ -57,20 +57,12 @@ class CaseInsensitiveDict:
         return self._dict.__getitem__(key)
 
     def __contains__(self, key: str):
-        try:
-            key = self.fix_key(key)
-        except KeyError:
-            return False
-        else:
-            return self._dict.__contains__(key)
+        key = self.fix_key(key)
+        return self._dict.__contains__(key)
 
     def get(self, key: str, default: any = None):
-        try:
-            key = self.fix_key(key)
-        except KeyError:
-            return default
-        else:
-            return self._dict.get(key, default)
+        key = self.fix_key(key)
+        return self._dict.get(key, default)
 
     def keys(self) -> KeysView[str]:
         return self._dict.keys()
@@ -96,14 +88,18 @@ class ImmutableDict:
             for key, value in d.items():
                 self._set(key, value)
 
-    def __getitem__(self, key: str):
-        return self._dict.__getitem__(key)
-
     def fix_key(self, key: str) -> str:
         return self._dict.fix_key(key)
 
+    def __getitem__(self, key: str):
+        return self._dict.__getitem__(key)
+
     def get(self, key: str, default: any = None):
-        return self._dict.get(key, default)
+        key = self.fix_key(key)
+        try:
+            return self._dict.get(key, default)
+        except KeyError:
+            return default
 
     def __contains__(self, key: str):
         return self._dict.__contains__(key)

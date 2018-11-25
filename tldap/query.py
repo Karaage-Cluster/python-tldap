@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
-from typing import List, Set, Iterator, Tuple, Optional
+from typing import Set, Iterator, Tuple, Optional, Dict
 
 import ldap3
 from ldap3.core.exceptions import LDAPNoSuchObjectResult
@@ -40,7 +40,7 @@ def get_filter_item(name: str, operation: bytes, value: bytes) -> bytes:
         raise ValueError("Unknown search operation %s" % operation)
 
 
-def get_filter(q: tldap.Q, fields: List[tldap.fields.Field], pk: str):
+def get_filter(q: tldap.Q, fields: Dict[str, tldap.fields.Field], pk: str):
     """
     Translate the Q tree into a filter string to search for, or None
     if no results possible.
@@ -93,31 +93,23 @@ def get_filter(q: tldap.Q, fields: List[tldap.fields.Field], pk: str):
                 continue
 
             # try to find field associated with name
-            f = [field for field in fields if field.name == name]
-            if len(f) < 0:
-                raise ValueError(
-                    "Cannot do a search on %s "
-                    "as we cannot find the field" % name)
+            field = fields[name]
+            if isinstance(value, list) and len(value) == 1:
+                value = value[0]
+                assert isinstance(value, str)
+
+            # process as list
+            if isinstance(value, list):
+                s = []
+                for v in value:
+                    v = field.value_to_filter(v)
+                    s.append(get_filter_item(name, operation, v))
+                search.append(b"(&".join(search) + b")")
+
+            # or process just the single value
             else:
-                # field was found
-                # try to turn list into single value
-                field = f[0]
-                if isinstance(value, list) and len(value) == 1:
-                    value = value[0]
-                    assert isinstance(value, str)
-
-                # process as list
-                if isinstance(value, list):
-                    s = []
-                    for v in value:
-                        v = field.value_to_filter(v)
-                        s.append(get_filter_item(name, operation, v))
-                    search.append(b"(&".join(search) + b")")
-
-                # or process just the single value
-                else:
-                    value = field.value_to_filter(value)
-                    search.append(get_filter_item(name, operation, value))
+                value = field.value_to_filter(value)
+                search.append(get_filter_item(name, operation, value))
 
     # output the results
     if len(search) == 1 and not q.negated:
@@ -128,7 +120,8 @@ def get_filter(q: tldap.Q, fields: List[tldap.fields.Field], pk: str):
         return b"(" + op + b"".join(search) + b")"
 
 
-def _get_search_params(query: Optional[tldap.Q], fields: List[tldap.fields.Field], object_classes: Set[str], pk: str):
+def _get_search_params(query: Optional[tldap.Q], fields: Dict[str, tldap.fields.Field],
+                       object_classes: Set[str], pk: str):
     # add object classes to search array
     oc_query = tldap.Q()
     for oc in sorted(object_classes):
@@ -152,9 +145,9 @@ def _get_search_params(query: Optional[tldap.Q], fields: List[tldap.fields.Field
 
 
 def search(
-        connection: LdapBase, query: Optional[tldap.Q], fields: List[tldap.fields.Field],
+        connection: LdapBase, query: Optional[tldap.Q], fields: Dict[str, tldap.fields.Field],
         base_dn: str, object_classes: Set[str], pk: str) -> Iterator[Tuple[str, dict]]:
-    field_names = [x.name for x in fields]
+    field_names = list(fields.keys())
 
     scope, search_filter = _get_search_params(query, fields, object_classes, pk)
 

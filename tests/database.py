@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Dict
 
 import tldap.fields
 from tldap.database import helpers, LdapObject, Changeset, SearchOptions, Database
@@ -9,17 +9,18 @@ import tldap.django.helpers as dhelpers
 class Account(LdapObject):
 
     @classmethod
-    def get_fields(cls) -> List[tldap.fields.Field]:
-        fields = []
-        fields += helpers.get_fields_common()
-        fields += helpers.get_fields_person()
-        fields += helpers.get_fields_account()
-        fields += helpers.get_fields_shadow()
+    def get_fields(cls) -> Dict[str, tldap.fields.Field]:
+        fields = {
+            **helpers.get_fields_common(),
+            **helpers.get_fields_person(),
+            **helpers.get_fields_account(),
+            **helpers.get_fields_shadow(),
+        }
 
         if os.environ['LDAP_TYPE'] == "openldap":
-            fields += helpers.get_fields_pwdpolicy()
+            fields.update(helpers.get_fields_pwdpolicy())
         elif os.environ['LDAP_TYPE'] == 'ds389':
-            fields += helpers.get_fields_password_object()
+            fields.update(helpers.get_fields_password_object())
 
         return fields
 
@@ -71,10 +72,11 @@ class Account(LdapObject):
 class Group(LdapObject):
 
     @classmethod
-    def get_fields(cls) -> List[tldap.fields.Field]:
-        fields = []
-        fields += helpers.get_fields_common()
-        fields += helpers.get_fields_group()
+    def get_fields(cls) -> Dict[str, tldap.fields.Field]:
+        fields = {
+            **helpers.get_fields_common(),
+            **helpers.get_fields_group(),
+        }
         return fields
 
     @classmethod
@@ -114,9 +116,8 @@ class Group(LdapObject):
 class OU(LdapObject):
 
     @classmethod
-    def get_fields(cls) -> List[tldap.fields.Field]:
-        fields = []
-        fields += helpers.get_fields_common()
+    def get_fields(cls) -> Dict[str, tldap.fields.Field]:
+        fields = helpers.get_fields_common()
         return fields
 
     @classmethod

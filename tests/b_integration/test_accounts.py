@@ -148,7 +148,7 @@ def test_create(ldap):
     })
 
     account_1 = tldap.database.insert(account_1)
-    assert account_1['uidNumber'] == 10000
+    assert account_1['uidNumber'] == [10000]
 
     account_2 = Account({
         'uid': "tux2",
@@ -164,7 +164,7 @@ def test_create(ldap):
     })
 
     account_2 = tldap.database.insert(account_2)
-    assert account_2['uidNumber'] == 10001
+    assert account_2['uidNumber'] == [10001]
 
     account_3 = Account({
         'uid': "tux3",
@@ -180,7 +180,7 @@ def test_create(ldap):
     })
 
     account_3 = tldap.database.insert(account_3)
-    assert account_3['uidNumber'] == 10002
+    assert account_3['uidNumber'] == [10002]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -202,7 +202,7 @@ def test_create_with_reset(ldap):
     })
 
     account_1 = tldap.database.insert(account_1)
-    assert account_1['uidNumber'] == 10000
+    assert account_1['uidNumber'] == [10000]
 
     Counters.objects.all().delete()
 
@@ -220,7 +220,7 @@ def test_create_with_reset(ldap):
     })
 
     account_2 = tldap.database.insert(account_2)
-    assert account_2['uidNumber'] == 10001
+    assert account_2['uidNumber'] == [10001]
 
     account_3 = Account({
         'uid': "tux3",
@@ -236,94 +236,94 @@ def test_create_with_reset(ldap):
     })
 
     account_3 = tldap.database.insert(account_3)
-    assert account_3['uidNumber'] == 10002
+    assert account_3['uidNumber'] == [10002]
 
 
 def test_lock_account(account, ldap: tldap.backend.base.LdapBase):
     # Check account is unlocked.
-    assert account['locked'] is False
-    assert account['loginShell'] == "/bin/bash"
-    assert ldap.check_password(account['dn'], 'silly') is True
+    assert account.get_as_single('locked') is False
+    assert account.get_as_single('loginShell') == "/bin/bash"
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is True
 
     # Lock account.
     changes = tldap.database.get_changes(account, {'locked': True})
     account = tldap.database.save(changes)
 
     # Check account is locked.
-    assert account['locked'] is True
-    assert account['loginShell'] == "/locked/bin/bash"
+    assert account.get_as_single('locked') is True
+    assert account.get_as_single('loginShell') == "/locked/bin/bash"
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
-    assert account['locked'] is True
-    assert account['loginShell'] == "/locked/bin/bash"
+    assert account.get_as_single('locked') is True
+    assert account.get_as_single('loginShell') == "/locked/bin/bash"
 
-    assert ldap.check_password(account['dn'], 'silly') is False
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is False
 
     # Change the login shell
     changes = tldap.database.get_changes(account, {'loginShell': '/bin/zsh'})
     account = tldap.database.save(changes)
 
     # Check the account is still locked.
-    assert account['locked'] is True
-    assert account['loginShell'] == "/locked/bin/zsh"
+    assert account.get_as_single('locked') is True
+    assert account.get_as_single('loginShell') == "/locked/bin/zsh"
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
-    assert account['locked'] == True
-    assert account['loginShell'] == "/locked/bin/zsh"
+    assert account.get_as_single('locked') == True
+    assert account.get_as_single('loginShell') == "/locked/bin/zsh"
 
-    assert ldap.check_password(account['dn'], 'silly') is False
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is False
 
     # Unlock the account.
     changes = tldap.database.get_changes(account, {'locked': False})
     account = tldap.database.save(changes)
 
     # Check the account is now unlocked.
-    assert account['locked'] is False
-    assert account['loginShell'] == "/bin/zsh"
+    assert account.get_as_single('locked') is False
+    assert account.get_as_single('loginShell') == "/bin/zsh"
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
-    assert account['locked'] is False
-    assert account['loginShell'] == "/bin/zsh"
+    assert account.get_as_single('locked') is False
+    assert account.get_as_single('loginShell') == "/bin/zsh"
 
-    assert ldap.check_password(account['dn'], 'silly') is True
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is True
 
 
 @pytest.mark.skipif(os.environ['LDAP_TYPE'] != 'openldap', reason="Require OpenLDAP")
 def test_lock_account_openldap(account, ldap: tldap.backend.base.LdapBase):
     # Check account is unlocked.
-    assert account['locked'] is False
-    assert account['pwdAccountLockedTime'] is None
-    assert ldap.check_password(account['dn'], 'silly') is True
+    assert account.get_as_single('locked') is False
+    assert account.get_as_list('pwdAccountLockedTime') == []
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is True
 
     # Lock account.
     changes = tldap.database.get_changes(account, {'locked': True})
     account = tldap.database.save(changes)
 
     # Check account is locked.
-    assert account['locked'] is True
-    assert account['pwdAccountLockedTime'] == "000001010000Z"
+    assert account.get_as_single('locked') is True
+    assert account.get_as_list('pwdAccountLockedTime') == ["000001010000Z"]
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
-    assert account['locked'] is True
-    assert account['pwdAccountLockedTime'] == "000001010000Z"
+    assert account.get_as_single('locked') is True
+    assert account.get_as_list('pwdAccountLockedTime') == ["000001010000Z"]
 
-    assert ldap.check_password(account['dn'], 'silly') is False
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is False
 
     # Unlock the account.
     changes = tldap.database.get_changes(account, {'locked': False})
     account = tldap.database.save(changes)
 
     # Check the account is now unlocked.
-    assert account['locked'] is False
-    assert account['pwdAccountLockedTime'] is None
+    assert account.get_as_single('locked') is False
+    assert account.get_as_list('pwdAccountLockedTime') == []
 
     account = tldap.database.get_one(Account, Q(uid='tux'))
 
-    assert account['locked'] is False
-    assert account['pwdAccountLockedTime'] is None
+    assert account.get_as_single('locked') is False
+    assert account.get_as_list('pwdAccountLockedTime') == []
 
-    assert ldap.check_password(account['dn'], 'silly') is True
+    assert ldap.check_password(account.get_as_single('dn'), 'silly') is True

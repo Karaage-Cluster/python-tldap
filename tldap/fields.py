@@ -29,37 +29,24 @@ class Field(object):
     """ The base field type. """
     db_field = True
 
-    def __init__(self, name, max_instances=1, required=False):
-        self.name = name
+    def __init__(self, max_instances=1, required=False):
         self._max_instances = max_instances
         self._required = required
 
-    # def get_db(self, db_data):
-    #     data = db_data[self.name]
-    #     return self.to_python(data)
-    #
-    # def set_db(self, db_data, python_value):
-    #     new_db_value = self.to_db(python_value)
-    #     db_data[self.name] = new_db_value
+    @property
+    def is_list(self):
+        return self._max_instances != 1
 
     def to_db(self, value):
-        "returns field's value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
 
         # ensure value is valid
         self.validate(value)
 
-        # do we expect a list or just a single value?
-        if self._max_instances == 1:
-            assert not isinstance(value, list)
-            if value is None:
-                value = []
-            else:
-                value = [self.value_to_db(value)]
-        else:
-            assert isinstance(value, list)
-            value = list(value)
-            for i, v in enumerate(value):
-                value[i] = self.value_to_db(v)
+        assert isinstance(value, list)
+        value = list(value)
+        for i, v in enumerate(value):
+            value[i] = self.value_to_db(v)
 
         # return result
         assert isinstance(value, list)
@@ -71,20 +58,12 @@ class Field(object):
         django.core.exceptions.ValidationError if the data can't be converted.
         Returns the converted value. Subclasses should override this.
         """
-        assert isinstance(value, list), self.name
+        assert isinstance(value, list)
 
         # convert every value in list
         value = list(value)
         for i, v in enumerate(value):
             value[i] = self.value_to_python(v)
-
-        # if we only expect one value, see if we can remove list
-        if self._max_instances is not None:
-            if self._max_instances == 1:
-                if len(value) == 0:
-                    value = None
-                elif len(value) == 1:
-                    value = value[0]
 
         # return result
         return value
@@ -94,41 +73,25 @@ class Field(object):
         Validates value and throws ValidationError. Subclasses should override
         this to provide validation logic.
         """
-        # do we expect a list or just a single value?
-        if self._max_instances == 1:
-            # check object type
-            if isinstance(value, list):
+        # check object type
+        if not isinstance(value, list):
+            raise tldap.exceptions.ValidationError(
+                "is not a list and max_instances is %s" %
+                self._max_instances)
+        # check maximum instances
+        if (self._max_instances is not None and
+                len(value) > self._max_instances):
+            raise tldap.exceptions.ValidationError(
+                "exceeds max_instances of %d" %
+                self._max_instances)
+        # check this required value is given
+        if self._required:
+            if len(value) == 0:
                 raise tldap.exceptions.ValidationError(
-                    "%r is a list and max_instances is %s" %
-                    (self.name, self._max_instances))
-            # check this required value is given
-            if self._required:
-                if value is None:
-                    raise tldap.exceptions.ValidationError(
-                        "%r is required" % self.name)
-            # validate the value
-            if value is not None:
-                self.value_validate(value)
-        else:
-            # check object type
-            if not isinstance(value, list):
-                raise tldap.exceptions.ValidationError(
-                    "%r is not a list and max_instances is %s" %
-                    (self.name, self._max_instances))
-            # check maximum instances
-            if (self._max_instances is not None and
-                    len(value) > self._max_instances):
-                raise tldap.exceptions.ValidationError(
-                    "%r exceeds max_instances of %d" %
-                    (self.name, self._max_instances))
-            # check this required value is given
-            if self._required:
-                if len(value) == 0:
-                    raise tldap.exceptions.ValidationError(
-                        "%r is required" % self.name)
-            # validate the value
-            for i, v in enumerate(value):
-                self.value_validate(v)
+                    "is required")
+        # validate the value
+        for i, v in enumerate(value):
+            self.value_validate(v)
 
     def clean(self, value):
         """
@@ -141,7 +104,7 @@ class Field(object):
         return value
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         raise RuntimeError("Not implemented")
 
     def value_to_filter(self, value):
@@ -176,7 +139,7 @@ class FakeField(Field):
     #     pass
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         return None
 
     def value_to_python(self, value):
@@ -200,7 +163,7 @@ class BinaryField(Field):
     """
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         assert value is None or isinstance(value, bytes)
         return value
 
@@ -212,8 +175,7 @@ class BinaryField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
         return value
 
     def value_validate(self, value):
@@ -222,15 +184,14 @@ class BinaryField(Field):
         this to provide validation logic.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
 
 
 class CharField(Field):
     """ Field contains a UTF8 character string. """
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         if isinstance(value, six.string_types):
             value = value.encode("utf_8")
         return value
@@ -243,8 +204,7 @@ class CharField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
         value = value.decode("utf_8")
         return value
 
@@ -254,15 +214,14 @@ class CharField(Field):
         this to provide validation logic.
         """
         if not isinstance(value, six.string_types):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+            raise tldap.exceptions.ValidationError("should be a string")
 
 
 class UnicodeField(Field):
     """ Field contains a UTF16 character string. """
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         value = value.encode("utf_16le")
         return value
 
@@ -274,8 +233,7 @@ class UnicodeField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
         value = value.decode("utf_16")
         return value
 
@@ -285,8 +243,7 @@ class UnicodeField(Field):
         this to provide validation logic.
         """
         if not isinstance(value, six.string_types):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a string" % self.name)
+            raise tldap.exceptions.ValidationError("should be a string")
 
 
 class IntegerField(Field):
@@ -300,18 +257,16 @@ class IntegerField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be bytes")
         if value is None:
             return value
         try:
             return int(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError(
-                "%r is invalid integer" % self.name)
+            raise tldap.exceptions.ValidationError("is invalid integer")
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         assert isinstance(value, six.integer_types)
         return str(value).encode("utf_8")
 
@@ -323,14 +278,12 @@ class IntegerField(Field):
         this.
         """
         if not isinstance(value, six.integer_types):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a integer" % self.name)
+            raise tldap.exceptions.ValidationError("should be a integer")
 
         try:
             return str(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError(
-                "%r is invalid integer" % self.name)
+            raise tldap.exceptions.ValidationError("is invalid integer")
 
 
 class DaysSinceEpochField(Field):
@@ -344,33 +297,29 @@ class DaysSinceEpochField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
 
         try:
             value = int(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError(
-                "%r is invalid integer" % self.name)
+            raise tldap.exceptions.ValidationError("is invalid integer")
 
         try:
             value = datetime.date.fromtimestamp(value * 24 * 60 * 60)
         except OverflowError:
-            raise tldap.exceptions.ValidationError(
-                "%r is too big a date" % self.name)
+            raise tldap.exceptions.ValidationError("is too big a date")
 
         return value
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         assert isinstance(value, datetime.date)
         assert not isinstance(value, datetime.datetime)
 
         try:
             value = value - datetime.date(year=1970, month=1, day=1)
         except OverflowError:
-            raise tldap.exceptions.ValidationError(
-                "%r is too big a date" % self.name)
+            raise tldap.exceptions.ValidationError("is too big a date")
 
         return str(value.days).encode("utf_8")
 
@@ -382,12 +331,10 @@ class DaysSinceEpochField(Field):
         this.
         """
         if not isinstance(value, datetime.date):
-            raise tldap.exceptions.ValidationError(
-                "%r is invalid date" % self.name)
+            raise tldap.exceptions.ValidationError("is invalid date")
         # a datetime is also a date but they are not compatable
         if isinstance(value, datetime.datetime):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a date, not a datetime" % self.name)
+            raise tldap.exceptions.ValidationError("should be a date, not a datetime")
 
 
 class SecondsSinceEpochField(Field):
@@ -401,32 +348,28 @@ class SecondsSinceEpochField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
 
         try:
             value = int(value)
         except (TypeError, ValueError):
-            raise tldap.exceptions.ValidationError(
-                "%r is invalid integer" % self.name)
+            raise tldap.exceptions.ValidationError("is invalid integer")
 
         try:
             value = datetime.datetime.utcfromtimestamp(value)
         except OverflowError:
-            raise tldap.exceptions.ValidationError(
-                "%r is too big a date" % self.name)
+            raise tldap.exceptions.ValidationError("is too big a date")
 
         return value
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
         assert isinstance(value, datetime.datetime)
 
         try:
             value = value - datetime.datetime(1970, 1, 1)
         except OverflowError:
-            raise tldap.exceptions.ValidationError(
-                "%r is too big a date" % self.name)
+            raise tldap.exceptions.ValidationError("is too big a date")
 
         value = value.seconds + value.days * 24 * 3600
         value = str(value).encode("utf_8")
@@ -441,8 +384,7 @@ class SecondsSinceEpochField(Field):
         this.
         """
         if not isinstance(value, datetime.datetime):
-            raise tldap.exceptions.ValidationError(
-                "%r is invalid date time" % self.name)
+            raise tldap.exceptions.ValidationError("is invalid date time")
 
 
 class SidField(Field):
@@ -456,8 +398,7 @@ class SidField(Field):
         this.
         """
         if not isinstance(value, bytes):
-            raise tldap.exceptions.ValidationError(
-                "%r should be a bytes" % self.name)
+            raise tldap.exceptions.ValidationError("should be a bytes")
 
         length = len(value) - 8
         if length % 4 != 0:
@@ -477,7 +418,7 @@ class SidField(Field):
         return "-".join([str(i) for i in array])
 
     def value_to_db(self, value):
-        "returns field's single value prepared for saving into a database."
+        """ Returns field's single value prepared for saving into a database. """
 
         assert isinstance(value, str)
 

@@ -54,8 +54,12 @@ class SearchMock:
         results = []
         for search, obj in self.results:
             if search in filterstr:
+                obj_values = {
+                    key: obj.get_as_single(key)
+                    for key in obj.keys()
+                }
                 results.append(
-                    (obj['dn'], get_db_values(obj.to_dict(), type(obj)))
+                    (obj['dn'], get_db_values(obj_values, type(obj)))
                 )
         return results
 
@@ -188,12 +192,14 @@ def get_python_expected_values(updates):
 
     for key, value in updates.items():
         if key == "password":
-            result['password'] = None
-            result['userPassword'] = mock.ANY
+            result['password'] = []
+            result['userPassword'] = [mock.ANY]
         elif key == "primary_group":
-            result[key] = CheckInstance(tldap.database.NotLoadedObject)
+            result[key] = [CheckInstance(tldap.database.NotLoadedObject)]
+        elif value is None:
+            result[key] = []
         else:
-            result[key] = value
+            result[key] = [value]
 
     return result
 
@@ -216,7 +222,7 @@ def get_db_values(updates, table: tldap.database.LdapObjectClass):
                 if value is None:
                     result["gidNumber"] = []
                 else:
-                    result["gidNumber"] = [str(value['gidNumber']).encode("UTF-8")]
+                    result["gidNumber"] = [str(value.get_as_single('gidNumber')).encode("UTF-8")]
         elif value is None:
             result[key] = []
         elif value is mock.ANY:
@@ -227,8 +233,8 @@ def get_db_values(updates, table: tldap.database.LdapObjectClass):
             value = value - datetime.date(year=1970, month=1, day=1)
             result[key] = [str(value.days).encode("UTF-8")]
         elif key == "members":
-            if not isinstance(value, tldap.database.NotLoadedListToList):
-                result['memberUid'] = [v['uid'] for v in value]
+            if not any(isinstance(v, tldap.database.NotLoadedObject) for v in value):
+                result['memberUid'] = [v.get_as_single('uid') for v in value]
         elif key == "groups":
             pass
         elif isinstance(value, list):
@@ -386,7 +392,7 @@ class TestModelAccount:
         person = tldap.database.get_one(
             tests.database.Account,
             Q(dn="uid=tux, ou=People, dc=python-ldap,dc=org"))
-        assert person['uid'] == "tux"
+        assert person.get_as_single('uid') == "tux"
 
         expected_calls = [(
             'ou=People, dc=python-ldap,dc=org',
@@ -401,7 +407,6 @@ class TestModelAccount:
             None
         )]
         assert c.search.calls == expected_calls
-
 
     def test_delete(self, mock_ldap, account1):
         """ Test delete LDAP object. """
@@ -443,7 +448,7 @@ class TestModelAccount:
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert account1['dn'] == "uid=tuz,ou=People,dc=python-ldap,dc=org"
+        assert account1.get_as_single('dn') == "uid=tuz,ou=People,dc=python-ldap,dc=org"
         for key, value in python_expected_values.items():
             assert account1[key] == value, key
 
@@ -469,7 +474,7 @@ class TestModelAccount:
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert account1['dn'] == "uid=tux,ou=Groups,dc=python-ldap,dc=org"
+        assert account1.get_as_single('dn') == "uid=tux,ou=Groups,dc=python-ldap,dc=org"
         for key, value in python_expected_values.items():
             assert account1[key] == value, key
 
@@ -498,7 +503,7 @@ class TestModelAccount:
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert account1['dn'] == "uid=tux,ou=People,dc=python-ldap,dc=org"
+        assert account1.get_as_single('dn') == "uid=tux,ou=People,dc=python-ldap,dc=org"
         for key, value in python_expected_values.items():
             assert account1[key] == value, key
 
@@ -543,7 +548,7 @@ class TestModelAccount:
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert account1['dn'] == "uid=tux,ou=People,dc=python-ldap,dc=org"
+        assert account1.get_as_single('dn') == "uid=tux,ou=People,dc=python-ldap,dc=org"
         for key, value in python_expected_values.items():
             assert account1[key] == value, key
 
@@ -563,6 +568,18 @@ class TestModelAccount:
         changes = tldap.database.get_changes(account1, {})
         changes = changes.merge({'sn': "Torvalds"})
         assert 'sn' not in changes
+
+    def test_replace_attribute_error(self, account1):
+        """ Test replace LDAP attribute with invalid value. """
+
+        # Replace the attribute.
+        changes = tldap.database.get_changes(account1, {'gidNumber': "Torvalds"})
+
+        assert not changes.is_valid
+        assert changes.errors == ["gidNumber: should be a integer."]
+
+        with pytest.raises(RuntimeError):
+            tldap.database.save(changes)
 
     def test_delete_attribute(self, defaults, mock_ldap, account1):
         """ Test delete LDAP attribute. """
@@ -592,7 +609,7 @@ class TestModelAccount:
         c.assert_has_calls(expected_calls)
 
         # Assert caches are correct.
-        assert account1['dn'] == "uid=tux,ou=People,dc=python-ldap,dc=org"
+        assert account1.get_as_single('dn') == "uid=tux,ou=People,dc=python-ldap,dc=org"
         for key, value in python_expected_values.items():
             assert account1[key] == value, key
 
@@ -626,7 +643,7 @@ class TestModelGroup:
 
         # Get the primary group
         account1 = tldap.database.preload(account1)
-        group = account1['primary_group']
+        group = account1.get_as_single('primary_group')
 
         for key in ["cn", "description", "gidNumber", "memberUid"]:
             assert group[key] == group1[key]
@@ -646,7 +663,7 @@ class TestModelGroup:
         expected_calls = [
             mock.call.modify(
                 'cn=group1,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': [('MODIFY_REPLACE', [b'tux'])]},
+                {'memberUid': [('MODIFY_ADD', [b'tux'])]},
             )
         ]
         c.assert_has_calls(expected_calls)
@@ -666,7 +683,7 @@ class TestModelGroup:
         expected_calls = [
             mock.call.modify(
                 'cn=group2,ou=Group,dc=python-ldap,dc=org',
-                {'memberUid': [('MODIFY_DELETE', [])]},
+                {'memberUid': [('MODIFY_DELETE', [b'tux'])]},
             )
         ]
         c.assert_has_calls(expected_calls)
