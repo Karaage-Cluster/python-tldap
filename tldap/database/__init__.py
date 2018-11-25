@@ -487,14 +487,14 @@ def preload(python_data: LdapObject, database: Optional[Database] = None) -> Lda
 
         # Check for errors.
         if isinstance(value_list, NotLoadedObject):
-            raise RuntimeError(f"{key}: Unexpected NotLoadedObject outside list.")
+            raise RuntimeError(f"{name}: Unexpected NotLoadedObject outside list.")
 
         elif isinstance(value_list, NotLoadedList):
             value_list = value_list.load(database)
 
         else:
             if any(isinstance(v, NotLoadedList) for v in value_list):
-                raise RuntimeError(f"{key}: Unexpected NotLoadedList in list.")
+                raise RuntimeError(f"{name}: Unexpected NotLoadedList in list.")
             elif any(isinstance(v, NotLoadedObject) for v in value_list):
                 value_list = [preload_item(value) for value in value_list]
             else:
