@@ -67,7 +67,7 @@ def set_object_class(changes: Changeset, object_class: List[str]) -> Changeset:
 
 
 def get_value(changes: Changeset, key: str) -> any:
-    return changes.get_value(key)
+    return changes.get_value_as_single(key)
 
 
 # PERSON

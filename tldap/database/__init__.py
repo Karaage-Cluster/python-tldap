@@ -181,7 +181,7 @@ class Changeset(ImmutableDict):
         copy._changes = self._changes
         return copy
 
-    def get_value(self, key: str) -> any:
+    def get_value_as_single(self, key: str) -> any:
         key = self.fix_key(key)
         if key in self._dict:
             field = self._fields[key]
@@ -545,7 +545,7 @@ def save(changes: Changeset, database: Optional[Database] = None) -> LdapObject:
     if src_dn is None and 'dn' not in changes:
         raise RuntimeError("No DN was given")
     elif src_dn is None and 'dn' in changes:
-        dn = changes.get_value('dn')
+        dn = changes.get_value_as_single('dn')
         assert dn is not None
         create = True
     elif src_dn is not None and 'dn' not in changes:
