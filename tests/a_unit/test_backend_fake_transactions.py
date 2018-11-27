@@ -130,13 +130,11 @@ def defaults(search_response):
         allowed_referral_hosts=[('*', True)],
         get_info='NO_INFO'))
 
-    assert c._transact is False
-    assert c._onrollback == []
+    assert not c.is_managed()
 
     yield values
 
-    assert c._transact is False
-    assert c._onrollback == []
+    assert not c.is_managed()
 
 
 class TestBackendBase:

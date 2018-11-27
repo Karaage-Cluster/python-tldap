@@ -10,13 +10,6 @@ import tldap.backend
 import tldap.database
 
 
-def delete(connection, dn):
-    try:
-        connection.delete(dn)
-    except exceptions.LDAPNoSuchObjectResult:
-        pass
-
-
 @pytest.fixture
 def settings():
     return {
@@ -39,23 +32,13 @@ def ldap(settings):
     tldap.backend.setup(settings)
 
     connection = tldap.backend.connections['default']
-    yield connection
 
-    delete(connection, f"uid=tux,{os.environ['LDAP_ACCOUNT_BASE']}")
-    delete(connection, f"uid=tuz,{os.environ['LDAP_ACCOUNT_BASE']}")
-    delete(connection, f"uid=tux,{os.environ['LDAP_GROUP_BASE']}")
+    with tldap.transaction.commit_manually():
+        yield connection
+        tldap.transaction.rollback()
 
-    delete(connection, f"cn=tux,{os.environ['LDAP_GROUP_BASE']}")
-    delete(connection, f"cn=tuz,{os.environ['LDAP_GROUP_BASE']}")
-    delete(connection, f"cn=tux,{os.environ['LDAP_ACCOUNT_BASE']}")
-
-    delete(connection, f"uid=tux1,{os.environ['LDAP_ACCOUNT_BASE']}")
-    delete(connection, f"uid=tux2,{os.environ['LDAP_ACCOUNT_BASE']}")
-    delete(connection, f"uid=tux3,{os.environ['LDAP_ACCOUNT_BASE']}")
-
-    delete(connection, f"cn=penguins1,{os.environ['LDAP_GROUP_BASE']}")
-    delete(connection, f"cn=penguins2,{os.environ['LDAP_GROUP_BASE']}")
-    delete(connection, f"cn=penguins3,{os.environ['LDAP_GROUP_BASE']}")
+    if tldap.transaction.is_managed():
+        raise RuntimeError("Unexpected still inside a transaction error.")
 
 
 @pytest.fixture

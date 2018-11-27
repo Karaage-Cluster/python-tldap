@@ -31,18 +31,17 @@ class TransactionMiddleware(MiddlewareMixin):
     """
     def process_request(self, request):
         """Enters transaction management"""
-        if not tldap.transaction.is_managed():
-            tldap.transaction.enter_transaction_management()
+        tldap.transaction.enter_transaction_management()
 
     def process_exception(self, request, exception):
         """Rolls back the database and leaves transaction management"""
-        if tldap.transaction.is_dirty():
-            tldap.transaction.rollback()
+        tldap.transaction.rollback()
 
     def process_response(self, request, response):
         """Commits and leaves transaction management."""
         if tldap.transaction.is_managed():
-            if tldap.transaction.is_dirty():
-                tldap.transaction.commit()
+            tldap.transaction.commit()
             tldap.transaction.leave_transaction_management()
+        if tldap.transaction.is_managed():
+            raise RuntimeError("Unexpected still inside a transaction error.")
         return response

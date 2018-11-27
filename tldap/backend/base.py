@@ -19,7 +19,7 @@
 with a subset of the functions from the real ldap module. """
 
 import ssl
-from typing import Optional, TypeVar, Callable, Tuple
+from typing import Optional, TypeVar, Callable, Tuple, Generator
 
 import ldap3
 import ldap3.core.exceptions as exceptions
@@ -153,7 +153,7 @@ class LdapBase(object):
     ###################
 
     def search(self, base, scope, filterstr='(objectClass=*)',
-               attrlist=None, limit=None) -> Tuple[str, dict]:
+               attrlist=None, limit=None) -> Generator[Tuple[str, dict], None, None]:
         """
         Search for entries in LDAP database.
         """
@@ -195,7 +195,7 @@ class LdapBase(object):
     # Cache Management #
     ####################
 
-    def reset(self, forceflushcache: bool = False) -> None:
+    def reset(self, force_flush_cache: bool = False) -> None:
         """
         Reset transaction back to original state, discarding all
         uncompleted transactions.
@@ -246,35 +246,35 @@ class LdapBase(object):
     # Functions needing Transactions #
     ##################################
 
-    def add(self, dn: str, modlist: dict):
+    def add(self, dn: str, mod_list: dict) -> None:
         """
         Add a DN to the LDAP database; See ldap module. Doesn't return a result
         if transactions enabled.
         """
         raise NotImplementedError()
 
-    def modify(self, dn: str, modlist: dict):
+    def modify(self, dn: str, mod_list: dict) -> None:
         """
         Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled.
         """
         raise NotImplementedError()
 
-    def modify_no_rollback(self, dn: str, modlist: dict):
+    def modify_no_rollback(self, dn: str, mod_list: dict) -> None:
         """
         Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled.
         """
         raise NotImplementedError()
 
-    def delete(self, dn: str):
+    def delete(self, dn: str) -> None:
         """
         delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
         """
         raise NotImplementedError()
 
-    def rename(self, dn: str, newrdn: str, newsuperior: Optional[str] = None):
+    def rename(self, dn: str, new_rdn: str, new_base_dn: Optional[str] = None) -> None:
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.

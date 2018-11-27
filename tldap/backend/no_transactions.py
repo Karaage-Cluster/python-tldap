@@ -17,6 +17,7 @@
 
 """ This module provides the LDAP functions with transaction support disabled,
 with a subset of the functions from the real ldap module. """
+from typing import Optional
 
 from .base import LdapBase
 
@@ -30,7 +31,7 @@ class LDAPwrapper(LdapBase):
     # Cache Management #
     ####################
 
-    def reset(self, forceflushcache=False):
+    def reset(self, force_flush_cache: bool=False) -> None:
         """
         Reset transaction back to original state, discarding all
         uncompleted transactions.
@@ -43,19 +44,19 @@ class LDAPwrapper(LdapBase):
 
     # Fake it
 
-    def is_dirty(self):
+    def is_dirty(self) -> bool:
         """ Are there uncommitted changes? """
         return False
 
-    def is_managed(self):
+    def is_managed(self) -> bool:
         """ Are we inside transaction management? """
         return False
 
-    def enter_transaction_management(self):
+    def enter_transaction_management(self) -> None:
         """ Start a transaction. """
         pass
 
-    def leave_transaction_management(self):
+    def leave_transaction_management(self) -> None:
         """
         End a transaction. Must not be dirty when doing so. ie. commit() or
         rollback() must be called if changes made. If dirty, changes will be
@@ -63,14 +64,14 @@ class LDAPwrapper(LdapBase):
         """
         pass
 
-    def commit(self):
+    def commit(self) -> None:
         """
         Attempt to commit all changes to LDAP database. i.e. forget all
         rollbacks.  However stay inside transaction management.
         """
         pass
 
-    def rollback(self):
+    def rollback(self) -> None:
         """
         Roll back to previous database state. However stay inside transaction
         management.
@@ -81,31 +82,31 @@ class LDAPwrapper(LdapBase):
     # Functions needing Transactions #
     ##################################
 
-    def add(self, dn, modlist):
+    def add(self, dn: str, mod_list: dict) -> None:
         """
         Add a DN to the LDAP database; See ldap module. Doesn't return a result
         if transactions enabled.
         """
 
-        return self._do_with_retry(lambda obj: obj.add_s(dn, modlist))
+        return self._do_with_retry(lambda obj: obj.add_s(dn, mod_list))
 
-    def modify(self, dn, modlist):
+    def modify(self, dn: str, mod_list: dict) -> None:
         """
         Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled.
         """
 
-        return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
+        return self._do_with_retry(lambda obj: obj.modify_s(dn, mod_list))
 
-    def modify_no_rollback(self, dn, modlist):
+    def modify_no_rollback(self, dn: str, mod_list: dict) -> None:
         """
         Modify a DN in the LDAP database; See ldap module. Doesn't return a
         result if transactions enabled.
         """
 
-        return self._do_with_retry(lambda obj: obj.modify_s(dn, modlist))
+        return self._do_with_retry(lambda obj: obj.modify_s(dn, mod_list))
 
-    def delete(self, dn):
+    def delete(self, dn: str) -> None:
         """
         delete a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
@@ -113,11 +114,11 @@ class LDAPwrapper(LdapBase):
 
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
-    def rename(self, dn, newrdn, newsuperior=None):
+    def rename(self, dn: str, new_rdn: str, new_base_dn: Optional[str]=None) -> None:
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
         """
 
         return self._do_with_retry(
-            lambda obj: obj.rename_s(dn, newrdn, newsuperior))
+            lambda obj: obj.rename_s(dn, new_rdn, new_base_dn))

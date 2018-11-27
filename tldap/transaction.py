@@ -211,12 +211,7 @@ def commit_on_success(using=None):
                 if is_dirty(using=using):
                     rollback(using=using)
             else:
-                if is_dirty(using=using):
-                    try:
-                        commit(using=using)
-                    except:  # noqa: E722
-                        rollback(using=using)
-                        raise
+                commit(using=using)
         finally:
             leave_transaction_management(using=using)
 
