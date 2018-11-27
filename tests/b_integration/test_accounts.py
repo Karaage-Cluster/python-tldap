@@ -58,6 +58,7 @@ def step_modify_account(ldap, name):
     changes = tldap.database.changeset(account, {
         'sn': "Tux",
         'givenName': "Super",
+        'cn': "Super Tux",
     })
     tldap.database.save(changes)
     account = tldap.database.get_one(Account, Q(uid=name))

@@ -527,7 +527,7 @@ class TestModelAccount:
 
         # Replace the attribute.
         changes = tldap.database.changeset(account1, {'sn': "Closed"})
-        changes = changes.merge({'sn': "Gates"})
+        changes = changes.merge({'sn': "Gates", 'cn': "Tux Gates"})
         account1 = tldap.database.save(changes)
 
         # Simulate required attributes that should be added.

@@ -49,7 +49,7 @@ class Account(LdapObject):
     @classmethod
     def on_save(cls, changes: Changeset, database: Database) -> Changeset:
         settings = database.settings
-        changes = helpers.save_person(changes)
+        changes = helpers.save_person(changes, database)
         changes = helpers.save_account(changes, database)
         changes = helpers.save_shadow(changes)
 

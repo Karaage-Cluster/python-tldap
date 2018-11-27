@@ -94,16 +94,10 @@ def load_person(python_data: LdapObject, group_table: LdapObjectClass) -> LdapOb
     return python_data
 
 
-def save_person(changes: Changeset) -> Changeset:
+def save_person(changes: Changeset, database: Database, format_fields: Optional[Set[str]] = None) -> Changeset:
+    settings = database.settings
+
     d = dict()
-
-    if 'givenName' in changes or 'sn' in changes:
-        given_name = changes.get_value_as_single('givenName')
-        sn = changes.get_value_as_single('sn')
-
-        if given_name is not None and sn is not None:
-            d['displayName'] = '%s %s' % (given_name, sn)
-            d['cn'] = d['displayName']
 
     if 'password' in changes:
         password = changes.get_value_as_single('password')
@@ -113,6 +107,23 @@ def save_person(changes: Changeset) -> Changeset:
         groups = changes.get_value_as_list('groups')
         if len(groups) > 0:
             raise RuntimeError("Cannot register changes in groups on people.")
+
+    if 'primary_group' in changes:
+        group = changes.get_value_as_single('primary_group')
+        assert group.get_as_single('gidNumber') is not None
+        d['gidNumber'] = group.get_as_single('gidNumber')
+
+    if format_fields is None:
+        format_fields = {'cn'}
+
+    if any(name in changes for name in format_fields):
+        values = {
+            name: changes.get_value_as_single(name)
+            for name in format_fields
+        }
+
+        spec = settings.get('DISPLAY_NAME_FORMAT', "{cn}")
+        d['displayName'] = spec.format(**values)
 
     return changes.merge(d)
 
