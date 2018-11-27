@@ -31,7 +31,7 @@ class LDAPwrapper(LdapBase):
     # Cache Management #
     ####################
 
-    def reset(self, force_flush_cache: bool=False) -> None:
+    def reset(self, force_flush_cache: bool = False) -> None:
         """
         Reset transaction back to original state, discarding all
         uncompleted transactions.
@@ -114,7 +114,7 @@ class LDAPwrapper(LdapBase):
 
         return self._do_with_retry(lambda obj: obj.delete_s(dn))
 
-    def rename(self, dn: str, new_rdn: str, new_base_dn: Optional[str]=None) -> None:
+    def rename(self, dn: str, new_rdn: str, new_base_dn: Optional[str] = None) -> None:
         """
         rename a dn in the ldap database; see ldap module. doesn't return a
         result if transactions enabled.
