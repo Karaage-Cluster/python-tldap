@@ -133,7 +133,7 @@ def get_fields_account() -> Dict[str, tldap.fields.Field]:
         'loginShell': tldap.fields.CharField(),
         'homeDirectory': tldap.fields.CharField(),
         'o': tldap.fields.CharField(),
-        'gidNumber': tldap.fields.IntegerField(),
+        'gidNumber': tldap.fields.IntegerField(required=True),
         'uidNumber': tldap.fields.IntegerField(),
         'primary_group': tldap.fields.FakeField(),
     }

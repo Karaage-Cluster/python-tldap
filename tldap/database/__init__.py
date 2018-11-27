@@ -27,7 +27,7 @@ from tldap import Q
 from tldap.backend.base import LdapBase
 from tldap.dict import ImmutableDict
 from tldap.dn import dn2str, str2dn
-from tldap.exceptions import ObjectAlreadyExists, ObjectDoesNotExist, MultipleObjectsReturned
+from tldap.exceptions import ObjectAlreadyExists, ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 import tldap.query
 
 
@@ -396,9 +396,12 @@ def _python_to_mod_new(changes: Changeset) -> Dict[str, List[List[bytes]]]:
 
     for name, field in fields.items():
         if field.db_field:
-            value = field.to_db(changes.get_value_as_list(name))
-            if len(value) > 0:
-                result[name] = value
+            try:
+                value = field.to_db(changes.get_value_as_list(name))
+                if len(value) > 0:
+                    result[name] = value
+            except ValidationError as e:
+                raise ValidationError(f"{name}: {e}.")
 
     return result
 
@@ -413,11 +416,14 @@ def _python_to_mod_modify(changes: Changeset) -> Dict[str, List[Tuple[Operation,
         field = _get_field_by_name(table, key)
 
         if field.db_field:
-            new_list = [
-                (operation, field.to_db(value))
-                for operation, value in l
-            ]
-            result[key] = new_list
+            try:
+                new_list = [
+                    (operation, field.to_db(value))
+                    for operation, value in l
+                ]
+                result[key] = new_list
+            except ValidationError as e:
+                raise ValidationError(f"{key}: {e}.")
 
     return result
 
@@ -460,11 +466,11 @@ def get_one(table: LdapObjectClass, query: Optional[Q] = None,
     try:
         result = next(results)
     except StopIteration:
-        raise ObjectDoesNotExist()
+        raise ObjectDoesNotExist(f"Cannot find result for {query}.")
 
     try:
         next(results)
-        raise MultipleObjectsReturned()
+        raise MultipleObjectsReturned(f"Found multiple results for {query}.")
     except StopIteration:
         pass
 
