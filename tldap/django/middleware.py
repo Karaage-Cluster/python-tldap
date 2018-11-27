@@ -42,6 +42,4 @@ class TransactionMiddleware(MiddlewareMixin):
         if tldap.transaction.is_managed():
             tldap.transaction.commit()
             tldap.transaction.leave_transaction_management()
-        if tldap.transaction.is_managed():
-            raise RuntimeError("Unexpected still inside a transaction error.")
         return response
