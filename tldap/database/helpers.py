@@ -19,7 +19,7 @@
 import base64
 import datetime
 from hashlib import sha1
-from typing import List, Dict
+from typing import List, Dict, Optional, Set
 
 import tldap.exceptions
 import tldap.fields
@@ -153,7 +153,7 @@ def load_account(python_data: LdapObject, group_table: LdapObjectClass) -> LdapO
     return python_data
 
 
-def save_account(changes: Changeset, database: Database) -> Changeset:
+def save_account(changes: Changeset, database: Database, format_fields: Optional[Set[str]] = None) -> Changeset:
     d = {}
     settings = database.settings
 
@@ -166,15 +166,6 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
     changes = changes.merge(d)
 
     d = {}
-    if 'uid' in changes:
-        uid = changes.get_value_as_single('uid')
-        home_directory = changes.get_value_as_single('homeDirectory')
-
-        if uid is not None:
-            spec = settings.get('HOME_DIRECTORY', "/home/{uid}s")
-            if home_directory is None:
-                d['homeDirectory'] = spec.format(uid=uid)
-
     if 'locked' in changes or 'loginShell' in changes:
         locked = changes.get_value_as_single('locked')
         login_shell = changes.get_value_as_single('loginShell')
@@ -188,21 +179,25 @@ def save_account(changes: Changeset, database: Database) -> Changeset:
             if login_shell.startswith("/locked"):
                 d['loginShell'] = login_shell[7:]
 
-    fields = ['givenName', 'sn', 'o']
-    if any(name in changes for name in fields):
-        values = {
-            name: changes.get_value_as_single(name)
-            for name in fields
-        }
-
-        if all(value is not None for _, value in values.items()):
-            spec = settings.get('GECOS', "{givenName} {sn}")
-            d['gecos'] = spec.format(**values)
-
     if 'primary_group' in changes:
         group = changes.get_value_as_single('primary_group')
         assert group.get_as_single('gidNumber') is not None
         d['gidNumber'] = group.get_as_single('gidNumber')
+
+    if format_fields is None:
+        format_fields = {'uid', 'givenName', 'sn', 'o'}
+
+    if any(name in changes for name in format_fields):
+        values = {
+            name: changes.get_value_as_single(name)
+            for name in format_fields
+        }
+
+        spec = settings.get('GECOS_FORMAT', "{givenName} {sn}")
+        d['gecos'] = spec.format(**values)
+
+        spec = settings.get('HOME_DIRECTORY_FORMAT', "/home/{uid}")
+        d['homeDirectory'] = spec.format(**values)
 
     changes = changes.merge(d)
     return changes
