@@ -292,6 +292,9 @@ class Changeset(ImmutableDict):
                 for value in new_value_list:
                     old_value_list.remove(value)
 
+        else:
+            raise RuntimeError(f"Unknown LDAP operation {operation}.")
+
         self._dict[key] = old_value_list
 
         field = self._fields[key]
