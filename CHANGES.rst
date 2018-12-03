@@ -9,6 +9,15 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+1.0.0 - 2018-12-03
+------------------
+
+Changed
+~~~~~~~
+* Complete rewrite/simplification of API.
+* Not compatible with previous versions.
+
+
 0.4.4 - 2018-03-02
 ------------------
 
