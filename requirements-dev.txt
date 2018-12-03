@@ -16,7 +16,7 @@ mock
 pipenv-to-requirements
 pytest
 pytest-bdd
-pytest-django
+pytest-django==3.4.4
 pytest-runner
 sphinx
 tox
