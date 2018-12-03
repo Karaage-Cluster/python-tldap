@@ -17,7 +17,7 @@ pipenv-to-requirements
 pytest
 pytest-bdd
 pytest-django
-pytest-runner
+pytest-runner==4.2
 sphinx
 tox
 twine
