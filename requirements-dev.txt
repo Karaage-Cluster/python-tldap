@@ -12,7 +12,7 @@
 
 django
 flake8
-mock
+mock==2.0.0
 pipenv-to-requirements
 pytest
 pytest-bdd
