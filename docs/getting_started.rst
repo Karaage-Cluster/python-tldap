@@ -83,7 +83,7 @@ Basic Usage
     ..  code-block:: python
 
         for account in tldap.database.search(Account):
-            print account["cn"]
+            print(account["cn"])
 
 #.  For some real examples on how methods are used, see the `karaage
     <https://github.com/Karaage-Cluster/karaage>`_.
