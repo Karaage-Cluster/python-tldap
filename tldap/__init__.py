@@ -26,3 +26,8 @@ DEFAULT_LDAP_ALIAS
 """
 
 from tldap.query_utils import Q  # noqa: F401
+
+
+__author__ = """Brian May"""
+__email__ = 'brian@linuxpenguins.xyz'
+__version__ = '0.4.4'

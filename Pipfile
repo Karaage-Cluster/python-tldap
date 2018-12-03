@@ -7,7 +7,6 @@ name = "pypi"
 passlib = "==1.7.1"
 "pyasn1" = "==0.4.4"
 "ldap3" = "==2.5.1"
-setuptools-scm = "==3.1.0"
 six = "==1.11.0"
 pip = "*"
 
