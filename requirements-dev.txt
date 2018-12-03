@@ -14,7 +14,7 @@ django
 flake8
 mock
 pipenv-to-requirements
-pytest
+pytest==4.0.1
 pytest-bdd
 pytest-django
 pytest-runner
