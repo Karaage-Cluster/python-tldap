@@ -10,7 +10,7 @@
 # `Pipfile.lock` and then regenerate `requirements*.txt`.
 ################################################################################
 
-django
+django==2.1.3
 flake8
 mock
 pipenv-to-requirements
