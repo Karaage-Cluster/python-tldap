@@ -18,6 +18,6 @@ pytest
 pytest-bdd
 pytest-django
 pytest-runner
-sphinx
+sphinx==1.8.2
 tox
 twine
