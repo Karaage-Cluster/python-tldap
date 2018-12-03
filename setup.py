@@ -29,6 +29,7 @@ setup(
     description='High level python LDAP Library',
     packages=[
         'tldap', 'tldap.backend',
+        'tldap.django', 'tldap.django.migrations',
         'tldap.database',
         'tldap.test', 'tldap.test.ldap_schemas',
     ],

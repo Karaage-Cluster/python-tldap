@@ -9,6 +9,14 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+1.0.1 - 2018-12-03
+------------------
+
+Fixed
+~~~~~
+* Add missing tldap.django package.
+
+
 1.0.0 - 2018-12-03
 ------------------
 
