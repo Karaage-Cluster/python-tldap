@@ -19,5 +19,5 @@ pytest-bdd
 pytest-django
 pytest-runner
 sphinx
-tox
+tox==3.5.3
 twine
