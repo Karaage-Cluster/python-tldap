@@ -12,6 +12,6 @@
 
 ldap3==2.5.1
 passlib==1.7.1
-pip
+pip==18.1
 pyasn1==0.4.4
 six==1.11.0
