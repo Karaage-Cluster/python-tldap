@@ -15,7 +15,7 @@ flake8
 mock
 pipenv-to-requirements
 pytest
-pytest-bdd
+pytest-bdd==3.0.0
 pytest-django
 pytest-runner
 sphinx
