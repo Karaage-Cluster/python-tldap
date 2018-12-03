@@ -30,4 +30,4 @@ from tldap.query_utils import Q  # noqa: F401
 
 __author__ = """Brian May"""
 __email__ = 'brian@linuxpenguins.xyz'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
