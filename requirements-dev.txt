@@ -13,7 +13,7 @@
 django
 flake8
 mock
-pipenv-to-requirements
+pipenv-to-requirements==0.6.1
 pytest
 pytest-bdd
 pytest-django
