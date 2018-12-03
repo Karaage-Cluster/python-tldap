@@ -26,7 +26,6 @@ sys.path.insert(0, os.path.abspath('..'))
 django.setup()
 
 import tldap  # NOQA
-import tldap.version  # NOQA
 
 # -- General configuration ----------------------------------------------------
 
@@ -60,7 +59,7 @@ copyright = six.u('2014, Brian May')
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = tldap.version.version
+release = tldap.__version__
 # The short X.Y version.
 version = '.'.join(release.split('.')[:2])
 
