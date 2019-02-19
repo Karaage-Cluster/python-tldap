@@ -22,7 +22,7 @@ from setuptools import setup
 
 setup(
     name="python-tldap",
-    version='1.0.1',
+    version='1.0.2',
     url='https://github.com/Karaage-Cluster/python-tldap',
     author='Brian May',
     author_email='brian@linuxpenguins.xyz',
