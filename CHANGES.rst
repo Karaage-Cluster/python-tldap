@@ -15,6 +15,7 @@ adheres to `Semantic Versioning`_.
 Fixed
 ~~~~~
 * Ensure get_and_increment is run in transaction.
+* Give Django app sensible short name.
 
 
 1.0.1 - 2018-12-03

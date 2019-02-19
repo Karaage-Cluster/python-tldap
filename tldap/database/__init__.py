@@ -349,7 +349,7 @@ class NotLoadedObject(NotLoaded):
         return f"<NotLoadedObject {self._table} {self._key}={self._value}>"
 
     def load(self, database: Optional[Database] = None) -> LdapObject:
-        return self._load_one(self._table, self._key, self._value)
+        return self._load_one(self._table, self._key, self._value, database)
 
 
 class NotLoadedList(NotLoaded):

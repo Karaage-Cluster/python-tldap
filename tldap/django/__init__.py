@@ -23,6 +23,8 @@ import django.conf
 from tldap.backend import setup
 from tldap.utils import DEFAULT_LDAP_ALIAS
 
+default_app_config = 'tldap.django.apps.TldapConfig'
+
 # For backwards compatibility - Port any old database settings over to
 # the new values.
 if not hasattr(django.conf.settings, 'LDAP'):
