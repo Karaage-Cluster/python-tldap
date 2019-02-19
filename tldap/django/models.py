@@ -19,6 +19,7 @@
 for new LDAP objects. """
 
 from django.db import models
+from django.db import transaction
 
 
 class Counters(models.Model):
@@ -32,6 +33,7 @@ class Counters(models.Model):
         db_table = 'tldap_counters'
 
     @classmethod
+    @transaction.atomic
     def get_and_increment(cls, scheme, name, default, test):
         entry, c = cls.objects.select_for_update().get_or_create(
             scheme=scheme, name=name, defaults={'count': default})

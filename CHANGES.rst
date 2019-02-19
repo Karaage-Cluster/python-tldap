@@ -9,6 +9,14 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+1.0.2 - UNRELEASED
+------------------
+
+Fixed
+~~~~~
+* Ensure get_and_increment is run in transaction.
+
+
 1.0.1 - 2018-12-03
 ------------------
 
