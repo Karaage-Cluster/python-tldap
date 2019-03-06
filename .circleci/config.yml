@@ -1,0 +1,108 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: deps-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+
+      - run:
+          name: Install dependencies
+          command: |
+            sudo pip install pipenv
+            pipenv sync --dev
+            apt-get install slapd ldap-utils
+
+      - save_cache:
+          paths:
+            - ".venv"
+          key: deps-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+
+      - run:
+          name: Print version
+          command: |
+            pipenv run ./setup.py --version
+
+      - run:
+          name: Run tests
+          environment:
+            TZ: 'Australia/Melbourne'
+          command: |
+            pipenv run isort -rc --check --diff tldap
+            pipenv run flake8 tldap
+            mkdir test-reports
+            pipenv run python -m tldap.test.slapd python -m pytest --cov=tldap --junitxml=test-reports/junit.xml
+      - store_test_results:
+          path: test-reports
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+  verify-version:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - restore_cache:
+          key: deps-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: Verify git tag vs. version
+          command: |
+            pipenv run ./setup.py verify --version "$CIRCLE_TAG"
+
+  deploy-prod-pypi:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - restore_cache:
+          key: deps-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: Init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USER" >> ~/.pypirc
+            echo -e "password = $PYPI_PASS" >> ~/.pypirc
+      - run:
+          name: Create packages
+          command: |
+            pipenv run ./setup.py sdist bdist_wheel
+      - run:
+          name: Upload to pypi
+          command: |
+            pipenv run twine upload dist/*
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+      - verify-version:
+          context: pypi
+          requires:
+            - build
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
+      - deploy-prod-pypi:
+          context: pypi
+          requires:
+            - verify-version
+          filters:
+            tags:
+              only: /.*/
