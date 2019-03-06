@@ -9,6 +9,14 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+1.0.3 - 2019-03-06
+------------------
+
+Changed
+~~~~~~~
+* Use circleci for builds.
+
+
 1.0.2 - 2019-02-19
 ------------------
 
