@@ -13,6 +13,11 @@ jobs:
     steps:
       - checkout
 
+      - run:
+          name: Install slapd
+          command: |
+            sudo apt-get install slapd ldap-utils
+
       - restore_cache:
           key: deps-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
 
@@ -21,7 +26,6 @@ jobs:
           command: |
             sudo pip install pipenv
             pipenv sync --dev
-            apt-get install slapd ldap-utils
 
       - save_cache:
           paths:
