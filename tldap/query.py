@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
-from typing import Set, Iterator, Tuple, Optional, Dict
+from typing import Dict, Iterator, Optional, Set, Tuple
 
 import ldap3
 from ldap3.core.exceptions import LDAPNoSuchObjectResult

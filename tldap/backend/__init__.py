@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
-from tldap.utils import ConnectionHandler, DEFAULT_LDAP_ALIAS
+from tldap.utils import DEFAULT_LDAP_ALIAS, ConnectionHandler
 
 
 connections = None

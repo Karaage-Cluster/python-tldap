@@ -16,19 +16,33 @@
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 
 """ High level database interaction. """
-from typing import List, Iterator, TypeVar, Optional, Type, Set, Tuple, Any, Dict
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 import ldap3.core
 import ldap3.core.exceptions
 
 import tldap.fields
+import tldap.query
 from tldap import Q
-
 from tldap.backend.base import LdapBase
 from tldap.dict import ImmutableDict
 from tldap.dn import dn2str, str2dn
-from tldap.exceptions import ObjectAlreadyExists, ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
-import tldap.query
+from tldap.exceptions import (
+    MultipleObjectsReturned,
+    ObjectAlreadyExists,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 
 
 NotLoadedListType = List[Any] or 'NotLoadedList'

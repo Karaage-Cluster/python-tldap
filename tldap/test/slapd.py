@@ -2,17 +2,18 @@
 Utilities for starting up a test slapd server
 and talking to it with ldapsearch/ldapadd.
 """
-import sys
+import base64
+import logging
 import os
 import socket
-import time
 import subprocess
-import logging
+import sys
 import tempfile
-import base64
-from typing import Optional, Dict, Tuple, List
+import time
+from typing import Dict, List, Optional, Tuple
 
 import tldap.ldap_passwd as lp
+
 
 _log = logging.getLogger("slapd")
 

@@ -20,6 +20,7 @@
 import sys
 from threading import local
 
+
 DEFAULT_LDAP_ALIAS = "default"
 
 

@@ -18,14 +18,14 @@
 """ This module provides the LDAP base functions
 with a subset of the functions from the real ldap module. """
 
+import logging
 import ssl
-from typing import Optional, TypeVar, Callable, Tuple, Generator
+from typing import Callable, Generator, Optional, Tuple, TypeVar
+from urllib.parse import urlparse
 
 import ldap3
 import ldap3.core.exceptions as exceptions
-import logging
 
-from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 

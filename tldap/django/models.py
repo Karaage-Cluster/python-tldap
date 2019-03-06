@@ -18,8 +18,7 @@
 """ DB model for a counter to keep track of next uidNumber and gidNumber to use
 for new LDAP objects. """
 
-from django.db import models
-from django.db import transaction
+from django.db import models, transaction
 
 
 class Counters(models.Model):

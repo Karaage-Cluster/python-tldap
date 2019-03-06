@@ -18,16 +18,18 @@
 """ This module provides the LDAP functions with transaction support faked,
 with a subset of the functions from the real ldap module. """
 import logging
-import six
 import sys
-from typing import List, Callable, Dict, Optional, Any
+from typing import Any, Callable, Dict, List, Optional
 
 import ldap3
+import six
 
 import tldap.dn
 import tldap.exceptions
 import tldap.modlist
+
 from .base import LdapBase
+
 
 logger = logging.getLogger(__name__)
 

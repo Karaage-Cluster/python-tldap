@@ -20,8 +20,10 @@
 from __future__ import absolute_import
 
 import django.conf
+
 from tldap.backend import setup
 from tldap.utils import DEFAULT_LDAP_ALIAS
+
 
 default_app_config = 'tldap.django.apps.TldapConfig'
 

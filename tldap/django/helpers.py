@@ -18,7 +18,7 @@
 """ Django specific database helper functions. """
 
 from tldap import Q
-from tldap.database import Changeset, LdapObjectClass, get_one, Database
+from tldap.database import Changeset, Database, LdapObjectClass, get_one
 from tldap.django.models import Counters
 from tldap.exceptions import ObjectDoesNotExist
 

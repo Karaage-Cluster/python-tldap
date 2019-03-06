@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with python-tldap  If not, see <http://www.gnu.org/licenses/>.
 """ Dictionary related classes. """
-from typing import TypeVar, KeysView, ItemsView, Optional, Set, Dict
+from typing import Dict, ItemsView, KeysView, Optional, Set, TypeVar
+
 
 Entity = TypeVar('Entity', bound='CaseInsensitiveDict')
 

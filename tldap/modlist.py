@@ -19,10 +19,11 @@
 This module contains a ``modifyModlist`` function adopted from
 :py:mod:`ldap:ldap.modlist`.
 """
-from typing import Optional, List, Iterator, Dict, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import ldap3
 import ldap3.utils.conv
+
 import tldap.dict
 
 

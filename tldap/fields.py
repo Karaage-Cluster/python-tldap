@@ -19,10 +19,12 @@
 
 """ LDAP field types. """
 
-import tldap.exceptions
 import datetime
 import struct
+
 import six
+
+import tldap.exceptions
 
 
 class Field(object):

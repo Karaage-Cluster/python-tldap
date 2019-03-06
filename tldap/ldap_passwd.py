@@ -18,6 +18,7 @@
 """ Hash and check passwords. """
 from passlib.context import CryptContext
 
+
 pwd_context = CryptContext(
     schemes=[
         "ldap_sha512_crypt",

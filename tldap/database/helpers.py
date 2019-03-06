@@ -19,14 +19,20 @@
 import base64
 import datetime
 from hashlib import sha1
-from typing import List, Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import tldap.exceptions
 import tldap.fields
-from tldap.database import LdapObject, Changeset, NotLoadedObject, NotLoadedList, \
-    LdapObjectClass, Database
-from tldap.dn import str2dn, dn2str
 import tldap.ldap_passwd as ldap_passwd
+from tldap.database import (
+    Changeset,
+    Database,
+    LdapObject,
+    LdapObjectClass,
+    NotLoadedList,
+    NotLoadedObject,
+)
+from tldap.dn import dn2str, str2dn
 
 
 def rdn_to_dn(changes: Changeset, name: str, base_dn: str) -> Changeset:
