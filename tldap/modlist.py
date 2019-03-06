@@ -66,7 +66,7 @@ def addModlist(entry: dict, ignore_attr_types: Optional[List[str]] = None) -> Di
 
 def modifyModlist(
         old_entry: dict, new_entry: dict, ignore_attr_types: Optional[List[str]] = None,
-        ignore_oldexistent: bool = False)-> Dict[str, Tuple[str, List[bytes]]]:
+        ignore_oldexistent: bool = False) -> Dict[str, Tuple[str, List[bytes]]]:
     """
     Build differential modify list for calling LDAPObject.modify()/modify_s()
 
