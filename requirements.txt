@@ -1,16 +1,5 @@
-################################################################################
-# This requirements file has been automatically generated from `Pipfile` with
-# `pipenv-to-requirements`
-#
-#
-# This has been done to maintain backward compatibility with tools and services
-# that do not support `Pipfile` yet.
-#
-# Do NOT edit it directly, use `pipenv install [-d]` to modify `Pipfile` and
-# `Pipfile.lock` and then regenerate `requirements*.txt`.
-################################################################################
-
-ldap3==2.5.1
+-i https://pypi.org/simple/
+ldap3==2.5.2
 passlib==1.7.1
-pyasn1==0.4.4
-six==1.11.0
+pyasn1==0.4.5
+six==1.12.0
