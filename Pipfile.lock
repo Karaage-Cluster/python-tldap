@@ -183,9 +183,9 @@
         },
         "glob2": {
             "hashes": [
-                "sha256:f5b0a686ff21f820c4d3f0c4edd216704cea59d79d00fa337e244a2f2ff83ed6"
+                "sha256:85c3dbd07c8aa26d63d7aacee34fa86e9a91a3873bc30bf62ec46e531f92ab8c"
             ],
-            "version": "==0.6"
+            "version": "==0.7"
         },
         "idna": {
             "hashes": [
@@ -483,11 +483,11 @@
         },
         "tox": {
             "hashes": [
-                "sha256:04f8f1aa05de8e76d7a266ccd14e0d665d429977cd42123bc38efa9b59964e9e",
-                "sha256:25ef928babe88c71e3ed3af0c464d1160b01fca2dd1870a5bb26c2dea61a17fc"
+                "sha256:f5c8e446b51edd2ea97df31d4ded8c8b72e7d6c619519da6bb6084b9dd5770f9",
+                "sha256:f87fd33892a2df0950e5e034def9468988b8d008c7e9416be665fcc0dd45b14f"
             ],
             "index": "pypi",
-            "version": "==3.7.0"
+            "version": "==3.12.1"
         },
         "tqdm": {
             "hashes": [
