@@ -210,11 +210,11 @@
         },
         "isort": {
             "hashes": [
-                "sha256:c40744b6bc5162bbb39c1257fe298b7a393861d50978b565f3ccd9cb9de0182a",
-                "sha256:f57abacd059dc3bd666258d1efb0377510a89777fda3e3274e3c01f7c03ae22d"
+                "sha256:54da7e92468955c4fceacd0c86bd0ec997b0e1ee80d97f67c35a78b719dccab1",
+                "sha256:6e811fcb295968434526407adb8796944f1988c5b65e8139058f2014cbe100fd"
             ],
             "index": "pypi",
-            "version": "==4.3.20"
+            "version": "==4.3.21"
         },
         "jinja2": {
             "hashes": [
@@ -307,10 +307,10 @@
         },
         "pbr": {
             "hashes": [
-                "sha256:089ccb087e9bd8f278caedfa6c2c5d461381437eda3db750b6834e78b319f404",
-                "sha256:9fb1c3371344cd617eb073c6c00872e9b0e5a7fefed6cd29f327a1b26ab5c498"
+                "sha256:9181e2a34d80f07a359ff1d0504fad3a47e00e1cf2c475b0aa7dcb030af54c40",
+                "sha256:94bdc84da376b3dd5061aa0c3b6faffe943ee2e56fa4ff9bd63e1643932f34fc"
             ],
-            "version": "==5.3.0"
+            "version": "==5.3.1"
         },
         "pipenv": {
             "hashes": [
