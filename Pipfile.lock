@@ -322,11 +322,11 @@
         },
         "pipenv-to-requirements": {
             "hashes": [
-                "sha256:04dc5b1fedfea18858efe3f28d62ed70ac0cd04c34bc32a8c3531384d11be460",
-                "sha256:44bfefa3f6ded62e3bdcc5a6bb4de7a821b2658f821c1126f6abc3bffecb2c1e"
+                "sha256:115390158232f53983f1d989f922d890adbdaaaa95c8b2357a77b9f5fe647862",
+                "sha256:5b7349e76d2c511e8b4a723495311b310e4e33bb716437b30cc18ecb0b0b5e29"
             ],
             "index": "pypi",
-            "version": "==0.7.1"
+            "version": "==0.8.2"
         },
         "pkginfo": {
             "hashes": [
