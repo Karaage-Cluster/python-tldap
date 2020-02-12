@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+tldap.django.apps module
+------------------------
+
+.. automodule:: tldap.django.apps
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 tldap.django.helpers module
 ---------------------------
 

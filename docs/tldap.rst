@@ -110,14 +110,6 @@ tldap.utils module
     :undoc-members:
     :show-inheritance:
 
-tldap.version module
---------------------
-
-.. automodule:: tldap.version
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
