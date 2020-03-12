@@ -1,7 +1,7 @@
 -i https://pypi.org/simple/
 alabaster==0.7.12
 appdirs==1.4.3
-asgiref==3.2.3
+asgiref==3.2.5
 attrs==19.3.0
 babel==2.8.0
 bleach==3.1.1
@@ -28,7 +28,7 @@ keyring==21.1.1
 mako==1.1.2
 markupsafe==1.1.1
 mccabe==0.6.1
-mock==4.0.1
+mock==4.0.2
 more-itertools==8.2.0
 packaging==20.3
 parse-type==0.5.2
@@ -42,7 +42,7 @@ py==1.8.1
 pycodestyle==2.5.0
 pycparser==2.20
 pyflakes==2.1.1
-pygments==2.5.2
+pygments==2.6.1
 pyparsing==2.4.6
 pytest-bdd==3.2.1
 pytest-cov==2.8.1
@@ -70,7 +70,7 @@ tqdm==4.43.0
 twine==3.1.1
 urllib3==1.25.8
 virtualenv-clone==0.5.3
-virtualenv==20.0.8
+virtualenv==20.0.10
 wcwidth==0.1.8
 webencodings==0.5.1
 wheel==0.34.2
