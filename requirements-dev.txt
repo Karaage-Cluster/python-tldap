@@ -24,7 +24,7 @@ importlib-metadata==1.5.0 ; python_version < '3.8'
 isort==4.3.21
 jeepney==0.4.3 ; sys_platform == 'linux'
 jinja2==2.11.1
-keyring==21.1.1
+keyring==21.2.0
 mako==1.1.2
 markupsafe==1.1.1
 mccabe==0.6.1
@@ -48,9 +48,9 @@ pytest-bdd==3.2.1
 pytest-cov==2.8.1
 pytest-django==3.8.0
 pytest-runner==5.2
-pytest==5.4.0
+pytest==5.4.1
 pytz==2019.3
-readme-renderer==24.0
+readme-renderer==25.0
 requests-toolbelt==0.9.1
 requests==2.23.0
 secretstorage==3.1.2 ; sys_platform == 'linux'
