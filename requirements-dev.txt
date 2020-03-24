@@ -1,15 +1,15 @@
 -i https://pypi.org/simple/
 alabaster==0.7.12
 appdirs==1.4.3
-asgiref==3.2.5
+asgiref==3.2.6
 attrs==19.3.0
 babel==2.8.0
-bleach==3.1.1
+bleach==3.1.2
 bumpversion==0.5.3
 certifi==2019.11.28
 cffi==1.14.0
 chardet==3.0.4
-coverage==5.0.3
+coverage==5.0.4
 cryptography==2.8
 distlib==0.3.0
 django==3.0.4
@@ -70,8 +70,8 @@ tqdm==4.43.0
 twine==3.1.1
 urllib3==1.25.8
 virtualenv-clone==0.5.3
-virtualenv==20.0.10
-wcwidth==0.1.8
+virtualenv==20.0.13
+wcwidth==0.1.9
 webencodings==0.5.1
 wheel==0.34.2
 zipp==3.1.0
