@@ -9,7 +9,7 @@ bumpversion==0.5.3
 certifi==2020.4.5.1
 cffi==1.14.0
 chardet==3.0.4
-coverage==5.0.4
+coverage==5.1
 cryptography==2.9
 distlib==0.3.0
 django==3.0.5
@@ -33,7 +33,7 @@ more-itertools==8.2.0
 packaging==20.3
 parse-type==0.5.2
 parse==1.15.0
-pbr==5.4.4
+pbr==5.4.5
 pipenv-to-requirements==0.9.0
 pipenv==2018.11.26
 pkginfo==1.5.0.1
@@ -56,7 +56,7 @@ requests==2.23.0
 secretstorage==3.1.2 ; sys_platform == 'linux'
 six==1.14.0
 snowballstemmer==2.0.0
-sphinx==3.0.0
+sphinx==3.0.1
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==1.0.3
@@ -70,7 +70,7 @@ tqdm==4.45.0
 twine==3.1.1
 urllib3==1.25.8
 virtualenv-clone==0.5.4
-virtualenv==20.0.16
+virtualenv==20.0.17
 wcwidth==0.1.9
 webencodings==0.5.1
 wheel==0.34.2
