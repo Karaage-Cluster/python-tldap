@@ -1,6 +1,6 @@
 -i https://pypi.org/simple/
 alabaster==0.7.12
-appdirs==1.4.3
+appdirs==1.4.4
 asgiref==3.2.7
 attrs==19.3.0
 babel==2.8.0
@@ -14,9 +14,8 @@ cryptography==2.9.2
 distlib==0.3.0
 django==3.0.6
 docutils==0.16
-entrypoints==0.3
 filelock==3.0.12
-flake8==3.7.9
+flake8==3.8.1
 glob2==0.7
 idna==2.9
 imagesize==1.2.0
@@ -39,9 +38,9 @@ pipenv==2018.11.26
 pkginfo==1.5.0.1
 pluggy==0.13.1
 py==1.8.1
-pycodestyle==2.5.0
+pycodestyle==2.6.0
 pycparser==2.20
-pyflakes==2.1.1
+pyflakes==2.2.0
 pygments==2.6.1
 pyparsing==2.4.7
 pytest-bdd==3.3.0
