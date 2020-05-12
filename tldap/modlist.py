@@ -27,7 +27,7 @@ import ldap3.utils.conv
 import tldap.dict
 
 
-def _list_dict(l: Iterator[str], case_insensitive: bool = False):
+def _list_dict(line: Iterator[str], case_insensitive: bool = False):
     """
     return a dictionary with all items of l being the keys of the dictionary
 
@@ -39,7 +39,7 @@ def _list_dict(l: Iterator[str], case_insensitive: bool = False):
         d = tldap.dict.CaseInsensitiveDict()
     else:
         d = {}
-    for i in l:
+    for i in line:
         d[i] = None
     return d
 
