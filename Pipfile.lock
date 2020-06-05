@@ -483,11 +483,10 @@
         },
         "pytest-bdd": {
             "hashes": [
-                "sha256:7800c04bea563a45b958e931259921b691358376af62d0f45beed84d9c15ae4f",
-                "sha256:dd0ff6b1b72d186b9433df3b3f76a55f754d62f461201624692928087d3a3a6b"
+                "sha256:20ce2519fc5fe08a74d160aba52d6e5e46d99da949bc929591eefd063a8e573b"
             ],
             "index": "pypi",
-            "version": "==3.3.0"
+            "version": "==3.4.0"
         },
         "pytest-cov": {
             "hashes": [
