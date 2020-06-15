@@ -29,7 +29,7 @@ mako==1.1.3
 markupsafe==1.1.1
 mccabe==0.6.1
 mock==4.0.2
-more-itertools==8.3.0
+more-itertools==8.4.0
 packaging==20.4
 parse-type==0.5.2
 parse==1.15.0
@@ -56,7 +56,7 @@ requests==2.23.0
 secretstorage==3.1.2 ; sys_platform == 'linux'
 six==1.15.0
 snowballstemmer==2.0.0
-sphinx==3.1.0
+sphinx==3.1.1
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==1.0.3
@@ -70,7 +70,7 @@ tqdm==4.46.1
 twine==3.1.1
 urllib3==1.25.9
 virtualenv-clone==0.5.4
-virtualenv==20.0.21
+virtualenv==20.0.23
 wcwidth==0.2.4
 webencodings==0.5.1
 wheel==0.34.2
