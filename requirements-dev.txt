@@ -13,15 +13,15 @@ chardet==3.0.4
 colorama==0.4.3
 coverage==5.1
 cryptography==2.9.2
-distlib==0.3.0
+distlib==0.3.1
 django==3.0.7
 docutils==0.16
 filelock==3.0.12
 flake8==3.8.3
 glob2==0.7
-idna==2.9
+idna==2.10
 imagesize==1.2.0
-importlib-metadata==1.6.1 ; python_version < '3.8'
+importlib-metadata==1.7.0 ; python_version < '3.8'
 isort==4.3.21
 jeepney==0.4.3 ; sys_platform == 'linux'
 jinja2==2.11.2
@@ -39,7 +39,7 @@ pipenv-to-requirements==0.9.0
 pipenv==2020.6.2
 pkginfo==1.5.0.1
 pluggy==0.13.1
-py==1.8.2
+py==1.9.0
 pycodestyle==2.6.0
 pycparser==2.20
 pyflakes==2.2.0
@@ -67,8 +67,8 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 sqlparse==0.3.1
 toml==0.10.1
-tox==3.15.2
-tqdm==4.46.1
+tox==3.16.0
+tqdm==4.47.0
 twine==3.2.0
 urllib3==1.25.9
 virtualenv-clone==0.5.4
