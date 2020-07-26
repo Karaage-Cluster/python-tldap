@@ -22,7 +22,7 @@ import sys
 from setuptools import Command, setup, find_packages
 
 
-VERSION='1.0.3'
+VERSION='1.0.4'
 
 class VerifyVersionCommand(Command):
     """Custom command to verify that the git tag matches our version"""
