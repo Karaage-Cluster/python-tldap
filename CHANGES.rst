@@ -9,6 +9,14 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+UNRELEASED
+----------
+
+Changed
+~~~~~~~
+* Bump dependancies for testing.
+
+
 1.0.3 - 2019-03-06
 ------------------
 
