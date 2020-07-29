@@ -67,7 +67,7 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 sqlparse==0.3.1
 toml==0.10.1
-tox==3.18.0
+tox==3.18.1
 tqdm==4.48.0
 twine==3.2.0
 urllib3==1.25.10
