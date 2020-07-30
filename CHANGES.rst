@@ -14,7 +14,15 @@ UNRELEASED
 
 Changed
 ~~~~~~~
-* Bump dependancies for testing.
+* Bump dependancies.
+
+
+1.0.4 - 2020-07-27
+------------------
+
+Changed
+~~~~~~~
+* Bump dependancies.
 
 
 1.0.3 - 2019-03-06
