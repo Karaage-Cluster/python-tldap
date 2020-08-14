@@ -37,7 +37,7 @@ parse-type==0.5.2
 parse==1.16.0
 pbr==5.4.5
 pipenv-to-requirements==0.9.0
-pipenv==2020.6.2
+pipenv==2020.8.13
 pkginfo==1.5.0.1
 pluggy==0.13.1
 py==1.9.0
@@ -75,5 +75,5 @@ urllib3==1.25.10
 virtualenv-clone==0.5.4
 virtualenv==20.0.30
 webencodings==0.5.1
-wheel==0.34.2
+wheel==0.35.0
 zipp==3.1.0
