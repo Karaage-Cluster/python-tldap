@@ -8,7 +8,7 @@ bleach==3.1.5
 bump2version==1.0.0
 bumpversion==0.6.0
 certifi==2020.6.20
-cffi==1.14.1
+cffi==1.14.2
 chardet==3.0.4
 colorama==0.4.3
 coverage==5.2.1
@@ -59,7 +59,7 @@ rfc3986==1.4.0
 secretstorage==3.1.2 ; sys_platform == 'linux'
 six==1.15.0
 snowballstemmer==2.0.0
-sphinx==3.2.0
+sphinx==3.2.1
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==1.0.3
