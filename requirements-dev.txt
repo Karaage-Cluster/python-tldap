@@ -8,7 +8,7 @@ bleach==3.1.5
 bump2version==1.0.0
 bumpversion==0.6.0
 certifi==2020.6.20
-cffi==1.14.1
+cffi==1.14.2
 chardet==3.0.4
 colorama==0.4.3
 coverage==5.2.1
@@ -23,7 +23,7 @@ idna==2.10
 imagesize==1.2.0
 importlib-metadata==1.7.0 ; python_version < '3.8'
 iniconfig==1.0.1
-isort==5.4.1
+isort==5.4.2
 jeepney==0.4.3 ; sys_platform == 'linux'
 jinja2==2.11.2
 keyring==21.3.0
