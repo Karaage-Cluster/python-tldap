@@ -8,7 +8,7 @@ bleach==3.1.5
 bump2version==1.0.0
 bumpversion==0.6.0
 certifi==2020.6.20
-cffi==1.14.1
+cffi==1.14.2
 chardet==3.0.4
 colorama==0.4.3
 coverage==5.2.1
@@ -75,5 +75,5 @@ urllib3==1.25.10
 virtualenv-clone==0.5.4
 virtualenv==20.0.30
 webencodings==0.5.1
-wheel==0.35.0
+wheel==0.35.1
 zipp==3.1.0
