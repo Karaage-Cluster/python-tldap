@@ -8,7 +8,7 @@ bleach==3.1.5
 bump2version==1.0.0
 bumpversion==0.6.0
 certifi==2020.6.20
-cffi==1.14.1
+cffi==1.14.2
 chardet==3.0.4
 colorama==0.4.3
 coverage==5.2.1
@@ -47,7 +47,7 @@ pyflakes==2.2.0
 pygments==2.6.1
 pyparsing==2.4.7
 pytest-bdd==3.4.0
-pytest-cov==2.10.0
+pytest-cov==2.10.1
 pytest-django==3.9.0
 pytest-runner==5.2
 pytest==6.0.1
