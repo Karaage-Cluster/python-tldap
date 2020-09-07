@@ -73,10 +73,10 @@
         },
         "attrs": {
             "hashes": [
-                "sha256:0ef97238856430dcf9228e07f316aefc17e8939fc8507e18c6501b761ef1a42a",
-                "sha256:2867b7b9f8326499ab5b0e2d12801fa5c98842d2cbd22b35112ae04bf85b4dff"
+                "sha256:26b54ddbbb9ee1d34d5d3668dd37d6cf74990ab23c828c2888dccdceee395594",
+                "sha256:fce7fc47dfc976152e82d53ff92fa0407700c21acd20886a13777a0d20e655dc"
             ],
-            "version": "==20.1.0"
+            "version": "==20.2.0"
         },
         "babel": {
             "hashes": [
@@ -496,10 +496,11 @@
         },
         "pytest-bdd": {
             "hashes": [
-                "sha256:20ce2519fc5fe08a74d160aba52d6e5e46d99da949bc929591eefd063a8e573b"
+                "sha256:09530e0dae3ce3462ed322a80c1fab7e23e8200f0f5b09aa3e61932e140a1bf4",
+                "sha256:6b13478b0f033cefe6d6eef3ea867aeefd8ce092de9e8c4d13b44c84fb298461"
             ],
             "index": "pypi",
-            "version": "==3.4.0"
+            "version": "==4.0.0"
         },
         "pytest-cov": {
             "hashes": [
