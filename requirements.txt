@@ -1,5 +1,5 @@
 -i https://pypi.org/simple/
 ldap3==2.8.1
-passlib==1.7.2
+passlib==1.7.3
 pyasn1==0.4.8
 six==1.15.0
