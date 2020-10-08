@@ -33,7 +33,7 @@ jobs:
         export TZ=Australia/Melbourne
         pipenv run ./setup.py --version
         pipenv run make -C docs html
-        pipenv run isort --check --diff karaage
+        pipenv run isort --check --diff tldap
         pipenv run flake8 tldap
         pipenv run python -m tldap.test.slapd python -m pytest --cov=tldap --junitxml=test-reports/junit.xml
 
