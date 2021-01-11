@@ -658,18 +658,18 @@
         },
         "tox": {
             "hashes": [
-                "sha256:42ce19ce5dc2f6d6b1fdc5666c476e1f1e2897359b47e0aa3a5b774f335d57c2",
-                "sha256:4321052bfe28f9d85082341ca8e233e3ea901fdd14dab8a5d3fbd810269fbaf6"
+                "sha256:5efda30ad73e662c3844ac51ce1381bf28f61063773e06996aa8b6277133a7c0",
+                "sha256:8cccede64802e78aa6c69f81051b25f0706639d1cbbb34d9366ce00c70ee054f"
             ],
             "index": "pypi",
-            "version": "==3.20.1"
+            "version": "==3.21.0"
         },
         "tqdm": {
             "hashes": [
-                "sha256:556c55b081bd9aa746d34125d024b73f0e2a0e62d5927ff0e400e20ee0a03b9a",
-                "sha256:b8b46036fd00176d0870307123ef06bb851096964fa7fc578d789f90ce82c3e4"
+                "sha256:4621f6823bab46a9cc33d48105753ccbea671b68bab2c50a9f0be23d4065cb5a",
+                "sha256:fe3d08dd00a526850568d542ff9de9bbc2a09a791da3c334f3213d8d0bbbca65"
             ],
-            "version": "==4.55.1"
+            "version": "==4.56.0"
         },
         "twine": {
             "hashes": [
@@ -688,10 +688,10 @@
         },
         "virtualenv": {
             "hashes": [
-                "sha256:54b05fc737ea9c9ee9f8340f579e5da5b09fb64fd010ab5757eb90268616907c",
-                "sha256:b7a8ec323ee02fb2312f098b6b4c9de99559b462775bc8fe3627a73706603c1b"
+                "sha256:205a7577275dd0d9223c730dd498e21a8910600085c3dee97412b041fc4b853b",
+                "sha256:7992b8de87e544a4ab55afc2240bf8388c4e3b5765d03784dad384bfdf9097ee"
             ],
-            "version": "==20.2.2"
+            "version": "==20.3.0"
         },
         "virtualenv-clone": {
             "hashes": [
