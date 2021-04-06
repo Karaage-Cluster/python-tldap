@@ -9,6 +9,15 @@ adheres to `Semantic Versioning`_.
 .. _`Semantic Versioning`: http://semver.org/
 
 
+1.0.6 (UNRELEASED)
+------------------
+
+Changed
+~~~~~~~
+* Bump dependancies.
+* Switch from pipenv to poetry.
+
+
 1.0.5 (2020-07-31)
 ------------------
 
