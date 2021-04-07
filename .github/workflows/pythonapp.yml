@@ -60,7 +60,7 @@ jobs:
       - name: Verify git tag vs. version
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          test $(poetry version) = "python-tldap ${VERSION}"
+          test "$(poetry version)" = "python-tldap ${VERSION}"
       - name: Create packages
         run: |
           poetry build
