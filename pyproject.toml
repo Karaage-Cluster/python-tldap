@@ -27,6 +27,8 @@ pyasn1 = "*"
 ldap3 = "*"
 six = "*"
 pip = "*"
+django = {version = "*", optional = true}
+sphinx = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
@@ -46,7 +48,7 @@ wheel = "*"
 bumpversion = "*"
 
 [tool.poetry.extras]
-docs = ["sphinx"]
+docs = ["sphinx", "django"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
