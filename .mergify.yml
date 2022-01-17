@@ -1,7 +1,14 @@
+queue_rules:
+  - name: default
+    conditions:
+      - "check-success=Tests"
+
 pull_request_rules:
   - name: Automatic merge on approval
     conditions:
       - "#approved-reviews-by>=1"
+      - "check-success=Tests"
     actions:
-      merge:
+      queue:
+        name: default
         method: rebase
