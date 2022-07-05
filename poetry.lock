@@ -582,11 +582,11 @@ testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.
 
 [[package]]
 name = "pytest-bdd"
-version = "5.0.0"
+version = "6.0.0"
 description = "BDD for pytest"
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 glob2 = "*"
@@ -594,7 +594,10 @@ Mako = "*"
 parse = "*"
 parse-type = "*"
 py = "*"
-pytest = ">=4.3"
+pytest = ">=5.0"
+
+[package.extras]
+testing = ["tox", "mypy (==0.910)"]
 
 [[package]]
 name = "pytest-cov"
@@ -1384,8 +1387,8 @@ pytest = [
     {file = "pytest-7.1.2.tar.gz", hash = "sha256:a06a0425453864a270bc45e71f783330a7428defb4230fb5e6a731fde06ecd45"},
 ]
 pytest-bdd = [
-    {file = "pytest-bdd-5.0.0.tar.gz", hash = "sha256:fab7093ed3d5e51ee0c68de093c90e4f40de345bd9a54a188b2991ce2a2a39cf"},
-    {file = "pytest_bdd-5.0.0-py3-none-any.whl", hash = "sha256:c7cf12209606421f61f36b5dc63beccd0c82d29446c0592cf68af2dad0a9761d"},
+    {file = "pytest-bdd-6.0.0.tar.gz", hash = "sha256:dbd48a31eca1d8859aa91a6a00cc4929419d0136f2fc4854d4644f1da16c0efb"},
+    {file = "pytest_bdd-6.0.0-py3-none-any.whl", hash = "sha256:49e45bd7dbe0fb88f4c2ee644be8f216cfa166958ac8187f67f56dbdf94c324f"},
 ]
 pytest-cov = [
     {file = "pytest-cov-3.0.0.tar.gz", hash = "sha256:e7f0f5b1617d2210a2cabc266dfe2f4c75a8d32fb89eafb7ad9d06f6d076d470"},
