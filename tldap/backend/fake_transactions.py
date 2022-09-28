@@ -357,7 +357,7 @@ class LDAPwrapper(LdapBase):
         # split up the parameters
         split_dn = tldap.dn.str2dn(dn)
         split_newrdn = tldap.dn.str2dn(new_rdn)
-        assert(len(split_newrdn) == 1)
+        assert (len(split_newrdn) == 1)
 
         # make dn unqualified
         rdn = tldap.dn.dn2str(split_dn[0:1])

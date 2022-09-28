@@ -182,7 +182,7 @@ def _descr(value, i):
 
 def _UTFMB(value, i):
     if ord(value[i]) >= 0x80:
-        return(value[i], i + 1)
+        return (value[i], i + 1)
 
     return (None, i)
 
