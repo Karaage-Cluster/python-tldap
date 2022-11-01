@@ -28,3 +28,5 @@ DATABASES = {
         'NAME': 'test.sqlite3',
     }
 }
+
+USE_TZ = True
