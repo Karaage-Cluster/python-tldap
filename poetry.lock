@@ -227,14 +227,6 @@ pycodestyle = ">=2.9.0,<2.10.0"
 pyflakes = ">=2.5.0,<2.6.0"
 
 [[package]]
-name = "glob2"
-version = "0.7"
-description = "Version of the glob module that can capture patterns and supports recursive wildcards"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "idna"
 version = "2.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -586,22 +578,18 @@ testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.
 
 [[package]]
 name = "pytest-bdd"
-version = "6.0.1"
+version = "6.1.0"
 description = "BDD for pytest"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-glob2 = "*"
 Mako = "*"
 parse = "*"
 parse-type = "*"
-py = "*"
-pytest = ">=5.0"
-
-[package.extras]
-testing = ["mypy (==0.910)", "tox"]
+pytest = ">=6.2.0"
+typing-extensions = "*"
 
 [[package]]
 name = "pytest-cov"
@@ -934,6 +922,14 @@ rich = ">=12.0.0"
 urllib3 = ">=1.26.0"
 
 [[package]]
+name = "typing-extensions"
+version = "4.4.0"
+description = "Backported and Experimental Type Hints for Python 3.7+"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "tzdata"
 version = "2021.5"
 description = "Provider of IANA time zone data"
@@ -1211,9 +1207,6 @@ flake8 = [
     {file = "flake8-5.0.4-py2.py3-none-any.whl", hash = "sha256:7a1cf6b73744f5806ab95e526f6f0d8c01c66d7bbe349562d22dfca20610b248"},
     {file = "flake8-5.0.4.tar.gz", hash = "sha256:6fbe320aad8d6b95cec8b8e47bc933004678dc63095be98528b7bdd2a9f510db"},
 ]
-glob2 = [
-    {file = "glob2-0.7.tar.gz", hash = "sha256:85c3dbd07c8aa26d63d7aacee34fa86e9a91a3873bc30bf62ec46e531f92ab8c"},
-]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
     {file = "idna-2.10.tar.gz", hash = "sha256:b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6"},
@@ -1376,8 +1369,8 @@ pytest = [
     {file = "pytest-7.2.0.tar.gz", hash = "sha256:c4014eb40e10f11f355ad4e3c2fb2c6c6d1919c73f3b5a433de4708202cade59"},
 ]
 pytest-bdd = [
-    {file = "pytest-bdd-6.0.1.tar.gz", hash = "sha256:f894e589c9ee9e6a66c54e4917fafbbd11801fce9ce01e9b56dc15ccc57e4620"},
-    {file = "pytest_bdd-6.0.1-py3-none-any.whl", hash = "sha256:1dcea36d5fb59291a5d3c186f4cbbd04cdb62a304341f9a360a07682ba1aba18"},
+    {file = "pytest_bdd-6.1.0-py3-none-any.whl", hash = "sha256:552b709ca630c7a718758f2ef39b12d6cecafa81771301731a8b2814bff8ca9d"},
+    {file = "pytest_bdd-6.1.0.tar.gz", hash = "sha256:36fb2d025f7b9ca163d5f27499952c837ac95216db0a2a98c6728be82388c5a1"},
 ]
 pytest-cov = [
     {file = "pytest-cov-4.0.0.tar.gz", hash = "sha256:996b79efde6433cdbd0088872dbc5fb3ed7fe1578b68cdbba634f14bb8dd0470"},
@@ -1478,6 +1471,10 @@ tox = [
 twine = [
     {file = "twine-4.0.1-py3-none-any.whl", hash = "sha256:42026c18e394eac3e06693ee52010baa5313e4811d5a11050e7d48436cf41b9e"},
     {file = "twine-4.0.1.tar.gz", hash = "sha256:96b1cf12f7ae611a4a40b6ae8e9570215daff0611828f5fe1f37a16255ab24a0"},
+]
+typing-extensions = [
+    {file = "typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
+    {file = "typing_extensions-4.4.0.tar.gz", hash = "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa"},
 ]
 tzdata = [
     {file = "tzdata-2021.5-py2.py3-none-any.whl", hash = "sha256:3eee491e22ebfe1e5cfcc97a4137cd70f092ce59144d81f8924a844de05ba8f5"},
