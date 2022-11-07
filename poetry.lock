@@ -446,7 +446,7 @@ python-versions = ">=2.6"
 
 [[package]]
 name = "pip"
-version = "22.3"
+version = "22.3.1"
 description = "The PyPA recommended tool for installing Python packages."
 category = "main"
 optional = false
@@ -1324,8 +1324,8 @@ pbr = [
     {file = "pbr-5.5.1.tar.gz", hash = "sha256:5fad80b613c402d5b7df7bd84812548b2a61e9977387a80a5fc5c396492b13c9"},
 ]
 pip = [
-    {file = "pip-22.3-py3-none-any.whl", hash = "sha256:1daab4b8d3b97d1d763caeb01a4640a2250a0ea899e257b1e44b9eded91e15ab"},
-    {file = "pip-22.3.tar.gz", hash = "sha256:8182aec21dad6c0a49a2a3d121a87cd524b950e0b6092b181625f07ebdde7530"},
+    {file = "pip-22.3.1-py3-none-any.whl", hash = "sha256:908c78e6bc29b676ede1c4d57981d490cb892eb45cd8c214ab6298125119e077"},
+    {file = "pip-22.3.1.tar.gz", hash = "sha256:65fd48317359f3af8e593943e6ae1506b66325085ea64b706a998c6e83eeaf38"},
 ]
 pipenv = [
     {file = "pipenv-2022.1.8-py2.py3-none-any.whl", hash = "sha256:3b80b4512934b9d8e8ce12c988394642ff96bb697680e5b092e59af503178327"},
