@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 passlib = "*"
 pyasn1 = "*"
 ldap3 = "*"

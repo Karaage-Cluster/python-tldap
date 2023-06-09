@@ -80,13 +80,11 @@ class Slapd:
 
     # Use /var/tmp to placate apparmour on Ubuntu:
     TEST_UTILS_DIR = os.path.abspath(os.path.split(__file__)[0])
-    PATH_SBIN_DIR = "/usr/sbin"
-    PATH_BIN_DIR = "/usr/bin"
     PATH_SCHEMA_DIR = TEST_UTILS_DIR + "/ldap_schemas/"
-    PATH_LDAPADD = os.path.join(PATH_BIN_DIR, "ldapadd")
-    PATH_LDAPSEARCH = os.path.join(PATH_BIN_DIR, "ldapsearch")
-    PATH_SLAPD = os.path.join(PATH_SBIN_DIR, "slapd")
-    PATH_SLAP_TEST = os.path.join(PATH_SBIN_DIR, "slaptest")
+    PATH_LDAPADD = "ldapadd"
+    PATH_LDAPSEARCH = "ldapsearch"
+    PATH_SLAPD = "slapd"
+    PATH_SLAP_TEST = "slaptest"
 
     @classmethod
     def check_paths(cls) -> None:
@@ -112,7 +110,9 @@ class Slapd:
         self._root_cn: str = "Manager"
         self._root_password: str = "password"
         self._slapd_debug_level: int or str = 0
-        self._env: Dict[str, str] = {}
+        self._env: Dict[str, str] = {
+            'PATH': os.getenv('PATH')
+        }
 
     # Setters
     def set_port(self, port: int) -> None:
@@ -253,7 +253,7 @@ class Slapd:
             f.write('ou: Groups\n')
 
         config_path = os.path.join(self._tmpdir, "slapd.conf")
-        subprocess.check_call(["/usr/sbin/slapadd", "-n", "1", "-f", config_path, "-l", p])
+        subprocess.check_call(["slapadd", "-n", "1", "-f", config_path, "-l", p])
 
     def start(self) -> None:
         """
