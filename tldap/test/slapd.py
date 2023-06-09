@@ -86,21 +86,6 @@ class Slapd:
     PATH_SLAPD = "slapd"
     PATH_SLAP_TEST = "slaptest"
 
-    @classmethod
-    def check_paths(cls) -> None:
-        """
-        Checks that the configured executable paths look valid.
-        If they don't, then logs warning messages (not errors).
-        """
-        for name, path in (
-                ("slapd", cls.PATH_SLAPD),
-                ("ldapadd", cls.PATH_LDAPADD),
-                ("ldapsearch", cls.PATH_LDAPSEARCH),
-        ):
-            cls._log.debug("checking %s executable at %s", name, path)
-            if not os.access(path, os.X_OK):
-                cls._log.warning("cannot find %s executable at %s", name, path)
-
     def __init__(self) -> None:
         self._proc = None
         self._proc_config: Optional[str] = None
@@ -447,9 +432,6 @@ class Slapd:
                 obj.append((attr, value))
         assert obj == []
         return objects
-
-
-Slapd.check_paths()
 
 
 def test() -> None:
