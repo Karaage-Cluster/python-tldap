@@ -8,6 +8,13 @@ adheres to `Semantic Versioning`_.
 .. _`Keep a Changelog`: http://keepachangelog.com/
 .. _`Semantic Versioning`: http://semver.org/
 
+UNRELEASED
+----------
+
+Changed
+~~~~~~~
+* Bump dependancies.
+
 
 1.0.6 (2021-04-08)
 ------------------
