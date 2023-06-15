@@ -29,6 +29,7 @@ six = "*"
 pip = "*"
 django = {version = "*", optional = true}
 sphinx = {version = "<7", optional = true}
+furo = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
@@ -48,7 +49,7 @@ wheel = "*"
 bumpversion = "*"
 
 [tool.poetry.extras]
-docs = ["sphinx", "django"]
+docs = ["sphinx", "django", "furo"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
