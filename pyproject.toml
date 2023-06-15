@@ -28,7 +28,7 @@ ldap3 = "*"
 six = "*"
 pip = "*"
 django = {version = "*", optional = true}
-sphinx = {version = "<7", optional = true}
+sphinx = {version = "<8", optional = true}
 furo = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
