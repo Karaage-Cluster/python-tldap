@@ -98,6 +98,10 @@ class LdapBase(object):
         tls = None
         if use_ssl or start_tls:
             tls = ldap3.Tls()
+
+            if 'CIPHERS' in settings:
+                tls.ciphers = settings['CIPHERS']
+
             if 'TLS_CA' in settings and settings['TLS_CA']:
                 tls.ca_certs_file = settings['TLS_CA']
 
