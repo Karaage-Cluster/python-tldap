@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-tldap"
-version = "1.0.7"
+version = "1.0.8"
 description = "High level python LDAP Library"
 authors = ["Brian May <brian@linuxpenguins.xyz>"]
 license = "GPL3+"
