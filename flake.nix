@@ -22,9 +22,20 @@
         packages = {
           python-tldap = mkPoetryApplication {
             projectDir = self;
-            # See https://github.com/nix-community/poetry2nix/issues/1184
-            overrides = pkgs.poetry2nix.overrides.withDefaults
-              (self: super: { pip = pkgs.python3.pkgs.pip; });
+            overrides = pkgs.poetry2nix.overrides.withDefaults (self: super: {
+              # See https://github.com/nix-community/poetry2nix/issues/1184
+              pip = pkgs.python3.pkgs.pip;
+              # See https://github.com/nix-community/poetry2nix/issues/413
+              cryptography = super.cryptography.overridePythonAttrs (old: {
+                cargoDeps = pkgs.rustPlatform.fetchCargoTarball {
+                  src = old.src;
+                  sourceRoot = "${old.pname}-${old.version}/src/rust";
+                  name = "${old.pname}-${old.version}";
+                  # This is what we actually want to patch.
+                  sha256 = pkgs.lib.fakeSha256;
+                };
+              });
+            });
           };
           default = self.packages.${system}.python-tldap;
         };
