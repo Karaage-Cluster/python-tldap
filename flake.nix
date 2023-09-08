@@ -20,7 +20,12 @@
 
       in {
         packages = {
-          python-tldap = mkPoetryApplication { projectDir = self; };
+          python-tldap = mkPoetryApplication {
+            projectDir = self;
+            # See https://github.com/nix-community/poetry2nix/issues/1184
+            overrides = pkgs.poetry2nix.overrides.withDefaults
+              (self: super: { pip = pkgs.python3.pkgs.pip; });
+          };
           default = self.packages.${system}.python-tldap;
         };
 
