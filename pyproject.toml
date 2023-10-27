@@ -43,7 +43,6 @@ twine = "*"
 pipenv-to-requirements = "*"
 pytest-cov = "*"
 isort = "*"
-wheel = "*"
 bumpversion = "*"
 
 [tool.poetry.extras]
