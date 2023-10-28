@@ -2,10 +2,10 @@
   description = "Python LDAP library";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.poetry2nix = {
-    # url = "github:nix-community/poetry2nix";
-    url = "github:sciyoshi/poetry2nix/new-bootstrap-fixes";
+    url = "github:nix-community/poetry2nix";
+    # url = "github:sciyoshi/poetry2nix/new-bootstrap-fixes";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -23,20 +23,19 @@
         packages = {
           python-tldap = mkPoetryApplication {
             projectDir = self;
-            # See https://github.com/nix-community/poetry2nix/issues/1184
-            # overrides = p2n.overrides.withDefaults
-            #   (self: super: { pip = pkgs.python3.pkgs.pip; });
+            overrides = p2n.overrides.withDefaults (final: prev: {
+              nh3 = prev.nh3.override { preferWheel = true; };
+              furo = prev.furo.override { preferWheel = true; };
+              bump2version = prev.bump2version.overridePythonAttrs (oldAttrs: {
+                buildInputs = oldAttrs.buildInputs ++ [ final.setuptools ];
+              });
+            });
           };
           default = self.packages.${system}.python-tldap;
         };
 
         devShells.default = pkgs.mkShell {
-          packages = pkgs.lib.warn "meow ${poetry2nix}" [
-            pkgs.poetry
-            pkgs.libffi
-            slapd
-            pkgs.openldap
-          ];
+          packages = [ pkgs.poetry pkgs.libffi slapd pkgs.openldap ];
         };
       });
 }

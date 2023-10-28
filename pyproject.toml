@@ -29,6 +29,7 @@ six = "*"
 django = {version = "*", optional = true}
 sphinx = {version = "*", optional = true}
 furo = {version = "*", optional = true}
+cryptography = "41.0.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
@@ -43,7 +44,8 @@ twine = "*"
 pipenv-to-requirements = "*"
 pytest-cov = "*"
 isort = "*"
-bumpversion = "*"
+wheel = "*"
+bump2version = "*"
 
 [tool.poetry.extras]
 docs = ["sphinx", "django", "furo"]
