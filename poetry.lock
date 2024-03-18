@@ -1096,13 +1096,13 @@ testing = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygm
 
 [[package]]
 name = "pytest-bdd"
-version = "7.1.1"
+version = "7.1.2"
 description = "BDD for pytest"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest_bdd-7.1.1-py3-none-any.whl", hash = "sha256:331621122a46f9881110ae0dd43fedb29e96e8202de29256be3d76c53b57c1d2"},
-    {file = "pytest_bdd-7.1.1.tar.gz", hash = "sha256:1b41a10a8391f1849f0a1524d77b2991d0d8042d2253ace9b616b89b4a9b97a7"},
+    {file = "pytest_bdd-7.1.2-py3-none-any.whl", hash = "sha256:fceca364711d91c195815f507b0ea8f28660203e40a0ead94751c57d04114c33"},
+    {file = "pytest_bdd-7.1.2.tar.gz", hash = "sha256:b992536360f49441ac25b687f092d02815582b60b2acb3f62fce16b7b6e7273d"},
 ]
 
 [package.dependencies]
