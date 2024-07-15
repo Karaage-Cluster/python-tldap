@@ -2,7 +2,7 @@
   description = "Python LDAP library";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
   inputs.poetry2nix = {
     url = "github:nix-community/poetry2nix";
     # url = "github:sciyoshi/poetry2nix/new-bootstrap-fixes";
