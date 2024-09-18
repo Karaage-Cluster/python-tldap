@@ -998,6 +998,7 @@ description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs 
 optional = false
 python-versions = ">=3.8"
 files = [
+    {file = "pyasn1-0.6.1-py3-none-any.whl", hash = "sha256:0d632f46f2ba09143da3a8afe9e33fb6f92fa2320ab7e886e2d0f7672af84629"},
     {file = "pyasn1-0.6.1.tar.gz", hash = "sha256:6f580d2bdd84365380830acf45550f2511469f673cb4a5ae3857a3170128b034"},
 ]
 
@@ -1503,13 +1504,13 @@ files = [
 
 [[package]]
 name = "tox"
-version = "4.18.1"
+version = "4.19.0"
 description = "tox is a generic virtualenv management and test command line tool"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "tox-4.18.1-py3-none-any.whl", hash = "sha256:35d472032ee1f73fe20c3e0e73d7073a4e85075c86ff02c576f9fc7c6a15a578"},
-    {file = "tox-4.18.1.tar.gz", hash = "sha256:3c0c96bc3a568a5c7e66387a4cfcf8c875b52e09f4d47c9f7a277ec82f1a0b11"},
+    {file = "tox-4.19.0-py3-none-any.whl", hash = "sha256:6e20a520db7710f6980b8ec96bde189d6b8cf41b327ec703b03e1a2a447b1aaf"},
+    {file = "tox-4.19.0.tar.gz", hash = "sha256:66177d887f9d7ef8eaa9b58b187f7b865fa4c58650086c01336e82c9831e1867"},
 ]
 
 [package.dependencies]
