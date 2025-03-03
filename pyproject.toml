@@ -29,7 +29,7 @@ six = "*"
 django = {version = "*", optional = true}
 sphinx = {version = "*", optional = true}
 furo = {version = "*", optional = true}
-cryptography = "44.0.1"
+cryptography = "44.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
