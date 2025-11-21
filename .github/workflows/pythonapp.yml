@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install system dependancies
         run: |
           sudo apt-get update
@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up Python 3.10
         uses: actions/setup-python@v6
         with:
